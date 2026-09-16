@@ -1,0 +1,9 @@
+*.class
+
+nbproject/private/
+
+Thumbs.db
+.DS_Store
+/turnos-cliente/target/
+/turnos-pantalla/target/
+/turnos-servidor/target/
