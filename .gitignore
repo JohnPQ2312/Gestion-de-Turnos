@@ -7,3 +7,7 @@ Thumbs.db
 /turnos-cliente/target/
 /turnos-pantalla/target/
 /turnos-servidor/target/
+/CostumerTurn/target/
+/QueueDisplayScreen/target/
+/CoreServer/target/
+/OperatorSystem/target/
