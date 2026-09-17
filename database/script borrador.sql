@@ -1,139 +1,117 @@
-CREATE TABLE funcionario (
-    id_funcionario INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    identificacion VARCHAR(30) NOT NULL,
-    nombre_completo VARCHAR(120) NOT NULL,
-    activo TINYINT(1) NOT NULL DEFAULT 1,
+CREATE TABLE `operator` (
+    operator_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    operator_name VARCHAR(100) NOT NULL,
+    operator_username VARCHAR(50) NOT NULL,
+    operator_role VARCHAR(30) NOT NULL DEFAULT 'OPERADOR',
+    operator_state VARCHAR(20) NOT NULL DEFAULT 'ACTIVO',
+    PRIMARY KEY (operator_id),
+    UNIQUE KEY uk_operator_username (operator_username),
+    CONSTRAINT ck_operator_role
+        CHECK (operator_role IN ('ADMIN', 'OPERADOR', 'SUPERVISOR')),
+    CONSTRAINT ck_operator_state
+        CHECK (operator_state IN ('ACTIVO', 'INACTIVO'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-    PRIMARY KEY (id_funcionario),
-    UNIQUE (identificacion)
-) ENGINE = InnoDB;
+CREATE TABLE service (
+    service_code VARCHAR(20) NOT NULL,
+    services_name VARCHAR(80) NOT NULL,
+    service_prefix VARCHAR(5) NOT NULL,
+    service_state VARCHAR(20) NOT NULL DEFAULT 'ACTIVO',
+    op_id INT UNSIGNED NOT NULL,
+    PRIMARY KEY (service_code),
+    UNIQUE KEY uk_service_prefix (service_prefix),
+    CONSTRAINT ck_service_state
+        CHECK (service_state IN ('ACTIVO', 'INACTIVO')),
+    CONSTRAINT ck_service_prefix_nonempty
+        CHECK (CHAR_LENGTH(TRIM(service_prefix)) > 0),
+    CONSTRAINT fk_service_operator
+        FOREIGN KEY (op_id) REFERENCES `operator` (operator_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE servicio (
-    id_servicio INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    nombre VARCHAR(80) NOT NULL,
-    prefijo VARCHAR(5) NOT NULL,
-    activo TINYINT(1) NOT NULL DEFAULT 1,
+CREATE TABLE `window` (
+    window_id INT UNSIGNED NOT NULL,
+    window_state VARCHAR(20) NOT NULL DEFAULT 'ACTIVA',
+    service_id VARCHAR(20) NOT NULL,
+    PRIMARY KEY (window_id),
+    CONSTRAINT ck_window_state
+        CHECK (window_state IN ('ACTIVA', 'INACTIVA')),
+    CONSTRAINT fk_window_service
+        FOREIGN KEY (service_id) REFERENCES service (service_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-    PRIMARY KEY (id_servicio),
-    UNIQUE KEY uk_servicio_nombre (nombre),
-    UNIQUE KEY uk_servicio_prefijo (prefijo)
-) ENGINE = InnoDB;
+CREATE TABLE app_user (
+    user_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL,
+    user_state VARCHAR(20) NOT NULL DEFAULT 'ACTIVO',
+    PRIMARY KEY (user_id),
+    CONSTRAINT ck_user_state
+        CHECK (user_state IN ('ACTIVO', 'INACTIVO'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE ventanilla (
-    id_ventanilla INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    numero INT UNSIGNED NOT NULL,
-    estado VARCHAR(20) NOT NULL DEFAULT 'INACTIVA',
+CREATE TABLE ticket_sequence (
+    service_id VARCHAR(20) NOT NULL,
+    last_number INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (service_id),
+    CONSTRAINT fk_ticket_sequence_service
+        FOREIGN KEY (service_id) REFERENCES service (service_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-    PRIMARY KEY (id_ventanilla),
-    UNIQUE KEY uk_ventanilla_numero (numero)
-) ENGINE = InnoDB;
+CREATE TABLE ticket (
+    ticket_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    service_id VARCHAR(20) NOT NULL,
+    window_id INT UNSIGNED NULL,
+    user_id INT UNSIGNED NULL,
+    operator_id INT UNSIGNED NULL,
+    sequential_number INT UNSIGNED NOT NULL,
+    visual_code VARCHAR(20) NOT NULL,
+    ticket_state VARCHAR(20) NOT NULL DEFAULT 'EN_ESPERA',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    called_at TIMESTAMP NULL DEFAULT NULL,
+    started_at TIMESTAMP NULL DEFAULT NULL,
+    ended_at TIMESTAMP NULL DEFAULT NULL,
+    active_window_id INT UNSIGNED GENERATED ALWAYS AS (
+        CASE WHEN ticket_state IN ('LLAMADO', 'EN_ATENCION')
+             THEN window_id ELSE NULL END
+    ) STORED,
 
-CREATE TABLE usuario (
-    id_usuario INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    id_funcionario INT UNSIGNED NULL,
-    nombre_usuario VARCHAR(50) NOT NULL,
-    clave_hash VARCHAR(255) NOT NULL,
-    rol VARCHAR(20) NOT NULL,
-    activo TINYINT(1) NOT NULL DEFAULT 1,
+    PRIMARY KEY (ticket_id),
+    UNIQUE KEY uk_ticket_service_number (service_id, sequential_number),
+    UNIQUE KEY uk_ticket_visual_code (visual_code),
+    UNIQUE KEY uk_ticket_active_window (active_window_id),
 
-    PRIMARY KEY (id_usuario),
-    UNIQUE KEY uk_usuario_nombre (nombre_usuario),
-    UNIQUE KEY uk_usuario_funcionario (id_funcionario),
-
-    CONSTRAINT fk_usuario_funcionario
-        FOREIGN KEY (id_funcionario)
-        REFERENCES funcionario (id_funcionario)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT
-) ENGINE = InnoDB;
-
-CREATE TABLE ventanilla_servicio (
-    id_ventanilla INT UNSIGNED NOT NULL,
-    id_servicio INT UNSIGNED NOT NULL,
-
-    PRIMARY KEY (id_ventanilla, id_servicio),
-
-    CONSTRAINT fk_ventanilla_servicio_ventanilla
-        FOREIGN KEY (id_ventanilla)
-        REFERENCES ventanilla (id_ventanilla)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_ventanilla_servicio_servicio
-        FOREIGN KEY (id_servicio)
-        REFERENCES servicio (id_servicio)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
-) ENGINE = InnoDB;
-
-CREATE TABLE contador_turno (
-    id_servicio INT UNSIGNED NOT NULL,
-    ultimo_numero INT UNSIGNED NOT NULL DEFAULT 0,
-
-    PRIMARY KEY (id_servicio),
-
-    CONSTRAINT fk_contador_turno_servicio
-        FOREIGN KEY (id_servicio)
-        REFERENCES servicio (id_servicio)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
-) ENGINE = InnoDB;
-
-CREATE TABLE turno (
-    id_turno BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    id_servicio INT UNSIGNED NOT NULL,
-    id_ventanilla INT UNSIGNED NULL,
-    id_funcionario INT UNSIGNED NULL,
-
-    numero INT UNSIGNED NOT NULL,
-    codigo VARCHAR(20) NOT NULL,
-    estado VARCHAR(20) NOT NULL DEFAULT 'EN_ESPERA',
-
-    fecha_hora_generacion DATETIME
-        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    fecha_hora_llamado DATETIME NULL,
-    fecha_hora_inicio DATETIME NULL,
-    fecha_hora_finalizacion DATETIME NULL,
-
-    PRIMARY KEY (id_turno),
-
-    UNIQUE KEY uk_turno_codigo (codigo),
-    UNIQUE KEY uk_turno_numero_servicio (
-        id_servicio,
-        numero
+    CONSTRAINT ck_ticket_number CHECK (sequential_number > 0),
+    CONSTRAINT ck_ticket_state CHECK (
+        ticket_state IN ('EN_ESPERA', 'LLAMADO', 'EN_ATENCION', 'FINALIZADO')
     ),
-
-    CONSTRAINT fk_turno_servicio
-        FOREIGN KEY (id_servicio)
-        REFERENCES servicio (id_servicio)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT,
-
-    CONSTRAINT fk_turno_ventanilla
-        FOREIGN KEY (id_ventanilla)
-        REFERENCES ventanilla (id_ventanilla)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT,
-
-    CONSTRAINT fk_turno_funcionario
-        FOREIGN KEY (id_funcionario)
-        REFERENCES funcionario (id_funcionario)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT,
-
-    INDEX idx_turno_asignacion (
-        id_servicio,
-        estado,
-        fecha_hora_generacion,
-        id_turno
+    CONSTRAINT ck_ticket_assignment CHECK (
+        ticket_state = 'EN_ESPERA'
+        OR (window_id IS NOT NULL AND operator_id IS NOT NULL)
     ),
-
-    INDEX idx_turno_fecha_generacion (
-        fecha_hora_generacion
+    CONSTRAINT ck_ticket_state_times CHECK (
+        (ticket_state = 'EN_ESPERA'
+            AND called_at IS NULL AND started_at IS NULL AND ended_at IS NULL)
+        OR (ticket_state = 'LLAMADO'
+            AND called_at IS NOT NULL AND started_at IS NULL AND ended_at IS NULL)
+        OR (ticket_state = 'EN_ATENCION'
+            AND called_at IS NOT NULL AND started_at IS NOT NULL AND ended_at IS NULL)
+        OR (ticket_state = 'FINALIZADO'
+            AND called_at IS NOT NULL AND started_at IS NOT NULL AND ended_at IS NOT NULL)
     ),
+    CONSTRAINT ck_ticket_time_order CHECK (
+        (called_at IS NULL OR called_at >= created_at)
+        AND (started_at IS NULL OR started_at >= called_at)
+        AND (ended_at IS NULL OR ended_at >= started_at)
+    ),
+    CONSTRAINT fk_ticket_service
+        FOREIGN KEY (service_id) REFERENCES service (service_code),
+    CONSTRAINT fk_ticket_window
+        FOREIGN KEY (window_id) REFERENCES `window` (window_id),
+    CONSTRAINT fk_ticket_user
+        FOREIGN KEY (user_id) REFERENCES app_user (user_id),
+    CONSTRAINT fk_ticket_operator
+        FOREIGN KEY (operator_id) REFERENCES `operator` (operator_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-    INDEX idx_turno_fecha_finalizacion (
-        fecha_hora_finalizacion
-    )
-) ENGINE = InnoDB;
+CREATE INDEX idx_ticket_assignment
+    ON ticket (service_id, ticket_state, created_at, ticket_id);
+CREATE INDEX idx_ticket_created_at ON ticket (created_at);
