@@ -8,6 +8,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ToggleButton;
 
 /**
  *
@@ -19,6 +20,8 @@ public class TicketsGeneratorController {
     private ComboBox<?> servicesCombo;
     @FXML
     private Button genTurnButton;
+    @FXML
+    private ToggleButton priorityButton;
 
     @FXML
     private void generateTicket(ActionEvent event) {
