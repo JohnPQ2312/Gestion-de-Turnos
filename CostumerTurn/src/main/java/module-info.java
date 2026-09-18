@@ -4,5 +4,6 @@ module cr.ac.una.costumerturn {
     requires java.base;
 
     opens cr.ac.una.costumerturn to javafx.fxml;
+    opens cr.ac.una.Controller to javafx.fxml;
     exports cr.ac.una.costumerturn;
 }

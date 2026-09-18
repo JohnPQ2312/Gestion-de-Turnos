@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/13"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="cr.ac.una.Controller.DisplayScreenController"
+      spacing="15.0"
+      prefWidth="700.0"
+      prefHeight="420.0">
+
+    <padding>
+        <Insets top="20.0" right="20.0"
+                bottom="20.0" left="20.0"/>
+    </padding>
+
+    <children>
+        <Label text="Estado de los turnos"
+               style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+        <TableView fx:id="ticketsTable" VBox.vgrow="ALWAYS">
+            <placeholder>
+                <Label text="Todavía no hay turnos registrados."/>
+            </placeholder>
+
+            <columns>
+                <TableColumn fx:id="codeColumn"
+                             text="Turno"
+                             prefWidth="100.0"/>
+
+                <TableColumn fx:id="serviceColumn"
+                             text="Servicio"
+                             prefWidth="230.0"/>
+
+                <TableColumn fx:id="attentionColumn"
+                             text="Atención"
+                             prefWidth="150.0"/>
+
+                <TableColumn fx:id="stateColumn"
+                             text="Estado"
+                             prefWidth="150.0"/>
+            </columns>
+        </TableView>
+    </children>
+</VBox>
