@@ -7,9 +7,30 @@ public class Service {
     private final String prefix;
 
     public Service(String code, String name, String prefix) {
-        this.code = code;
-        this.name = name;
-        this.prefix = prefix;
+        this.code = requireText(code, "Código del servicio", 20);
+        this.name = requireText(name, "Nombre del servicio", 80);
+        this.prefix = requireText(prefix, "Prefijo del servicio", 5);
+    }
+
+    private static String requireText(
+            String value,
+            String fieldName,
+            int maxLength
+    ) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(
+                    fieldName + " es obligatorio."
+            );
+        }
+
+        if (value.codePointCount(0, value.length()) > maxLength) {
+            throw new IllegalArgumentException(
+                    fieldName + " no puede superar "
+                    + maxLength + " caracteres."
+            );
+        }
+
+        return value;
     }
 
     public String getCode() {
