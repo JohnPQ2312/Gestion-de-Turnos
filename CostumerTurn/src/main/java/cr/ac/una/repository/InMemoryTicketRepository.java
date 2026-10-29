@@ -6,11 +6,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 
-public class InMemoryTicketRepository {
+public class InMemoryTicketRepository implements TicketRepository {
 
     private final Queue<Ticket> regularQueue = new ArrayDeque<>();
     private final Queue<Ticket> priorityQueue = new ArrayDeque<>();
 
+    @Override
     public void add(Ticket ticket) {
         Objects.requireNonNull(ticket, "El turno no puede ser nulo.");
 
@@ -21,10 +22,12 @@ public class InMemoryTicketRepository {
         }
     }
 
+    @Override
     public List<Ticket> findRegularTickets() {
         return List.copyOf(regularQueue);
     }
 
+    @Override
     public List<Ticket> findPriorityTickets() {
         return List.copyOf(priorityQueue);
     }

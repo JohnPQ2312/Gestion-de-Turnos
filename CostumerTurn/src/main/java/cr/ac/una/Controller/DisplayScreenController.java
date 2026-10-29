@@ -1,7 +1,7 @@
 package cr.ac.una.Controller;
 
 import cr.ac.una.model.Ticket;
-import cr.ac.una.repository.InMemoryTicketRepository;
+import cr.ac.una.repository.TicketRepository;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
@@ -9,7 +9,7 @@ import javafx.scene.control.TableView;
 
 public class DisplayScreenController {
 
-    private InMemoryTicketRepository ticketRepository;
+    private TicketRepository ticketRepository;
 
     @FXML
     private TableView<Ticket> ticketsTable;
@@ -28,36 +28,34 @@ public class DisplayScreenController {
 
     @FXML
     private void initialize() {
-        codeColumn.setCellValueFactory(cellData ->
-                new ReadOnlyStringWrapper(
+        codeColumn.setCellValueFactory(cellData
+                -> new ReadOnlyStringWrapper(
                         cellData.getValue().getVisualCode()
                 )
         );
 
-        serviceColumn.setCellValueFactory(cellData ->
-                new ReadOnlyStringWrapper(
+        serviceColumn.setCellValueFactory(cellData
+                -> new ReadOnlyStringWrapper(
                         cellData.getValue().getService().getName()
                 )
         );
 
-        attentionColumn.setCellValueFactory(cellData ->
-                new ReadOnlyStringWrapper(
+        attentionColumn.setCellValueFactory(cellData
+                -> new ReadOnlyStringWrapper(
                         cellData.getValue().isPriority()
-                                ? "Preferencial" : "Regular"
+                        ? "Preferencial" : "Regular"
                 )
         );
 
-        stateColumn.setCellValueFactory(cellData ->
-                new ReadOnlyStringWrapper(
+        stateColumn.setCellValueFactory(cellData
+                -> new ReadOnlyStringWrapper(
                         cellData.getValue().getState().name()
                                 .replace('_', ' ')
                 )
         );
     }
 
-    public void setTicketRepository(
-            InMemoryTicketRepository ticketRepository) {
-
+    public void setTicketRepository(TicketRepository ticketRepository) {
         this.ticketRepository = ticketRepository;
         refreshTickets();
     }
