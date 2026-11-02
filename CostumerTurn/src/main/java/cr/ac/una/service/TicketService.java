@@ -3,18 +3,16 @@ package cr.ac.una.service;
 import cr.ac.una.model.Service;
 import cr.ac.una.model.Ticket;
 import cr.ac.una.repository.TicketRepository;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 public class TicketService {
 
     private final TicketRepository ticketRepository;
-    private final Map<String, Integer> lastNumbersByService = new HashMap<>();
 
     public TicketService(TicketRepository ticketRepository) {
         this.ticketRepository = Objects.requireNonNull(
-                ticketRepository, "El repositorio de turnos es obligatorio."
+                ticketRepository,
+                "El repositorio de turnos es obligatorio."
         );
     }
 
@@ -25,14 +23,6 @@ public class TicketService {
             );
         }
 
-        String serviceCode = service.getCode();
-        int nextNumber = lastNumbersByService.getOrDefault(serviceCode, 0) + 1;
-
-        Ticket ticket = new Ticket(service, nextNumber, priority);
-
-        ticketRepository.add(ticket);
-        lastNumbersByService.put(serviceCode, nextNumber);
-
-        return ticket;
+        return ticketRepository.createWithNextNumber(service, priority);
     }
 }
