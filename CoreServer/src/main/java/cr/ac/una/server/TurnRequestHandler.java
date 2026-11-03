@@ -8,6 +8,7 @@ import cr.ac.una.model.Ticket;
 import cr.ac.una.repository.ServiceRepository;
 import cr.ac.una.repository.ActiveTicketRepository;
 import cr.ac.una.service.TicketAttentionService;
+import cr.ac.una.service.TicketLifecycleService;
 import cr.ac.una.service.TicketService;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -22,12 +23,14 @@ public class TurnRequestHandler {
     private final TicketService ticketService;
     private final TicketAttentionService attentionService;
     private final ActiveTicketRepository activeTicketRepository;
+    private final TicketLifecycleService lifecycleService;
 
     public TurnRequestHandler(
             ServiceRepository serviceRepository,
             TicketService ticketService,
             TicketAttentionService attentionService,
-            ActiveTicketRepository activeTicketRepository
+            ActiveTicketRepository activeTicketRepository,
+            TicketLifecycleService lifecycleService
     ) {
         this.serviceRepository = Objects.requireNonNull(
                 serviceRepository, "El repositorio de servicios es obligatorio."
@@ -40,6 +43,9 @@ public class TurnRequestHandler {
         );
         this.activeTicketRepository = Objects.requireNonNull(
                 activeTicketRepository, "El repositorio de turnos activos es obligatorio."
+        );
+        this.lifecycleService = Objects.requireNonNull(
+                lifecycleService, "El servicio del ciclo de atención es obligatorio."
         );
     }
 
@@ -69,6 +75,14 @@ public class TurnRequestHandler {
 
             if (parts.length == 2 && "GET_ACTIVE_TICKET".equals(parts[0])) {
                 return getActiveTicket(parts[1]);
+            }
+
+            if (parts.length == 3 && "START_ATTENTION".equals(parts[0])) {
+                return startAttention(parts[1], parts[2]);
+            }
+
+            if (parts.length == 3 && "FINISH_ATTENTION".equals(parts[0])) {
+                return finishAttention(parts[1], parts[2]);
             }
 
             throw new IllegalArgumentException(
@@ -175,21 +189,43 @@ public class TurnRequestHandler {
     }
 
     private long parseAssignmentId(String assignmentIdText) {
-        long assignmentId;
+        return parsePositiveId(assignmentIdText, "El identificador de la asignación");
+    }
+
+    private long parseTicketId(String ticketIdText) {
+        return parsePositiveId(ticketIdText, "El identificador del turno");
+    }
+
+    private long parsePositiveId(String value, String label) {
+        long identifier;
         try {
-            assignmentId = Long.parseLong(assignmentIdText);
+            identifier = Long.parseLong(value);
         } catch (NumberFormatException exception) {
             throw new IllegalArgumentException(
-                    "El identificador de la asignación debe ser un número entero."
+                    label + " debe ser un número entero."
             );
         }
 
-        if (assignmentId <= 0) {
+        if (identifier <= 0) {
             throw new IllegalArgumentException(
-                    "El identificador de la asignación debe ser positivo."
+                    label + " debe ser positivo."
             );
         }
-        return assignmentId;
+        return identifier;
+    }
+
+    private String startAttention(String assignmentIdText, String ticketIdText) {
+        long assignmentId = parseAssignmentId(assignmentIdText);
+        long ticketId = parseTicketId(ticketIdText);
+        lifecycleService.startAttention(assignmentId, ticketId);
+        return "OK;ATTENTION_STARTED;" + assignmentId + ";" + ticketId;
+    }
+
+    private String finishAttention(String assignmentIdText, String ticketIdText) {
+        long assignmentId = parseAssignmentId(assignmentIdText);
+        long ticketId = parseTicketId(ticketIdText);
+        lifecycleService.finishAttention(assignmentId, ticketId);
+        return "OK;ATTENTION_FINISHED;" + assignmentId + ";" + ticketId;
     }
 
     private String encode(String value) {

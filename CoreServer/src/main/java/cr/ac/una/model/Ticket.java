@@ -48,6 +48,54 @@ public class Ticket {
         this.state = TicketState.EN_ESPERA;
     }
 
+    public static Ticket restoreActive(
+            Service service,
+            int sequentialNumber,
+            boolean priority,
+            LocalDateTime createdAt,
+            OperatorWindowAssignment assignment,
+            TicketState state,
+            LocalDateTime calledAt,
+            LocalDateTime startedAt
+    ) {
+        Ticket ticket = new Ticket(service, sequentialNumber, priority, createdAt);
+        Objects.requireNonNull(assignment, "La asignación del turno activo es obligatoria.");
+
+        if (state != TicketState.LLAMADO && state != TicketState.EN_ATENCION) {
+            throw new IllegalArgumentException(
+                    "Solo se puede restaurar como activo un turno llamado o en atención."
+            );
+        }
+
+        if (calledAt == null || calledAt.isBefore(createdAt)
+                || calledAt.isBefore(assignment.getStartedAt())) {
+            throw new IllegalArgumentException(
+                    "La fecha de llamado debe existir y ser igual o posterior "
+                    + "a la creación del turno y al inicio de la asignación."
+            );
+        }
+
+        if (state == TicketState.LLAMADO && startedAt != null) {
+            throw new IllegalArgumentException(
+                    "Un turno llamado todavía no debe tener fecha de inicio de atención."
+            );
+        }
+
+        if (state == TicketState.EN_ATENCION
+                && (startedAt == null || startedAt.isBefore(calledAt))) {
+            throw new IllegalArgumentException(
+                    "Un turno en atención debe tener una fecha de inicio "
+                    + "igual o posterior al llamado."
+            );
+        }
+
+        ticket.assignment = assignment;
+        ticket.state = state;
+        ticket.calledAt = calledAt;
+        ticket.startedAt = startedAt;
+        return ticket;
+    }
+
     public boolean isEligibleFor(
             Set<String> eligibleServiceCodes,
             AttentionMode attentionMode

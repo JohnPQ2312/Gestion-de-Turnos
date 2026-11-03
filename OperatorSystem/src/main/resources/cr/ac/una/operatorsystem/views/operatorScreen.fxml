@@ -12,7 +12,7 @@
       fx:controller="cr.ac.una.operatorsystem.controller.OperatorController"
       spacing="12.0"
       prefWidth="500.0"
-      prefHeight="300.0">
+      prefHeight="360.0">
 
     <padding>
         <Insets top="20.0" right="20.0"
@@ -41,6 +41,20 @@
                         text="Actualizar asignaciones"
                         disable="true"
                         onAction="#reloadAssignments"/>
+            </children>
+        </HBox>
+
+        <HBox spacing="10.0">
+            <children>
+                <Button fx:id="startAttentionButton"
+                        text="Iniciar atención"
+                        disable="true"
+                        onAction="#startAttention"/>
+
+                <Button fx:id="finishAttentionButton"
+                        text="Finalizar atención"
+                        disable="true"
+                        onAction="#finishAttention"/>
             </children>
         </HBox>
 

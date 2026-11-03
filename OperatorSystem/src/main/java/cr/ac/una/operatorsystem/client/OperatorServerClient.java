@@ -143,6 +143,60 @@ public class OperatorServerClient {
         }
     }
 
+    public void startAttention(long assignmentId, long ticketId)
+            throws IOException {
+        requestTransition(
+                "START_ATTENTION", "ATTENTION_STARTED",
+                assignmentId, ticketId
+        );
+    }
+
+    public void finishAttention(long assignmentId, long ticketId)
+            throws IOException {
+        requestTransition(
+                "FINISH_ATTENTION", "ATTENTION_FINISHED",
+                assignmentId, ticketId
+        );
+    }
+
+    private void requestTransition(
+            String command,
+            String confirmationType,
+            long assignmentId,
+            long ticketId
+    ) throws IOException {
+        if (assignmentId <= 0 || ticketId <= 0) {
+            throw new IllegalArgumentException(
+                    "Los identificadores de la asignación y del turno deben ser positivos."
+            );
+        }
+
+        String[] response = request(
+                command + ";" + assignmentId + ";" + ticketId
+        );
+
+        if (response.length != 4
+                || !confirmationType.equals(response[1])) {
+            throw new IOException(
+                    "La confirmación del cambio de estado no es válida."
+            );
+        }
+
+        long receivedAssignmentId = positiveLong(
+                response[2], "asignación"
+        );
+        long receivedTicketId = positiveLong(
+                response[3], "turno"
+        );
+
+        if (receivedAssignmentId != assignmentId
+                || receivedTicketId != ticketId) {
+            throw new IOException(
+                    "La confirmación no corresponde al turno y asignación solicitados."
+            );
+        }
+    }
+
     private int positiveInt(String value, String field) throws IOException {
         long number = positiveLong(value, field);
         if (number > Integer.MAX_VALUE) {

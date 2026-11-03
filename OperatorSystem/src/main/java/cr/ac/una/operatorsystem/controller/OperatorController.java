@@ -19,26 +19,47 @@ public class OperatorController {
 
     @FunctionalInterface
     public interface AssignmentsRequest {
+
         List<OperatorAssignment> list() throws IOException;
     }
 
     @FunctionalInterface
     public interface CallNextRequest {
+
         Optional<CalledTicket> callNext(long assignmentId) throws IOException;
     }
 
     @FunctionalInterface
     public interface ActiveTicketRequest {
+
         Optional<ActiveTicket> get(long assignmentId) throws IOException;
+    }
+
+    @FunctionalInterface
+    public interface AttentionRequest {
+
+        void execute(long assignmentId, long ticketId) throws IOException;
+    }
+
+    private enum AttentionOperation {
+        CALL, START, FINISH
+    }
+
+    private record FailedOperation(
+            AttentionOperation operation, Long ticketId, Throwable cause
+            ) {
+
     }
 
     private AssignmentsRequest assignmentsRequest;
     private CallNextRequest callNextRequest;
     private ActiveTicketRequest activeTicketRequest;
+    private AttentionRequest startAttentionRequest;
+    private AttentionRequest finishAttentionRequest;
+    private ActiveTicket currentTicket;
     private Task<?> currentTask;
     private boolean assignmentsLoaded;
     private boolean activeTicketKnown;
-    private boolean hasActiveTicket;
     private boolean busy;
     private boolean closed;
 
@@ -49,16 +70,24 @@ public class OperatorController {
     @FXML
     private Button reloadAssignmentsButton;
     @FXML
+    private Button startAttentionButton;
+    @FXML
+    private Button finishAttentionButton;
+    @FXML
     private Label activeTicketLabel;
 
     public void configure(
             AssignmentsRequest assignmentsRequest,
             CallNextRequest callNextRequest,
-            ActiveTicketRequest activeTicketRequest
+            ActiveTicketRequest activeTicketRequest,
+            AttentionRequest startAttentionRequest,
+            AttentionRequest finishAttentionRequest
     ) {
         Objects.requireNonNull(assignmentsRequest, "La consulta de asignaciones es obligatoria.");
         Objects.requireNonNull(callNextRequest, "La solicitud de llamado es obligatoria.");
         Objects.requireNonNull(activeTicketRequest, "La consulta del turno activo es obligatoria.");
+        Objects.requireNonNull(startAttentionRequest, "La solicitud de inicio es obligatoria.");
+        Objects.requireNonNull(finishAttentionRequest, "La solicitud de finalización es obligatoria.");
 
         if (busy || closed) {
             throw new IllegalStateException("La pantalla no se puede configurar en este momento.");
@@ -67,6 +96,8 @@ public class OperatorController {
         this.assignmentsRequest = assignmentsRequest;
         this.callNextRequest = callNextRequest;
         this.activeTicketRequest = activeTicketRequest;
+        this.startAttentionRequest = startAttentionRequest;
+        this.finishAttentionRequest = finishAttentionRequest;
         reloadAssignments();
     }
 
@@ -90,7 +121,7 @@ public class OperatorController {
 
         assignmentCombo.valueProperty().addListener((observable, previous, selected) -> {
             activeTicketKnown = false;
-            hasActiveTicket = false;
+            currentTicket = null;
             activeTicketLabel.setText("Seleccione una asignación para consultar su turno.");
             updateControls();
 
@@ -110,7 +141,7 @@ public class OperatorController {
         OperatorAssignment previous = assignmentCombo.getValue();
         assignmentsLoaded = false;
         activeTicketKnown = false;
-        hasActiveTicket = false;
+        currentTicket = null;
         assignmentCombo.getItems().clear();
         assignmentCombo.setPromptText("Consultando asignaciones...");
         activeTicketLabel.setText("Seleccione una asignación para consultar su turno.");
@@ -166,7 +197,7 @@ public class OperatorController {
         startTask(task);
     }
 
-    private void loadActiveTicket(Throwable failedCall) {
+    private void loadActiveTicket(FailedOperation failedOperation) {
         if (busy || closed || !assignmentsLoaded || activeTicketRequest == null) {
             return;
         }
@@ -177,7 +208,7 @@ public class OperatorController {
         }
 
         activeTicketKnown = false;
-        hasActiveTicket = false;
+        currentTicket = null;
         activeTicketLabel.setText("Consultando turno activo...");
 
         Task<Optional<ActiveTicket>> task = new Task<>() {
@@ -216,27 +247,19 @@ public class OperatorController {
 
             Optional<ActiveTicket> active = task.getValue();
             activeTicketKnown = true;
-            hasActiveTicket = active.isPresent();
+            currentTicket = active.orElse(null);
 
-            if (active.isPresent()) {
-                ActiveTicket ticket = active.get();
-                showTicket(ticket.visualCode(), ticket.serviceName(),
-                        ticket.operatorId(), ticket.windowId(), ticket.state());
+            if (currentTicket != null) {
+                showTicket(currentTicket.visualCode(), currentTicket.serviceName(),
+                        currentTicket.operatorId(), currentTicket.windowId(), currentTicket.state());
             } else {
                 activeTicketLabel.setText("Sin turno activo en esta asignación.");
             }
 
             setBusy(false);
 
-            if (failedCall != null && (active.isEmpty()
-                    || failedCall instanceof IllegalArgumentException
-                    || failedCall instanceof IllegalStateException)) {
-                showFailure(
-                        "No se recibió la confirmación del llamado. "
-                        + "La consulta actual no muestra un turno activo; "
-                        + "compruebe el estado antes de repetir la solicitud.",
-                        failedCall
-                );
+            if (failedOperation != null && !recoveredAfterFailure(failedOperation, active)) {
+                showFailure(failureMessage(failedOperation.operation()), failedOperation.cause());
             }
         });
 
@@ -252,7 +275,7 @@ public class OperatorController {
             }
 
             activeTicketKnown = false;
-            hasActiveTicket = false;
+            currentTicket = null;
             activeTicketLabel.setText("Estado sin confirmar. Actualice las asignaciones.");
             setBusy(false);
             showFailure(
@@ -265,10 +288,44 @@ public class OperatorController {
         startTask(task);
     }
 
+    private boolean recoveredAfterFailure(
+            FailedOperation failure,
+            Optional<ActiveTicket> active
+    ) {
+        if (!(failure.cause() instanceof IOException)) {
+            return false;
+        }
+
+        return switch (failure.operation()) {
+            case CALL ->
+                active.isPresent();
+            case START ->
+                active.isPresent()
+                && Objects.equals(active.get().ticketId(), failure.ticketId())
+                && "EN_ATENCION".equals(active.get().state());
+            case FINISH ->
+                false;
+        };
+    }
+
+    private String failureMessage(AttentionOperation operation) {
+        return switch (operation) {
+            case CALL ->
+                "No se recibió la confirmación del llamado. "
+                + "Compruebe el estado actual antes de repetir la solicitud.";
+            case START ->
+                "No se recibió la confirmación del inicio de atención. "
+                + "Compruebe el estado actual antes de repetir la solicitud.";
+            case FINISH ->
+                "No se recibió la confirmación de finalización. "
+                + "Compruebe el estado y el historial del turno antes de repetir la solicitud.";
+        };
+    }
+
     @FXML
     private void callNext() {
         if (busy || closed || !assignmentsLoaded || !activeTicketKnown
-                || hasActiveTicket || callNextRequest == null) {
+                || currentTicket != null || callNextRequest == null) {
             return;
         }
 
@@ -307,7 +364,7 @@ public class OperatorController {
                 return;
             }
 
-            callNextButton.setText("Llamar siguiente");
+            resetOperationButtons();
             if (!selected.equals(assignmentCombo.getValue())) {
                 setBusy(false);
                 loadActiveTicket(null);
@@ -315,19 +372,17 @@ public class OperatorController {
             }
 
             Optional<CalledTicket> next = task.getValue();
-            activeTicketKnown = true;
-            hasActiveTicket = next.isPresent();
-
             if (next.isPresent()) {
                 CalledTicket ticket = next.get();
                 showTicket(ticket.visualCode(), ticket.serviceName(),
                         ticket.operatorId(), ticket.windowId(), "LLAMADO");
+                setBusy(false);
+                loadActiveTicket(null);
             } else {
+                activeTicketKnown = true;
+                currentTicket = null;
                 activeTicketLabel.setText("Sin turno activo en esta asignación.");
-            }
-
-            setBusy(false);
-            if (next.isEmpty()) {
+                setBusy(false);
                 showMessage(Alert.AlertType.INFORMATION, "No hay turnos compatibles en espera.");
             }
         });
@@ -337,17 +392,95 @@ public class OperatorController {
                 return;
             }
 
-            callNextButton.setText("Llamar siguiente");
+            resetOperationButtons();
             activeTicketKnown = false;
             setBusy(false);
-            System.err.println("No se recibió la confirmación del llamado. Detalle: "
-                    + task.getException());
-
-            loadActiveTicket(selected.equals(assignmentCombo.getValue())
-                    ? task.getException() : null);
+            FailedOperation failure = new FailedOperation(
+                    AttentionOperation.CALL, null, task.getException()
+            );
+            logFailure(failure);
+            loadActiveTicket(selected.equals(assignmentCombo.getValue()) ? failure : null);
         });
 
         startTask(task);
+    }
+
+    @FXML
+    private void startAttention() {
+        changeAttention(AttentionOperation.START);
+    }
+
+    @FXML
+    private void finishAttention() {
+        changeAttention(AttentionOperation.FINISH);
+    }
+
+    private void changeAttention(AttentionOperation operation) {
+        boolean starting = operation == AttentionOperation.START;
+        AttentionRequest request = starting ? startAttentionRequest : finishAttentionRequest;
+        String expectedState = starting ? "LLAMADO" : "EN_ATENCION";
+
+        if (busy || closed || !assignmentsLoaded || !activeTicketKnown
+                || currentTicket == null || request == null
+                || !expectedState.equals(currentTicket.state())) {
+            return;
+        }
+
+        OperatorAssignment selected = assignmentCombo.getValue();
+        if (selected == null) {
+            return;
+        }
+
+        ActiveTicket target = currentTicket;
+        activeTicketKnown = false;
+        Button operationButton = starting ? startAttentionButton : finishAttentionButton;
+        operationButton.setText(starting ? "Iniciando..." : "Finalizando...");
+
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws IOException {
+                request.execute(selected.assignmentId(), target.ticketId());
+                return null;
+            }
+        };
+
+        task.setOnSucceeded(event -> {
+            if (closed) {
+                return;
+            }
+
+            resetOperationButtons();
+            setBusy(false);
+            loadActiveTicket(null);
+        });
+
+        task.setOnFailed(event -> {
+            if (closed) {
+                return;
+            }
+
+            resetOperationButtons();
+            activeTicketKnown = false;
+            setBusy(false);
+            FailedOperation failure = new FailedOperation(
+                    operation, target.ticketId(), task.getException()
+            );
+            logFailure(failure);
+            loadActiveTicket(selected.equals(assignmentCombo.getValue()) ? failure : null);
+        });
+
+        startTask(task);
+    }
+
+    private void logFailure(FailedOperation failure) {
+        System.err.println("Operación sin confirmación exitosa: " + failure.operation()
+                + ". Detalle: " + failure.cause());
+    }
+
+    private void resetOperationButtons() {
+        callNextButton.setText("Llamar siguiente");
+        startAttentionButton.setText("Iniciar atención");
+        finishAttentionButton.setText("Finalizar atención");
     }
 
     private void showTicket(
@@ -375,10 +508,15 @@ public class OperatorController {
 
     private void updateControls() {
         boolean noAssignments = assignmentCombo.getItems().isEmpty();
+        boolean actionsBlocked = closed || busy || !assignmentsLoaded
+                || !activeTicketKnown || assignmentCombo.getValue() == null;
+
         assignmentCombo.setDisable(closed || busy || !assignmentsLoaded || noAssignments);
-        callNextButton.setDisable(closed || busy || !assignmentsLoaded
-                || !activeTicketKnown || hasActiveTicket
-                || assignmentCombo.getValue() == null || callNextRequest == null);
+        callNextButton.setDisable(actionsBlocked || currentTicket != null || callNextRequest == null);
+        startAttentionButton.setDisable(actionsBlocked || startAttentionRequest == null
+                || currentTicket == null || !"LLAMADO".equals(currentTicket.state()));
+        finishAttentionButton.setDisable(actionsBlocked || finishAttentionRequest == null
+                || currentTicket == null || !"EN_ATENCION".equals(currentTicket.state()));
         reloadAssignmentsButton.setDisable(closed || busy || assignmentsRequest == null);
     }
 

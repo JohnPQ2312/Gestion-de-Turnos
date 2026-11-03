@@ -8,11 +8,13 @@ import cr.ac.una.repository.JdbcServiceRepository;
 import cr.ac.una.repository.JdbcServiceWindowRepository;
 import cr.ac.una.repository.JdbcTicketCallingRepository;
 import cr.ac.una.repository.JdbcTicketCreationRepository;
+import cr.ac.una.repository.JdbcTicketLifecycleRepository;
 import cr.ac.una.repository.ServiceRepository;
 import cr.ac.una.repository.TicketCreationRepository;
 import cr.ac.una.server.TurnRequestHandler;
 import cr.ac.una.server.TurnServer;
 import cr.ac.una.service.TicketAttentionService;
+import cr.ac.una.service.TicketLifecycleService;
 import cr.ac.una.service.TicketService;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -39,9 +41,13 @@ public class App {
                     new JdbcOperatorWindowAssignmentRepository(connectionFactory)
             );
 
+            TicketLifecycleService lifecycleService = new TicketLifecycleService(
+                    new JdbcTicketLifecycleRepository(connectionFactory)
+            );
+
             TurnRequestHandler requestHandler = new TurnRequestHandler(
                     serviceRepository, ticketService, attentionService,
-                    new JdbcActiveTicketRepository(connectionFactory)
+                    new JdbcActiveTicketRepository(connectionFactory), lifecycleService
             );
 
             TurnServer server = new TurnServer(5000, requestHandler);

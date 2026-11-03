@@ -22,12 +22,13 @@ public class App extends Application {
         controller = loader.getController();
 
         stage.setTitle("Atención de turnos");
-        stage.setScene(new Scene(root, 500, 300));
+        stage.setScene(new Scene(root, 500, 360));
         stage.show();
 
         OperatorServerClient client = new OperatorServerClient("127.0.0.1", 5000);
         controller.configure(
-                client::listAssignments, client::callNext, client::getActiveTicket
+                client::listAssignments, client::callNext, client::getActiveTicket,
+                client::startAttention, client::finishAttention
         );
     }
 
