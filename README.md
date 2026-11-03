@@ -9,11 +9,13 @@ Sistema de gestión de turnos en Java, organizado en cuatro proyectos Maven que 
 | `OperatorSystem` | Pantalla de asignación de operador/ventanilla y llamado de turnos. |
 | `QueueDisplayScreen` | Pantalla pública de turnos. |
 
-## Estado de la reorganización
+## Estado actual
 
-La lógica de negocio se trasladó desde `CostumerTurn` a `CoreServer`. Las pantallas y sus controladores quedaron en sus aplicaciones correspondientes. Los clientes contienen únicamente datos de presentación y puntos de configuración para las solicitudes; no crean repositorios ni administran colas o consecutivos.
+La lógica de negocio se trasladó desde `CostumerTurn` a `CoreServer`. Las pantallas y sus controladores quedaron en sus aplicaciones correspondientes. La presentación y la comunicación con el servidor corresponden a los clientes. Los repositorios, las colas y los consecutivos permanecen en `CoreServer`.
 
-Esta versión corresponde a la reorganización previa a la comunicación entre aplicaciones. Cada cliente abre su pantalla por separado. Generar y llamar permanecen deshabilitados hasta configurar la conexión con el servidor; la pantalla pública abre sin datos. `CoreServer` informa de este estado y termina: todavía no escucha conexiones. El prototipo anterior de tres ventanas en una misma ejecución dejó de ser el arranque de `CostumerTurn`.
+`CoreServer` escucha conexiones TCP locales en el puerto 5000 y procesa las solicitudes de catálogo y generación de turnos. `CostumerTurn` consulta los servicios y solicita turnos mediante sockets; estas operaciones se ejecutan en segundo plano para mantener la interfaz disponible. Dos generadores independientes comparten los consecutivos del mismo servidor.
+
+`OperatorSystem` y `QueueDisplayScreen` conservan sus pantallas, pendientes de conectar al servidor. El llamado todavía está deshabilitado en la aplicación del operador y la pantalla pública abre sin datos.
 
 Las reglas existentes se conservan en el servidor: consecutivos por servicio, atención regular/preferencial, compatibilidad entre servicios del operador y la ventanilla, control de ocupación, estados y tiempos del turno. Sus repositorios en memoria no conservan datos al cerrar el proceso.
 
@@ -21,11 +23,14 @@ Las reglas existentes se conservan en el servidor: consecutivos por servicio, at
 
 - Utilizar JDK 21 o superior y abrir cada carpeta de proyecto en NetBeans.
 - Los tres clientes utilizan JavaFX 13, con sus FXML ajustados a la misma versión. Java y JavaFX tienen versiones independientes.
-- Ejecutar cada cliente con la acción **Run Project** de NetBeans; cada uno muestra su propia pantalla.
-- Ejecutar `CoreServer` con su clase `cr.ac.una.CoreServer.App`. Por ahora muestra el estado del núcleo y finaliza.
+- Iniciar primero `CoreServer` con su clase `cr.ac.una.CoreServer.App` y mantenerlo ejecutándose.
+- Ejecutar `CostumerTurn` con **Run Project**. Se conecta a `127.0.0.1:5000` y carga los servicios automáticamente.
+- Si falla la carga del catálogo, iniciar el servidor y utilizar **Reconectar** en el generador.
+- Para comprobar los consecutivos compartidos, abrir dos instancias de `CostumerTurn` sin reiniciar `CoreServer` y generar turnos del mismo servicio.
+- `OperatorSystem` y `QueueDisplayScreen` pueden abrirse por separado para visualizar sus pantallas; su comunicación está pendiente.
 
 ## Base de datos y continuación
 
-El uso de MySQL está autorizado por el profesor, según la aclaración del grupo. El borrador de estructura está en `database/script borrador.sql`; esta reorganización no lo ejecuta ni conecta las aplicaciones a una base de datos.
+El uso de MySQL está autorizado por el profesor, según la aclaración del grupo. El borrador de estructura está en `database/script borrador.sql`; las aplicaciones todavía no están conectadas a una base de datos. Los turnos y consecutivos actuales se pierden al reiniciar el servidor.
 
-El siguiente bloque consiste en conectar `CostumerTurn` con `CoreServer` para solicitar un turno y recibir el código generado. Después se incorporarán los llamados del operador y las actualizaciones de la pantalla pública.
+El siguiente bloque consiste en conectar los llamados de `OperatorSystem` con `CoreServer` y enviar las actualizaciones a `QueueDisplayScreen`. La persistencia en MySQL continúa pendiente.

@@ -2,16 +2,27 @@ package cr.ac.una.repository;
 
 import cr.ac.una.model.Service;
 import java.util.List;
+import java.util.Optional;
 
 public class InMemoryServiceRepository {
 
     private final List<Service> services = List.of(
-        new Service("INFO", "Información general", "A"),
-        new Service("TRAM", "Trámites", "B"),
-        new Service("PAGO", "Pagos", "C")
+            new Service("INFO", "Información general", "A"),
+            new Service("TRAM", "Trámites", "B"),
+            new Service("PAGO", "Pagos", "C")
     );
 
     public List<Service> findAll() {
         return services;
+    }
+
+    public Optional<Service> findByCode(String code) {
+        for (Service service : services) {
+            if (service.getCode().equals(code)) {
+                return Optional.of(service);
+            }
+        }
+
+        return Optional.empty();
     }
 }
