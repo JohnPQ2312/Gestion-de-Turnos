@@ -1,19 +1,10 @@
 package cr.ac.una.repository;
 
-import cr.ac.una.model.AttentionMode;
-import cr.ac.una.model.OperatorWindowAssignment;
 import cr.ac.una.model.Ticket;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 
-public interface TicketRepository extends TicketCreationRepository {
-
-    Optional<Ticket> callNext(
-            OperatorWindowAssignment assignment,
-            Set<String> eligibleServiceCodes,
-            AttentionMode attentionMode
-    );
+public interface TicketRepository
+        extends TicketCreationRepository, TicketCallingRepository {
 
     List<Ticket> findRegularTickets();
 

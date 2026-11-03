@@ -16,7 +16,20 @@ public class Ticket {
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
 
-    public Ticket(Service service, int sequentialNumber, boolean priority) {
+    public Ticket(
+            Service service,
+            int sequentialNumber,
+            boolean priority
+    ) {
+        this(service, sequentialNumber, priority, LocalDateTime.now());
+    }
+
+    public Ticket(
+            Service service,
+            int sequentialNumber,
+            boolean priority,
+            LocalDateTime createdAt
+    ) {
         this.service = Objects.requireNonNull(
                 service, "El turno debe tener un servicio."
         );
@@ -29,7 +42,9 @@ public class Ticket {
 
         this.sequentialNumber = sequentialNumber;
         this.priority = priority;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = Objects.requireNonNull(
+                createdAt, "La fecha de creación es obligatoria."
+        );
         this.state = TicketState.EN_ESPERA;
     }
 

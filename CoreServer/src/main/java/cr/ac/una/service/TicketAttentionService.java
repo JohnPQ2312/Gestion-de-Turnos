@@ -6,22 +6,24 @@ import cr.ac.una.model.Ticket;
 import cr.ac.una.repository.OperatorRepository;
 import cr.ac.una.repository.OperatorWindowAssignmentRepository;
 import cr.ac.una.repository.ServiceWindowRepository;
-import cr.ac.una.repository.TicketRepository;
+import cr.ac.una.repository.TicketCallingRepository;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 public class TicketAttentionService {
 
-    private final TicketRepository ticketRepository;
+    private final TicketCallingRepository ticketRepository;
     private final OperatorRepository operatorRepository;
     private final ServiceWindowRepository windowRepository;
     private final OperatorWindowAssignmentRepository assignmentRepository;
 
     public TicketAttentionService(
-            TicketRepository ticketRepository,
+            TicketCallingRepository ticketRepository,
             OperatorRepository operatorRepository,
             ServiceWindowRepository windowRepository,
             OperatorWindowAssignmentRepository assignmentRepository
@@ -39,6 +41,31 @@ public class TicketAttentionService {
                 assignmentRepository,
                 "El repositorio de asignaciones es obligatorio."
         );
+    }
+
+    public List<OperatorWindowAssignment> listActiveAssignments() {
+        List<OperatorWindowAssignment> activeAssignments = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+
+        for (OperatorWindowAssignment assignment : assignmentRepository.findAll()) {
+            if (!assignment.isOpen() || assignment.getStartedAt().isAfter(now)) {
+                continue;
+            }
+
+            if (!operatorRepository.isActive(assignment.getOperatorId())) {
+                continue;
+            }
+
+            Optional<ServiceWindow> window = windowRepository.findById(
+                    assignment.getWindowId()
+            );
+
+            if (window.isPresent() && window.get().isActive()) {
+                activeAssignments.add(assignment);
+            }
+        }
+
+        return List.copyOf(activeAssignments);
     }
 
     public Optional<Ticket> callNext(long assignmentId) {
