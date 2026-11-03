@@ -2,6 +2,7 @@ package cr.ac.una.model;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Set;
 
 public class Ticket {
 
@@ -10,9 +11,10 @@ public class Ticket {
     private final boolean priority;
     private final LocalDateTime createdAt;
     private TicketState state;
-    private Integer windowId;
-    private Integer operatorId;
+    private OperatorWindowAssignment assignment;
     private LocalDateTime calledAt;
+    private LocalDateTime startedAt;
+    private LocalDateTime endedAt;
 
     public Ticket(Service service, int sequentialNumber, boolean priority) {
         this.service = Objects.requireNonNull(
@@ -31,23 +33,93 @@ public class Ticket {
         this.state = TicketState.EN_ESPERA;
     }
 
-    public void markCalled(int windowId, int operatorId) {
+    public boolean isEligibleFor(
+            Set<String> eligibleServiceCodes,
+            AttentionMode attentionMode
+    ) {
+        Objects.requireNonNull(
+                eligibleServiceCodes,
+                "Los servicios habilitados son obligatorios."
+        );
+
+        Objects.requireNonNull(
+                attentionMode,
+                "La modalidad de atención es obligatoria."
+        );
+
+        return state == TicketState.EN_ESPERA
+                && eligibleServiceCodes.contains(service.getCode())
+                && attentionMode.allows(priority);
+    }
+
+    public void markCalled(OperatorWindowAssignment assignment) {
         if (state != TicketState.EN_ESPERA) {
             throw new IllegalStateException(
                     "Solo se puede asignar un turno que está en espera."
             );
         }
 
-        if (windowId <= 0 || operatorId <= 0) {
-            throw new IllegalArgumentException(
-                    "La ventanilla y el operador deben tener identificadores positivos."
+        Objects.requireNonNull(
+                assignment, "La asignación es obligatoria."
+        );
+
+        if (!assignment.isOpen()) {
+            throw new IllegalStateException(
+                    "No se puede llamar un turno desde una asignación cerrada."
             );
         }
 
-        this.windowId = windowId;
-        this.operatorId = operatorId;
-        this.calledAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+
+        if (now.isBefore(createdAt)
+                || now.isBefore(assignment.getStartedAt())) {
+            throw new IllegalStateException(
+                    "El llamado no puede ser anterior a la creación "
+                    + "del turno ni al inicio de la asignación."
+            );
+        }
+
+        this.assignment = assignment;
+        this.calledAt = now;
         this.state = TicketState.LLAMADO;
+    }
+
+    public void startAttention() {
+        if (state != TicketState.LLAMADO) {
+            throw new IllegalStateException(
+                    "Solo se puede iniciar la atención de un turno llamado."
+            );
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (now.isBefore(calledAt)) {
+            throw new IllegalStateException(
+                    "La atención no puede comenzar antes del llamado."
+            );
+        }
+
+        this.startedAt = now;
+        this.state = TicketState.EN_ATENCION;
+    }
+
+    public void finishAttention() {
+        if (state != TicketState.EN_ATENCION) {
+            throw new IllegalStateException(
+                    "Solo se puede finalizar un turno que está en atención."
+            );
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (now.isBefore(startedAt)) {
+            throw new IllegalStateException(
+                    "La atención no puede finalizar antes de su inicio."
+            );
+        }
+
+        this.endedAt = now;
+        this.state = TicketState.FINALIZADO;
     }
 
     public Service getService() {
@@ -70,16 +142,31 @@ public class Ticket {
         return state;
     }
 
+    public Long getAssignmentId() {
+        return assignment == null
+                ? null : assignment.getAssignmentId();
+    }
+
     public Integer getWindowId() {
-        return windowId;
+        return assignment == null
+                ? null : assignment.getWindowId();
     }
 
     public Integer getOperatorId() {
-        return operatorId;
+        return assignment == null
+                ? null : assignment.getOperatorId();
     }
 
     public LocalDateTime getCalledAt() {
         return calledAt;
+    }
+
+    public LocalDateTime getStartedAt() {
+        return startedAt;
+    }
+
+    public LocalDateTime getEndedAt() {
+        return endedAt;
     }
 
     public String getVisualCode() {

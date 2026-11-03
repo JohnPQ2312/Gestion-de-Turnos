@@ -12,6 +12,11 @@ import cr.ac.una.Controller.TicketsGeneratorController;
 import cr.ac.una.Controller.DisplayScreenController;
 import cr.ac.una.repository.InMemoryTicketRepository;
 import cr.ac.una.service.TicketService;
+import cr.ac.una.Controller.OperatorController;
+import cr.ac.una.repository.InMemoryOperatorRepository;
+import cr.ac.una.repository.InMemoryOperatorWindowAssignmentRepository;
+import cr.ac.una.repository.InMemoryServiceWindowRepository;
+import cr.ac.una.service.TicketAttentionService;
 
 /**
  * JavaFX App
@@ -28,6 +33,16 @@ public class App extends Application {
         TicketService ticketService
                 = new TicketService(ticketRepository);
 
+        InMemoryOperatorWindowAssignmentRepository assignmentRepository
+                = new InMemoryOperatorWindowAssignmentRepository();
+
+        TicketAttentionService attentionService = new TicketAttentionService(
+                ticketRepository,
+                new InMemoryOperatorRepository(),
+                new InMemoryServiceWindowRepository(),
+                assignmentRepository
+        );
+
         FXMLLoader generatorLoader = new FXMLLoader(
                 App.class.getResource("/cr/ac/una/Views/ticketsGenerator.fxml")
         );
@@ -38,6 +53,14 @@ public class App extends Application {
                 = generatorLoader.getController();
 
         generatorController.setTicketService(ticketService);
+
+        FXMLLoader operatorLoader = new FXMLLoader(
+                App.class.getResource("/cr/ac/una/Views/operatorScreen.fxml")
+        );
+
+        Parent operatorRoot = operatorLoader.load();
+
+        OperatorController operatorController = operatorLoader.getController();
 
         FXMLLoader displayLoader = new FXMLLoader(
                 App.class.getResource("/cr/ac/una/Views/displayScreen.fxml")
@@ -54,6 +77,12 @@ public class App extends Application {
                 () -> displayController.refreshTickets()
         );
 
+        operatorController.configure(
+                attentionService,
+                assignmentRepository.findAll(),
+                () -> displayController.refreshTickets()
+        );
+
         scene = new Scene(generatorRoot, 640, 480);
         stage.setTitle("Generador de turnos");
         stage.setScene(scene);
@@ -63,8 +92,14 @@ public class App extends Application {
         displayStage.setTitle("Pantalla de turnos");
         displayStage.setScene(new Scene(displayRoot, 700, 420));
 
+        Stage operatorStage = new Stage();
+        operatorStage.initOwner(stage);
+        operatorStage.setTitle("Atención de turnos");
+        operatorStage.setScene(new Scene(operatorRoot, 500, 300));
+
         stage.show();
         displayStage.show();
+        operatorStage.show();
     }
 
     static void setRoot(String fxml) throws IOException {
