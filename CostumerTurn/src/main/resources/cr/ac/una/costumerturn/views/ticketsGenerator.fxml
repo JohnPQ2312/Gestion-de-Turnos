@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="399.0" prefWidth="629.0" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cr.ac.una.costumerturn.controller.TicketsGeneratorController">
+   <children>
+      <ComboBox fx:id="servicesCombo" layoutX="37.0" layoutY="103.0" prefHeight="26.0" prefWidth="178.0" promptText="Pendiente de conexión al servidor" disable="true" />
+      <Label layoutX="29.0" layoutY="14.0" prefHeight="18.0" prefWidth="187.0" text="Sistema de turnos">
+         <font>
+            <Font size="23.0" />
+         </font>
+      </Label>
+      <Button fx:id="genTurnButton" layoutX="237.0" layoutY="152.0" mnemonicParsing="false" onAction="#generateTicket" prefHeight="26.0" prefWidth="111.0" disable="true" text="Generar turno" />
+      <ToggleButton fx:id="priorityButton" layoutX="237.0" layoutY="103.0" mnemonicParsing="false" text="Preferencial" />
+      <Label layoutX="37.0" layoutY="78.0" text="Seleccionar tipo de servicio" />
+      <Label layoutX="237.0" layoutY="78.0" text="Seleccionar atención preferencial" />
+   </children>
+</AnchorPane>
