@@ -4,7 +4,7 @@ import cr.ac.una.model.Service;
 import java.util.List;
 import java.util.Optional;
 
-public class InMemoryServiceRepository {
+public class InMemoryServiceRepository implements ServiceRepository {
 
     private final List<Service> services = List.of(
             new Service("INFO", "Información general", "A"),
@@ -12,10 +12,12 @@ public class InMemoryServiceRepository {
             new Service("PAGO", "Pagos", "C")
     );
 
+    @Override
     public List<Service> findAll() {
         return services;
     }
 
+    @Override
     public Optional<Service> findByCode(String code) {
         for (Service service : services) {
             if (service.getCode().equals(code)) {

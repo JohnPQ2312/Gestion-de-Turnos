@@ -1,34 +1,47 @@
 package cr.ac.una.CoreServer;
 
-import cr.ac.una.repository.InMemoryServiceRepository;
-import cr.ac.una.repository.InMemoryTicketRepository;
+import cr.ac.una.config.DatabaseConnectionFactory;
+import cr.ac.una.repository.JdbcTicketCreationRepository;
+import cr.ac.una.repository.TicketCreationRepository;
+import cr.ac.una.repository.JdbcServiceRepository;
+import cr.ac.una.repository.ServiceRepository;
 import cr.ac.una.server.TurnRequestHandler;
 import cr.ac.una.server.TurnServer;
 import cr.ac.una.service.TicketService;
 import java.io.IOException;
+import java.sql.SQLException;
 
 public class App {
 
     public static void main(String[] args) {
-        InMemoryTicketRepository ticketRepository
-                = new InMemoryTicketRepository();
-
-        InMemoryServiceRepository serviceRepository
-                = new InMemoryServiceRepository();
-
-        TicketService ticketService
-                = new TicketService(ticketRepository);
-
-        TurnRequestHandler requestHandler
-                = new TurnRequestHandler(
-                        serviceRepository,
-                        ticketService
-                );
-
-        TurnServer server = new TurnServer(5000, requestHandler);
-
         try {
+            DatabaseConnectionFactory connectionFactory
+                    = new DatabaseConnectionFactory();
+
+            ServiceRepository serviceRepository
+                    = new JdbcServiceRepository(connectionFactory);
+
+            TicketCreationRepository ticketRepository
+                    = new JdbcTicketCreationRepository(connectionFactory);
+
+            TicketService ticketService
+                    = new TicketService(ticketRepository);
+
+            TurnRequestHandler requestHandler
+                    = new TurnRequestHandler(
+                            serviceRepository,
+                            ticketService
+                    );
+
+            TurnServer server = new TurnServer(5000, requestHandler);
             server.start();
+
+        } catch (SQLException exception) {
+            System.err.println(
+                    "No se pudo cargar la configuración de MySQL: "
+                    + exception.getMessage()
+            );
+
         } catch (IOException exception) {
             System.err.println(
                     "No se pudo iniciar o mantener el servidor: "

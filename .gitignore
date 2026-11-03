@@ -11,3 +11,4 @@ Thumbs.db
 /QueueDisplayScreen/target/
 /CoreServer/target/
 /OperatorSystem/target/
+/CoreServer/src/main/resources/db.properties

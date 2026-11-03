@@ -2,8 +2,9 @@ package cr.ac.una.server;
 
 import cr.ac.una.model.Service;
 import cr.ac.una.model.Ticket;
-import cr.ac.una.repository.InMemoryServiceRepository;
+import cr.ac.una.repository.ServiceRepository;
 import cr.ac.una.service.TicketService;
+import cr.ac.una.exception.DataAccessException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -12,11 +13,11 @@ import java.util.List;
 
 public class TurnRequestHandler {
 
-    private final InMemoryServiceRepository serviceRepository;
+    private final ServiceRepository serviceRepository;
     private final TicketService ticketService;
 
     public TurnRequestHandler(
-            InMemoryServiceRepository serviceRepository,
+            ServiceRepository serviceRepository,
             TicketService ticketService
     ) {
         this.serviceRepository = Objects.requireNonNull(
@@ -80,7 +81,16 @@ public class TurnRequestHandler {
 
         } catch (IllegalArgumentException exception) {
             return "ERROR;" + encode(exception.getMessage());
+
+        } catch (DataAccessException exception) {
+            System.err.println(exception.getMessage());
+            exception.printStackTrace(System.err);
+
+            return "ERROR;" + encode(
+                    "No se pudo completar la operación con la base de datos."
+            );
         }
+        
     }
 
     private String encode(String value) {

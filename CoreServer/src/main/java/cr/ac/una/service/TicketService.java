@@ -2,14 +2,14 @@ package cr.ac.una.service;
 
 import cr.ac.una.model.Service;
 import cr.ac.una.model.Ticket;
-import cr.ac.una.repository.TicketRepository;
+import cr.ac.una.repository.TicketCreationRepository;
 import java.util.Objects;
 
 public class TicketService {
 
-    private final TicketRepository ticketRepository;
+    private final TicketCreationRepository ticketRepository;
 
-    public TicketService(TicketRepository ticketRepository) {
+    public TicketService(TicketCreationRepository ticketRepository) {
         this.ticketRepository = Objects.requireNonNull(
                 ticketRepository,
                 "El repositorio de turnos es obligatorio."
