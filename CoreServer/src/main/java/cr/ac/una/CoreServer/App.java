@@ -2,6 +2,7 @@ package cr.ac.una.CoreServer;
 
 import cr.ac.una.config.DatabaseConnectionFactory;
 import cr.ac.una.repository.JdbcActiveTicketRepository;
+import cr.ac.una.repository.JdbcDisplayRepository;
 import cr.ac.una.repository.JdbcOperatorRepository;
 import cr.ac.una.repository.JdbcOperatorWindowAssignmentRepository;
 import cr.ac.una.repository.JdbcServiceRepository;
@@ -47,7 +48,8 @@ public class App {
 
             TurnRequestHandler requestHandler = new TurnRequestHandler(
                     serviceRepository, ticketService, attentionService,
-                    new JdbcActiveTicketRepository(connectionFactory), lifecycleService
+                    new JdbcActiveTicketRepository(connectionFactory), lifecycleService,
+                    new JdbcDisplayRepository(connectionFactory)
             );
 
             TurnServer server = new TurnServer(5000, requestHandler);

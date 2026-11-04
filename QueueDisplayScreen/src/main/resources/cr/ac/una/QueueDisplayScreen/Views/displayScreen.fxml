@@ -4,45 +4,57 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
 <VBox xmlns="http://javafx.com/javafx/13"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="cr.ac.una.QueueDisplayScreen.controller.DisplayScreenController"
-      spacing="15.0"
-      prefWidth="700.0"
-      prefHeight="420.0">
-
+      spacing="10.0" prefWidth="900.0" prefHeight="760.0">
     <padding>
-        <Insets top="20.0" right="20.0"
-                bottom="20.0" left="20.0"/>
+        <Insets top="20.0" right="20.0" bottom="20.0" left="20.0"/>
     </padding>
-
     <children>
-        <Label text="Estado de los turnos"
-               style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
-
-        <TableView fx:id="ticketsTable" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="15.0">
+            <children>
+                <Label text="Sistema de turnos"
+                       style="-fx-font-size: 26px; -fx-font-weight: bold;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="clockLabel" text="--:--:--"
+                       style="-fx-font-size: 24px;"/>
+            </children>
+        </HBox>
+        <Label fx:id="connectionLabel" text="Conectando con el servidor..."
+               wrapText="true" minHeight="34.0"/>
+        <Label fx:id="lastCalledLabel" text="Esperando información de llamados..."
+               wrapText="true" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+        <Label fx:id="lastCallDetailsLabel" text="" wrapText="true" minHeight="36.0"/>
+        <Label text="Últimos llamados (hasta 5)"
+               style="-fx-font-size: 17px; -fx-font-weight: bold;"/>
+        <TableView fx:id="recentCallsTable" prefHeight="170.0" minHeight="130.0">
             <placeholder>
-                <Label text="Pendiente de conexión al servidor."/>
+                <Label text="Pendiente de información del servidor."/>
             </placeholder>
-
             <columns>
-                <TableColumn fx:id="codeColumn"
-                             text="Turno"
-                             prefWidth="100.0"/>
-
-                <TableColumn fx:id="serviceColumn"
-                             text="Servicio"
-                             prefWidth="230.0"/>
-
-                <TableColumn fx:id="attentionColumn"
-                             text="Atención"
-                             prefWidth="150.0"/>
-
-                <TableColumn fx:id="stateColumn"
-                             text="Estado"
-                             prefWidth="150.0"/>
+                <TableColumn fx:id="recentCodeColumn" text="Turno" prefWidth="90.0"/>
+                <TableColumn fx:id="recentServiceColumn" text="Servicio" prefWidth="250.0"/>
+                <TableColumn fx:id="recentWindowColumn" text="Ventanilla" prefWidth="90.0"/>
+                <TableColumn fx:id="recentTimeColumn" text="Fecha de llamado" prefWidth="180.0"/>
+                <TableColumn fx:id="recentStateColumn" text="Estado actual" prefWidth="140.0"/>
+            </columns>
+        </TableView>
+        <Label text="Turnos en espera (primeros 50; preferenciales primero)"
+               wrapText="true" style="-fx-font-size: 17px; -fx-font-weight: bold;"/>
+        <TableView fx:id="ticketsTable" prefHeight="240.0" minHeight="130.0" VBox.vgrow="ALWAYS">
+            <placeholder>
+                <Label text="Pendiente de información del servidor."/>
+            </placeholder>
+            <columns>
+                <TableColumn fx:id="codeColumn" text="Turno" prefWidth="100.0"/>
+                <TableColumn fx:id="serviceColumn" text="Servicio" prefWidth="360.0"/>
+                <TableColumn fx:id="attentionColumn" text="Atención" prefWidth="150.0"/>
+                <TableColumn fx:id="stateColumn" text="Estado" prefWidth="140.0"/>
             </columns>
         </TableView>
     </children>

@@ -1,5 +1,52 @@
 package cr.ac.una.QueueDisplayScreen.model;
 
-// Valores de una fila de la pantalla pública, sin comportamiento de negocio.
-public record TicketRow(String visualCode, String serviceName, boolean priority, String state) {
+import java.time.LocalDateTime;
+
+public record TicketRow(
+        long ticketId,
+        String visualCode,
+        String serviceName,
+        boolean priority,
+        String state,
+        Integer windowId,
+        LocalDateTime calledAt
+        ) {
+
+    public TicketRow {
+        if (ticketId <= 0) {
+            throw new IllegalArgumentException(
+                    "El identificador del turno debe ser positivo."
+            );
+        }
+
+        if (visualCode == null || visualCode.isBlank()
+                || serviceName == null || serviceName.isBlank()) {
+            throw new IllegalArgumentException(
+                    "El turno debe tener código y nombre del servicio."
+            );
+        }
+
+        if (!"EN_ESPERA".equals(state)
+                && !"LLAMADO".equals(state)
+                && !"EN_ATENCION".equals(state)
+                && !"FINALIZADO".equals(state)) {
+            throw new IllegalArgumentException(
+                    "El estado del turno no es válido."
+            );
+        }
+
+        if ("EN_ESPERA".equals(state)) {
+            if (windowId != null || calledAt != null) {
+                throw new IllegalArgumentException(
+                        "Un turno en espera no debe tener ventanilla ni fecha de llamado."
+                );
+            }
+        } else {
+            if (windowId == null || windowId <= 0 || calledAt == null) {
+                throw new IllegalArgumentException(
+                        "El turno debe conservar su ventanilla y fecha de llamado."
+                );
+            }
+        }
+    }
 }

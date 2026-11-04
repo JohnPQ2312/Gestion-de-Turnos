@@ -7,13 +7,13 @@ Sistema de gestión de turnos en Java, organizado en cuatro proyectos Maven que 
 | `CoreServer` | Entidades, reglas de atención, repositorios y servidor TCP. Catálogo, generación y ciclo de atención persistente en MySQL. |
 | `CostumerTurn` | Pantalla de solicitud de turnos y confirmación, conectada al servidor. |
 | `OperatorSystem` | Consulta de asignaciones, llamado, inicio, finalización y recuperación del turno actual mediante el servidor. |
-| `QueueDisplayScreen` | Pantalla pública de turnos; conexión pendiente. |
+| `QueueDisplayScreen` | Pantalla pública conectada al servidor, con último llamado, ventanilla, llamados recientes, turnos en espera y reloj. |
 
 ## Estado actual
 
 La lógica de negocio se encuentra en `CoreServer`. Cada cliente contiene su pantalla y controlador. Los clientes se comunican con el servidor; las conexiones a MySQL se realizan desde `CoreServer`.
 
-`CoreServer` escucha conexiones TCP locales en el puerto 5000 y procesa las solicitudes de catálogo, generación, asignaciones, llamado, inicio, finalización y consulta del turno activo. `CostumerTurn` ejecuta sus solicitudes en segundo plano para mantener la interfaz disponible y muestra la confirmación del turno generado.
+`CoreServer` escucha conexiones TCP locales en el puerto 5000 y procesa las solicitudes de catálogo, generación, asignaciones, llamado, inicio, finalización, consulta del turno activo y consulta de la pantalla pública. `CostumerTurn` ejecuta sus solicitudes en segundo plano para mantener la interfaz disponible y muestra la confirmación del turno generado.
 
 El catálogo se consulta mediante `JdbcServiceRepository`. La generación utiliza `JdbcTicketCreationRepository`, que comprueba el servicio activo, bloquea la fila de su consecutivo y guarda el turno y el nuevo consecutivo dentro de una misma transacción. Los turnos se registran como `EN_ESPERA`, con su prioridad y fecha de creación.
 
@@ -25,7 +25,9 @@ Las interfaces separan los contratos de creación (`TicketCreationRepository`), 
 
 `OperatorSystem` carga las asignaciones activas desde el servidor. Al seleccionar una, consulta su turno actual mediante `JdbcActiveTicketRepository` y muestra sus datos y estado. Habilita el llamado si está libre, el inicio si está `LLAMADO` y la finalización si está `EN_ATENCION`. Las acciones permanecen deshabilitadas mientras se procesa una solicitud o no se conoce el estado. Las operaciones se ejecutan en segundo plano y vuelven a consultar el turno activo al completarse. Si se pierde una confirmación, el cliente consulta el estado guardado sin repetir automáticamente la operación. Una finalización sin confirmación requiere revisar el historial; la ausencia de un turno activo por sí sola no se presenta como confirmación de esa operación. Al volver a abrir la pantalla y seleccionar la asignación, recupera el turno desde MySQL.
 
-`QueueDisplayScreen` conserva su pantalla, pendiente de conexión al servidor, y abre sin datos.
+`QueueDisplayScreen` consulta el comando `GET_DISPLAY_SNAPSHOT` mediante `DisplayServerClient`. En CoreServer, `JdbcDisplayRepository` obtiene hasta 50 turnos en espera y 5 llamados recientes en una misma transacción de lectura con aislamiento `REPEATABLE_READ`. Los turnos en espera se ordenan por prioridad, fecha de creación e identificador; los recientes, por fecha de llamado e identificador descendentes. La consulta conserva los llamados de turnos ya finalizados.
+
+`DisplayRefreshService` realiza las consultas sobre un hilo virtual y espera dos segundos después de terminar cada intento antes de iniciar otro. El controlador actualiza JavaFX mediante `Platform.runLater` y mantiene el reloj con `Timeline`. Si falla una consulta, conserva los datos recibidos y muestra que están desactualizados; reintenta automáticamente. Al cerrar la pantalla detiene el reloj y las consultas. La actualización es periódica, no una notificación directa del servidor; se observó una demora aproximada de tres segundos en la prueba manual.
 
 ## Configuración y ejecución
 
@@ -47,7 +49,7 @@ db.clave=CONTRASEÑA_LOCAL
 - Para atender, utilizar **Llamar siguiente**, **Iniciar atención** y **Finalizar atención**, en ese orden. Al confirmar que la asignación quedó libre, se habilita un nuevo llamado.
 - El cliente del operador espera hasta 15 segundos por una respuesta. Una espera agotada no demuestra que el llamado haya fallado; la pantalla intenta consultar el estado guardado.
 - Los parámetros de zona horaria permiten convertir los `TIMESTAMP` entre la sesión MySQL y la zona de Java. La configuración es necesaria para comparar correctamente el inicio de las asignaciones.
-- `QueueDisplayScreen` puede abrirse para visualizar su pantalla; su comunicación está pendiente.
+- Ejecutar `QueueDisplayScreen` con **Run Project**. Consulta `127.0.0.1:5000` automáticamente y muestra su estado de conexión. Si CoreServer se detiene, conserva los datos anteriores y vuelve a conectarse cuando está disponible; no requiere presionar botones.
 
 ## Comprobaciones realizadas
 
@@ -65,12 +67,18 @@ db.clave=CONTRASEÑA_LOCAL
 - Comprobaciones del protocolo con repositorios en memoria y del FXML y tareas de interfaz con respuestas simuladas, incluida la recuperación tras una confirmación perdida.
 - Comprobaciones adicionales del ciclo con JDBC simulado y de la interfaz con respuestas simuladas: estados permitidos, identificadores incorrectos, conservación de fechas, reversión ante fallos, bloqueo de controles y recuperación de un inicio con confirmación perdida. Estas simulaciones no sustituyen las pruebas de concurrencia ni de fallos contra MySQL real.
 
+- Visualización de datos persistidos en la pantalla pública, con ventanilla, estado y fecha de llamado.
+- Generación de A006 preferencial desde CostumerTurn y aparición automática antes de los regulares. Llamado desde la ventanilla 2, salida de la lista de espera y actualización a último llamado. Inicio y finalización desde OperatorSystem reflejados automáticamente en la pantalla pública.
+- Detención y reinicio de CoreServer manteniendo abierta la pantalla pública: aviso de datos desactualizados, conservación de las filas y del reloj, y recuperación automática de la conexión.
+
 La prueba manual con dos clientes no demuestra por sí sola el comportamiento bajo solicitudes exactamente simultáneas. La comprobación automatizada de concurrencia del repositorio JDBC y la de recuperación ante fallos de transacción siguen pendientes.
 
 ## Continuación
 
-Conectar `QueueDisplayScreen` al servidor para mostrar turnos, ventanillas, llamados recientes y reloj, con actualización automática.
+Evaluar e implementar notificaciones de cambios desde CoreServer a las pantallas conectadas para reducir la demora y las consultas periódicas, conservando una consulta de sincronización al conectar o recuperar la conexión.
+
+Completar la demostración con dos operadores independientes y solicitudes simultáneas contra MySQL. Hacer configurables el host y puerto, probar entre computadoras y consolidar las pruebas reproducibles dentro del repositorio.
 
 Para completar el proyecto también faltan la autenticación y los permisos, las funciones administrativas, la pausa y el rellamado del operador, los reportes y la validación integral con varios clientes y operadores independientes.
 
-También quedan pendientes la medición y optimización de la duración del llamado y la revisión de las fechas de los datos de prueba grabados antes del ajuste horario, antes de utilizarlos para validar métricas de espera.
+También quedan pendientes la medición y optimización de la duración del llamado y la revisión de las fechas de los datos de prueba grabados antes del ajuste horario, antes de utilizarlos para validar métricas de espera. También se deben completar las reglas de modificación administrativa, incorporar el script de datos iniciales al repositorio y actualizar los diagramas, documento técnico y presentación.

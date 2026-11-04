@@ -2,11 +2,14 @@ package cr.ac.una.server;
 
 import cr.ac.una.exception.DataAccessException;
 import cr.ac.una.model.ActiveTicket;
+import cr.ac.una.model.DisplaySnapshot;
+import cr.ac.una.model.DisplayTicket;
 import cr.ac.una.model.OperatorWindowAssignment;
 import cr.ac.una.model.Service;
 import cr.ac.una.model.Ticket;
 import cr.ac.una.repository.ServiceRepository;
 import cr.ac.una.repository.ActiveTicketRepository;
+import cr.ac.una.repository.DisplayRepository;
 import cr.ac.una.service.TicketAttentionService;
 import cr.ac.una.service.TicketLifecycleService;
 import cr.ac.una.service.TicketService;
@@ -24,13 +27,15 @@ public class TurnRequestHandler {
     private final TicketAttentionService attentionService;
     private final ActiveTicketRepository activeTicketRepository;
     private final TicketLifecycleService lifecycleService;
+    private final DisplayRepository displayRepository;
 
     public TurnRequestHandler(
             ServiceRepository serviceRepository,
             TicketService ticketService,
             TicketAttentionService attentionService,
             ActiveTicketRepository activeTicketRepository,
-            TicketLifecycleService lifecycleService
+            TicketLifecycleService lifecycleService,
+            DisplayRepository displayRepository
     ) {
         this.serviceRepository = Objects.requireNonNull(
                 serviceRepository, "El repositorio de servicios es obligatorio."
@@ -47,6 +52,9 @@ public class TurnRequestHandler {
         this.lifecycleService = Objects.requireNonNull(
                 lifecycleService, "El servicio del ciclo de atención es obligatorio."
         );
+        this.displayRepository = Objects.requireNonNull(
+                displayRepository, "El repositorio de la pantalla pública es obligatorio."
+        );
     }
 
     public String handle(String request) {
@@ -61,6 +69,10 @@ public class TurnRequestHandler {
 
             if ("LIST_ASSIGNMENTS".equals(request)) {
                 return listAssignments();
+            }
+
+            if ("GET_DISPLAY_SNAPSHOT".equals(request)) {
+                return getDisplaySnapshot();
             }
 
             String[] parts = request.split(";", -1);
@@ -226,6 +238,34 @@ public class TurnRequestHandler {
         long ticketId = parseTicketId(ticketIdText);
         lifecycleService.finishAttention(assignmentId, ticketId);
         return "OK;ATTENTION_FINISHED;" + assignmentId + ";" + ticketId;
+    }
+
+    private String getDisplaySnapshot() {
+        DisplaySnapshot snapshot = displayRepository.findSnapshot(50, 5);
+        StringBuilder response = new StringBuilder("OK;DISPLAY_SNAPSHOT;");
+        response.append(snapshot.waitingTickets().size())
+                .append(";").append(snapshot.recentCalls().size());
+
+        for (DisplayTicket ticket : snapshot.waitingTickets()) {
+            appendDisplayTicket(response, ticket);
+        }
+
+        for (DisplayTicket ticket : snapshot.recentCalls()) {
+            appendDisplayTicket(response, ticket);
+        }
+
+        return response.toString();
+    }
+
+    private void appendDisplayTicket(StringBuilder response, DisplayTicket ticket) {
+        response.append(";").append(ticket.ticketId())
+                .append(";").append(encode(ticket.visualCode()))
+                .append(";").append(encode(ticket.serviceName()))
+                .append(";").append(ticket.priority())
+                .append(";").append(ticket.state().name())
+                .append(";").append(ticket.windowId() == null ? "" : ticket.windowId())
+                .append(";").append(ticket.calledAt() == null
+                        ? "" : encode(ticket.calledAt().toString()));
     }
 
     private String encode(String value) {
