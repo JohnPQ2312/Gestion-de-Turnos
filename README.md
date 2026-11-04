@@ -13,7 +13,7 @@ Sistema de gestión de turnos en Java, organizado en cuatro proyectos Maven que 
 
 La lógica de negocio se encuentra en `CoreServer`. Cada cliente contiene su pantalla y controlador. Los clientes se comunican con el servidor; las conexiones a MySQL se realizan desde `CoreServer`.
 
-`CoreServer` escucha conexiones TCP locales en el puerto 5000 y procesa las solicitudes de catálogo, generación, asignaciones, llamado, inicio, finalización, consulta del turno activo y consulta de la pantalla pública. `CostumerTurn` ejecuta sus solicitudes en segundo plano para mantener la interfaz disponible y muestra la confirmación del turno generado.
+`CoreServer` escucha conexiones TCP locales en el puerto 5000 y procesa las solicitudes de catálogo, generación, asignaciones, llamado, inicio, finalización, consulta del turno activo, consulta de la pantalla pública y suscripción a sus avisos de cambios. `CostumerTurn` ejecuta sus solicitudes en segundo plano para mantener la interfaz disponible y muestra la confirmación del turno generado.
 
 El catálogo se consulta mediante `JdbcServiceRepository`. La generación utiliza `JdbcTicketCreationRepository`, que comprueba el servicio activo, bloquea la fila de su consecutivo y guarda el turno y el nuevo consecutivo dentro de una misma transacción. Los turnos se registran como `EN_ESPERA`, con su prioridad y fecha de creación.
 
@@ -27,7 +27,11 @@ Las interfaces separan los contratos de creación (`TicketCreationRepository`), 
 
 `QueueDisplayScreen` consulta el comando `GET_DISPLAY_SNAPSHOT` mediante `DisplayServerClient`. En CoreServer, `JdbcDisplayRepository` obtiene hasta 50 turnos en espera y 5 llamados recientes en una misma transacción de lectura con aislamiento `REPEATABLE_READ`. Los turnos en espera se ordenan por prioridad, fecha de creación e identificador; los recientes, por fecha de llamado e identificador descendentes. La consulta conserva los llamados de turnos ya finalizados.
 
-`DisplayRefreshService` realiza las consultas sobre un hilo virtual y espera dos segundos después de terminar cada intento antes de iniciar otro. El controlador actualiza JavaFX mediante `Platform.runLater` y mantiene el reloj con `Timeline`. Si falla una consulta, conserva los datos recibidos y muestra que están desactualizados; reintenta automáticamente. Al cerrar la pantalla detiene el reloj y las consultas. La actualización es periódica, no una notificación directa del servidor; se observó una demora aproximada de tres segundos en la prueba manual.
+`DisplayEventHub` distribuye avisos a las pantallas suscritas. CoreServer publica un aviso después de confirmar una generación, llamado, inicio o finalización; las consultas, los rechazos y los llamados sin turno disponible no generan avisos. Cada suscripción mantiene como máximo un aviso pendiente dentro del centro de eventos. El envío por sockets se ejecuta en el hilo de cada suscriptor, separado de la operación que modifica los datos.
+
+`DisplayServerClient` abre un canal mediante `SUBSCRIBE_DISPLAY`. El servidor confirma con `OK;SUBSCRIBED`, envía `EVENT;DISPLAY_CHANGED` cuando hay cambios y `OK;HEARTBEAT` después de diez segundos sin avisos. `DisplayRefreshService` se suscribe antes de consultar la captura inicial para conservar los avisos que lleguen durante la sincronización. Después consulta los datos al recibir avisos, sin consultar MySQL por cada latido. Los avisos corresponden a operaciones procesadas por CoreServer; las modificaciones directas en la base no publican eventos.
+
+La escucha y las consultas se ejecutan sobre un hilo virtual. El controlador actualiza JavaFX mediante `Platform.runLater` y mantiene el reloj con `Timeline`. Si falla la conexión o una consulta, conserva los datos visibles, muestra que están desactualizados y vuelve a intentar la suscripción después de dos segundos. Al reconectar obtiene una captura completa. Al cerrar la pantalla detiene el reloj, cierra el canal e interrumpe la escucha. La hora de última actualización permanece fija mientras no se reciben nuevos datos; el reloj sigue avanzando.
 
 ## Configuración y ejecución
 
@@ -49,7 +53,7 @@ db.clave=CONTRASEÑA_LOCAL
 - Para atender, utilizar **Llamar siguiente**, **Iniciar atención** y **Finalizar atención**, en ese orden. Al confirmar que la asignación quedó libre, se habilita un nuevo llamado.
 - El cliente del operador espera hasta 15 segundos por una respuesta. Una espera agotada no demuestra que el llamado haya fallado; la pantalla intenta consultar el estado guardado.
 - Los parámetros de zona horaria permiten convertir los `TIMESTAMP` entre la sesión MySQL y la zona de Java. La configuración es necesaria para comparar correctamente el inicio de las asignaciones.
-- Ejecutar `QueueDisplayScreen` con **Run Project**. Consulta `127.0.0.1:5000` automáticamente y muestra su estado de conexión. Si CoreServer se detiene, conserva los datos anteriores y vuelve a conectarse cuando está disponible; no requiere presionar botones.
+- Ejecutar `QueueDisplayScreen` con **Run Project**. Se suscribe a los avisos de `127.0.0.1:5000`, consulta los datos iniciales y muestra su estado de conexión. Si CoreServer se detiene, conserva los datos anteriores y vuelve a suscribirse y sincronizarse cuando está disponible; no requiere presionar botones. El canal de avisos espera hasta 25 segundos por un mensaje y las consultas de datos hasta 15 segundos por una respuesta.
 
 ## Comprobaciones realizadas
 
@@ -66,16 +70,18 @@ db.clave=CONTRASEÑA_LOCAL
 - Tras finalizar A003, la ventanilla preferencial quedó libre y respondió que no había turnos compatibles, sin tomar los regulares pendientes.
 - Comprobaciones del protocolo con repositorios en memoria y del FXML y tareas de interfaz con respuestas simuladas, incluida la recuperación tras una confirmación perdida.
 - Comprobaciones adicionales del ciclo con JDBC simulado y de la interfaz con respuestas simuladas: estados permitidos, identificadores incorrectos, conservación de fechas, reversión ante fallos, bloqueo de controles y recuperación de un inicio con confirmación perdida. Estas simulaciones no sustituyen las pruebas de concurrencia ni de fallos contra MySQL real.
-
 - Visualización de datos persistidos en la pantalla pública, con ventanilla, estado y fecha de llamado.
 - Generación de A006 preferencial desde CostumerTurn y aparición automática antes de los regulares. Llamado desde la ventanilla 2, salida de la lista de espera y actualización a último llamado. Inicio y finalización desde OperatorSystem reflejados automáticamente en la pantalla pública.
 - Detención y reinicio de CoreServer manteniendo abierta la pantalla pública: aviso de datos desactualizados, conservación de las filas y del reloj, y recuperación automática de la conexión.
 
+- Actualización por eventos al generar preferenciales y al llamar, iniciar y finalizar A007 desde la ventanilla 2. Se observó una demora aproximada de medio segundo a un segundo; es una observación manual, no una medición de rendimiento bajo carga.
+- Recuperación del canal de notificaciones al detener y reiniciar CoreServer, con conservación de los datos y del reloj.
+- Dos instancias de QueueDisplayScreen recibieron el mismo turno generado y mostraron los mismos datos automáticamente.
+- Comprobaciones adicionales con sockets locales y repositorios en memoria: suscripción de varias pantallas, avisos después de operaciones exitosas, ausencia de avisos ante rechazos, latidos sin consultas de datos, cambios durante la sincronización inicial y recuperación tras desconexión. Estas comprobaciones no acceden a MySQL.
+
 La prueba manual con dos clientes no demuestra por sí sola el comportamiento bajo solicitudes exactamente simultáneas. La comprobación automatizada de concurrencia del repositorio JDBC y la de recuperación ante fallos de transacción siguen pendientes.
 
 ## Continuación
-
-Evaluar e implementar notificaciones de cambios desde CoreServer a las pantallas conectadas para reducir la demora y las consultas periódicas, conservando una consulta de sincronización al conectar o recuperar la conexión.
 
 Completar la demostración con dos operadores independientes y solicitudes simultáneas contra MySQL. Hacer configurables el host y puerto, probar entre computadoras y consolidar las pruebas reproducibles dentro del repositorio.
 

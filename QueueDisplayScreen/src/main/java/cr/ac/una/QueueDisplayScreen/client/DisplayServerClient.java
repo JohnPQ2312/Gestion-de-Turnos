@@ -2,6 +2,7 @@ package cr.ac.una.QueueDisplayScreen.client;
 
 import cr.ac.una.QueueDisplayScreen.model.DisplaySnapshot;
 import cr.ac.una.QueueDisplayScreen.model.TicketRow;
+import cr.ac.una.QueueDisplayScreen.service.DisplayRefreshService.ChangeSubscription;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -36,6 +37,64 @@ public class DisplayServerClient {
 
     public DisplaySnapshot getSnapshot() throws IOException {
         return parseSnapshot(requestSnapshot());
+    }
+
+    public ChangeSubscription subscribe() throws IOException {
+        Socket socket = new Socket();
+        try {
+            socket.connect(new InetSocketAddress(host, port), 3000);
+            socket.setSoTimeout(25000);
+            BufferedReader input = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
+            );
+            BufferedWriter output = new BufferedWriter(
+                    new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)
+            );
+            output.write("SUBSCRIBE_DISPLAY");
+            output.newLine();
+            output.flush();
+
+            if (!"OK;SUBSCRIBED".equals(input.readLine())) {
+                throw new IOException("El servidor no confirmó la suscripción de la pantalla.");
+            }
+            return new ServerSubscription(socket, input);
+
+        } catch (IOException | RuntimeException exception) {
+            try {
+                socket.close();
+            } catch (IOException closeException) {
+                exception.addSuppressed(closeException);
+            }
+            throw exception;
+        }
+    }
+
+    private static final class ServerSubscription implements ChangeSubscription {
+
+        private final Socket socket;
+        private final BufferedReader input;
+
+        private ServerSubscription(Socket socket, BufferedReader input) {
+            this.socket = socket;
+            this.input = input;
+        }
+
+        @Override
+        public boolean awaitChange() throws IOException {
+            String message = input.readLine();
+            if ("EVENT;DISPLAY_CHANGED".equals(message)) {
+                return true;
+            }
+            if ("OK;HEARTBEAT".equals(message)) {
+                return false;
+            }
+            throw new IOException("Se perdió el canal de avisos o se recibió un mensaje inválido.");
+        }
+
+        @Override
+        public void close() throws IOException {
+            socket.close();
+        }
     }
 
     private String requestSnapshot() throws IOException {

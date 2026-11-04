@@ -12,6 +12,7 @@ import cr.ac.una.repository.JdbcTicketCreationRepository;
 import cr.ac.una.repository.JdbcTicketLifecycleRepository;
 import cr.ac.una.repository.ServiceRepository;
 import cr.ac.una.repository.TicketCreationRepository;
+import cr.ac.una.server.DisplayEventHub;
 import cr.ac.una.server.TurnRequestHandler;
 import cr.ac.una.server.TurnServer;
 import cr.ac.una.service.TicketAttentionService;
@@ -46,13 +47,15 @@ public class App {
                     new JdbcTicketLifecycleRepository(connectionFactory)
             );
 
+            DisplayEventHub displayEvents = new DisplayEventHub();
+
             TurnRequestHandler requestHandler = new TurnRequestHandler(
                     serviceRepository, ticketService, attentionService,
                     new JdbcActiveTicketRepository(connectionFactory), lifecycleService,
-                    new JdbcDisplayRepository(connectionFactory)
+                    new JdbcDisplayRepository(connectionFactory), displayEvents
             );
 
-            TurnServer server = new TurnServer(5000, requestHandler);
+            TurnServer server = new TurnServer(5000, requestHandler, displayEvents);
             server.start();
 
         } catch (SQLException exception) {

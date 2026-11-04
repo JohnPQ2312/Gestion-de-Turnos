@@ -80,14 +80,19 @@ public class DisplayScreenController {
         column.setCellValueFactory(data -> new ReadOnlyStringWrapper(value.apply(data.getValue())));
     }
 
-    public void configure(DisplayRefreshService.SnapshotRequest request) {
+    public void configure(
+            DisplayRefreshService.SnapshotRequest request,
+            DisplayRefreshService.SubscriptionRequest subscriptions
+    ) {
         Objects.requireNonNull(request, "La consulta de la pantalla es obligatoria.");
+        Objects.requireNonNull(subscriptions, "La suscripción de la pantalla es obligatoria.");
         if (closed || refreshService != null) {
             throw new IllegalStateException("La pantalla ya fue configurada o está cerrada.");
         }
 
         refreshService = new DisplayRefreshService(
                 request,
+                subscriptions,
                 snapshot -> Platform.runLater(() -> {
                     if (!closed) {
                         showSnapshot(snapshot);

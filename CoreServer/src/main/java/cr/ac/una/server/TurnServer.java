@@ -17,8 +17,11 @@ public class TurnServer {
 
     private final int port;
     private final TurnRequestHandler requestHandler;
+    private final DisplayEventHub displayEvents;
 
-    public TurnServer(int port, TurnRequestHandler requestHandler) {
+    public TurnServer(
+            int port, TurnRequestHandler requestHandler, DisplayEventHub displayEvents
+    ) {
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("El puerto no es válido.");
         }
@@ -27,6 +30,9 @@ public class TurnServer {
         this.requestHandler = Objects.requireNonNull(
                 requestHandler,
                 "El manejador de solicitudes es obligatorio."
+        );
+        this.displayEvents = Objects.requireNonNull(
+                displayEvents, "El centro de avisos de la pantalla es obligatorio."
         );
     }
 
@@ -68,11 +74,12 @@ public class TurnServer {
                 return;
             }
 
-            String response = requestHandler.handle(request);
+            if ("SUBSCRIBE_DISPLAY".equals(request)) {
+                streamDisplayChanges(output);
+                return;
+            }
 
-            output.write(response);
-            output.newLine();
-            output.flush();
+            sendLine(output, requestHandler.handle(request));
 
         } catch (IOException exception) {
             System.err.println(
@@ -80,5 +87,26 @@ public class TurnServer {
                     + exception.getMessage()
             );
         }
+    }
+
+    private void streamDisplayChanges(BufferedWriter output) throws IOException {
+        try (DisplayEventHub.Subscription subscription = displayEvents.subscribe()) {
+            sendLine(output, "OK;SUBSCRIBED");
+
+            while (!subscription.isClosed() && !Thread.currentThread().isInterrupted()) {
+                boolean changed = subscription.awaitChange();
+                if (!subscription.isClosed()) {
+                    sendLine(output, changed ? "EVENT;DISPLAY_CHANGED" : "OK;HEARTBEAT");
+                }
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void sendLine(BufferedWriter output, String message) throws IOException {
+        output.write(message);
+        output.newLine();
+        output.flush();
     }
 }

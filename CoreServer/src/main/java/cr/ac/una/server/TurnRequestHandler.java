@@ -28,6 +28,7 @@ public class TurnRequestHandler {
     private final ActiveTicketRepository activeTicketRepository;
     private final TicketLifecycleService lifecycleService;
     private final DisplayRepository displayRepository;
+    private final DisplayEventHub displayEvents;
 
     public TurnRequestHandler(
             ServiceRepository serviceRepository,
@@ -35,7 +36,8 @@ public class TurnRequestHandler {
             TicketAttentionService attentionService,
             ActiveTicketRepository activeTicketRepository,
             TicketLifecycleService lifecycleService,
-            DisplayRepository displayRepository
+            DisplayRepository displayRepository,
+            DisplayEventHub displayEvents
     ) {
         this.serviceRepository = Objects.requireNonNull(
                 serviceRepository, "El repositorio de servicios es obligatorio."
@@ -54,6 +56,9 @@ public class TurnRequestHandler {
         );
         this.displayRepository = Objects.requireNonNull(
                 displayRepository, "El repositorio de la pantalla pública es obligatorio."
+        );
+        this.displayEvents = Objects.requireNonNull(
+                displayEvents, "El centro de avisos de la pantalla es obligatorio."
         );
     }
 
@@ -158,6 +163,7 @@ public class TurnRequestHandler {
         ));
 
         Ticket ticket = ticketService.generateTicket(service, priority);
+        displayEvents.publishChange();
 
         return "OK;TICKET;"
                 + encode(ticket.getVisualCode()) + ";"
@@ -174,6 +180,7 @@ public class TurnRequestHandler {
         }
 
         Ticket ticket = next.get();
+        displayEvents.publishChange();
         return "OK;CALLED;"
                 + encode(ticket.getVisualCode()) + ";"
                 + encode(ticket.getService().getName()) + ";"
@@ -230,6 +237,7 @@ public class TurnRequestHandler {
         long assignmentId = parseAssignmentId(assignmentIdText);
         long ticketId = parseTicketId(ticketIdText);
         lifecycleService.startAttention(assignmentId, ticketId);
+        displayEvents.publishChange();
         return "OK;ATTENTION_STARTED;" + assignmentId + ";" + ticketId;
     }
 
@@ -237,6 +245,7 @@ public class TurnRequestHandler {
         long assignmentId = parseAssignmentId(assignmentIdText);
         long ticketId = parseTicketId(ticketIdText);
         lifecycleService.finishAttention(assignmentId, ticketId);
+        displayEvents.publishChange();
         return "OK;ATTENTION_FINISHED;" + assignmentId + ";" + ticketId;
     }
 
@@ -265,7 +274,7 @@ public class TurnRequestHandler {
                 .append(";").append(ticket.state().name())
                 .append(";").append(ticket.windowId() == null ? "" : ticket.windowId())
                 .append(";").append(ticket.calledAt() == null
-                        ? "" : encode(ticket.calledAt().toString()));
+                ? "" : encode(ticket.calledAt().toString()));
     }
 
     private String encode(String value) {

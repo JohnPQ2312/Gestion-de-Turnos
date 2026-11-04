@@ -28,7 +28,7 @@ public class App extends Application {
         stage.show();
 
         DisplayServerClient client = new DisplayServerClient("127.0.0.1", 5000);
-        controller.configure(client::getSnapshot);
+        controller.configure(client::getSnapshot, client::subscribe);
     }
 
     @Override

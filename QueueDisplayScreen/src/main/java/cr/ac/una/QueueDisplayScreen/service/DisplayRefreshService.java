@@ -3,9 +3,8 @@ package cr.ac.una.QueueDisplayScreen.service;
 import cr.ac.una.QueueDisplayScreen.model.DisplaySnapshot;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class DisplayRefreshService implements AutoCloseable {
@@ -16,24 +15,40 @@ public class DisplayRefreshService implements AutoCloseable {
         DisplaySnapshot get() throws IOException;
     }
 
+    @FunctionalInterface
+    public interface SubscriptionRequest {
+
+        ChangeSubscription open() throws IOException;
+    }
+
+    public interface ChangeSubscription extends AutoCloseable {
+
+        boolean awaitChange() throws IOException;
+
+        @Override
+        void close() throws IOException;
+    }
+
     private final SnapshotRequest request;
+    private final SubscriptionRequest subscriptions;
     private final Consumer<DisplaySnapshot> onSuccess;
     private final Consumer<Exception> onFailure;
-    private final ScheduledExecutorService scheduler;
-    private boolean started;
+    private final ExecutorService worker;
+    private volatile ChangeSubscription activeSubscription;
     private volatile boolean closed;
+    private boolean started;
 
     public DisplayRefreshService(
             SnapshotRequest request,
+            SubscriptionRequest subscriptions,
             Consumer<DisplaySnapshot> onSuccess,
             Consumer<Exception> onFailure
     ) {
         this.request = Objects.requireNonNull(request, "La consulta es obligatoria.");
+        this.subscriptions = Objects.requireNonNull(subscriptions, "La suscripción es obligatoria.");
         this.onSuccess = Objects.requireNonNull(onSuccess, "La acción de éxito es obligatoria.");
         this.onFailure = Objects.requireNonNull(onFailure, "La acción de error es obligatoria.");
-        this.scheduler = Executors.newSingleThreadScheduledExecutor(
-                Thread.ofVirtual().name("queuedisplay-refresh").factory()
-        );
+        this.worker = Executors.newVirtualThreadPerTaskExecutor();
     }
 
     public synchronized void start() {
@@ -41,26 +56,47 @@ public class DisplayRefreshService implements AutoCloseable {
             throw new IllegalStateException("La actualización no se puede iniciar nuevamente.");
         }
         started = true;
-        scheduler.scheduleWithFixedDelay(this::refresh, 0, 2, TimeUnit.SECONDS);
+        worker.submit(this::listen);
     }
 
-    private void refresh() {
-        if (closed) {
-            return;
-        }
+    private void listen() {
+        while (!closed && !Thread.currentThread().isInterrupted()) {
+            try (ChangeSubscription subscription = subscriptions.open()) {
+                activeSubscription = subscription;
+                if (closed) {
+                    return;
+                }
 
-        DisplaySnapshot snapshot;
-        try {
-            snapshot = Objects.requireNonNull(
-                    request.get(), "El servidor no devolvió una captura."
-            );
-        } catch (IOException | RuntimeException exception) {
-            if (!closed) {
-                onFailure.accept(exception);
+                refresh();
+                while (!closed && !Thread.currentThread().isInterrupted()) {
+                    if (subscription.awaitChange() && !closed) {
+                        refresh();
+                    }
+                }
+
+            } catch (IOException | RuntimeException exception) {
+                if (!closed) {
+                    onFailure.accept(exception);
+                }
+            } finally {
+                activeSubscription = null;
             }
-            return;
-        }
 
+            if (!closed) {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
+    }
+
+    private void refresh() throws IOException {
+        DisplaySnapshot snapshot = Objects.requireNonNull(
+                request.get(), "El servidor no devolvió una captura."
+        );
         if (!closed) {
             onSuccess.accept(snapshot);
         }
@@ -69,6 +105,14 @@ public class DisplayRefreshService implements AutoCloseable {
     @Override
     public synchronized void close() {
         closed = true;
-        scheduler.shutdownNow();
+        worker.shutdownNow();
+        ChangeSubscription subscription = activeSubscription;
+        if (subscription != null) {
+            try {
+                subscription.close();
+            } catch (IOException exception) {
+                System.err.println("No se pudo cerrar el canal de avisos. Detalle: " + exception);
+            }
+        }
     }
 }
