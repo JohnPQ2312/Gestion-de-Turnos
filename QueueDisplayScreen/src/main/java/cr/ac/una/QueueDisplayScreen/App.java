@@ -16,7 +16,7 @@ public class App extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader loader = new FXMLLoader(
-                App.class.getResource("/cr/ac/una/QueueDisplayScreen/views/displayScreen.fxml")
+                App.class.getResource("/cr/ac/una/QueueDisplayScreen/Views/displayScreen.fxml")
         );
         Parent root = loader.load();
         controller = loader.getController();

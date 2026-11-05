@@ -79,11 +79,11 @@ db.clave=CONTRASEÑA_LOCAL
 - Dos instancias de QueueDisplayScreen recibieron el mismo turno generado y mostraron los mismos datos automáticamente.
 - Comprobaciones adicionales con sockets locales y repositorios en memoria: suscripción de varias pantallas, avisos después de operaciones exitosas, ausencia de avisos ante rechazos, latidos sin consultas de datos, cambios durante la sincronización inicial y recuperación tras desconexión. Estas comprobaciones no acceden a MySQL.
 
-La prueba manual con dos clientes no demuestra por sí sola el comportamiento bajo solicitudes exactamente simultáneas. La comprobación automatizada de concurrencia del repositorio JDBC y la de recuperación ante fallos de transacción siguen pendientes.
+La prueba coordinada del 4 de noviembre de 2026 liberó dos solicitudes de llamado con una separación de 0,326 ms. La ventanilla 2 recibió A008 y la 1 recibió A009. Las consultas posteriores mediante CoreServer y phpMyAdmin confirmaron dos turnos distintos, prioridad preferencial, estado LLAMADO y asignaciones correctas. La consulta de ventanillas con más de un turno activo devolvió cero filas. El procedimiento, la herramienta y el resultado están en [pruebas/README.md](pruebas/README.md). Quedan por ampliar los escenarios concurrentes y comprobar la recuperación ante fallos de transacción.
 
 ## Continuación
 
-Completar la demostración con dos operadores independientes y solicitudes simultáneas contra MySQL. Hacer configurables el host y puerto, probar entre computadoras y consolidar las pruebas reproducibles dentro del repositorio.
+Ampliar las pruebas concurrentes a otros escenarios. Medir y optimizar la duración del llamado: en la ejecución coordinada se observaron 5525 y 6518 ms. Hacer configurables el host y puerto y probar entre computadoras.
 
 Para completar el proyecto también faltan la autenticación y los permisos, las funciones administrativas, la pausa y el rellamado del operador, los reportes y la validación integral con varios clientes y operadores independientes.
 
