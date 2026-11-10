@@ -1,23 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ToggleButton?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.text.Font?>
-
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="399.0" prefWidth="629.0" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cr.ac.una.costumerturn.controller.TicketsGeneratorController">
-   <children>
-      <ComboBox fx:id="servicesCombo" layoutX="37.0" layoutY="103.0" prefHeight="26.0" prefWidth="178.0" promptText="Pendiente de conexión al servidor" disable="true" />
-      <Label layoutX="29.0" layoutY="14.0" prefHeight="18.0" prefWidth="187.0" text="Sistema de turnos">
-         <font>
-            <Font size="23.0" />
-         </font>
-      </Label>
-      <Button fx:id="genTurnButton" layoutX="237.0" layoutY="152.0" mnemonicParsing="false" onAction="#generateTicket" prefHeight="26.0" prefWidth="111.0" disable="true" text="Generar turno" />
-      <ToggleButton fx:id="priorityButton" layoutX="237.0" layoutY="103.0" mnemonicParsing="false" text="Preferencial" />
-      <Label layoutX="37.0" layoutY="78.0" text="Seleccionar tipo de servicio" />
-      <Label layoutX="237.0" layoutY="78.0" text="Seleccionar atención preferencial" />
-   </children>
-</AnchorPane>
+<StackPane xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="cr.ac.una.costumerturn.controller.TicketsGeneratorController" stylesheets="@generator.css" styleClass="terminal">
+    <fx:define><ToggleGroup fx:id="servicesGroup"/></fx:define>
+    <BorderPane fx:id="formView">
+      <center>
+      <ScrollPane fitToWidth="true" fitToHeight="true" styleClass="page-scroll">
+        <VBox spacing="26" fillWidth="true">
+            <padding><Insets top="30" right="40" bottom="28" left="40"/></padding>
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <Label text="Gestión de turnos" styleClass="brand"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Atención al público" styleClass="context-label"/>
+            </HBox>
+            <VBox spacing="8">
+                <Label text="Solicite su turno" styleClass="page-title"/>
+                <Label text="Elija un servicio. Su número aparecerá al terminar." wrapText="true" styleClass="intro"/>
+            </VBox>
+            <Label fx:id="statusLabel" wrapText="true" visible="false" managed="false" maxWidth="Infinity" styleClass="status-message"/>
+            <HBox spacing="28" alignment="TOP_LEFT" fillHeight="false" VBox.vgrow="ALWAYS">
+                <VBox fx:id="serviceArea" spacing="12" prefWidth="560" minWidth="300" HBox.hgrow="ALWAYS">
+                    <Label text="¿Qué servicio necesita?" styleClass="section-title"/>
+                    <Label text="Seleccione una opción." styleClass="helper"/>
+                    <VBox fx:id="serviceOptions" spacing="12"/>
+                    <Label fx:id="errorLabel" text="Seleccione un servicio para continuar." wrapText="true"
+                           visible="false" managed="false" maxWidth="Infinity" styleClass="validation-error"/>
+                </VBox>
+                <VBox spacing="16" prefWidth="320" minWidth="300" maxWidth="360" styleClass="selection-panel">
+                    <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+                    <Label text="Su selección" styleClass="panel-caption"/>
+                    <Label fx:id="selectedServiceLabel" text="Elija un servicio" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="selection-name"/>
+                    <Separator styleClass="panel-divider"/>
+                    <CheckBox fx:id="priorityCheck" text="Necesito atención preferencial" wrapText="true"
+                              minHeight="48" maxWidth="Infinity" styleClass="priority-check"/>
+                    <Label text="Marque esta opción si le corresponde." wrapText="true" minHeight="-Infinity" styleClass="panel-helper"/>
+                    <Label fx:id="attentionLabel" text="Atención regular" wrapText="true" minHeight="-Infinity" styleClass="attention-state"/>
+                </VBox>
+            </HBox>
+        </VBox>
+      </ScrollPane>
+      </center>
+      <bottom>
+        <HBox alignment="CENTER_LEFT" spacing="24" styleClass="action-bar">
+            <padding><Insets top="16" right="40" bottom="16" left="40"/></padding>
+            <Label text="¿Necesita ayuda?&#10;Consulte al personal de atención." wrapText="true" minHeight="-Infinity" styleClass="helper"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="genTurnButton" text="Generar turno" onAction="#generateTicket" defaultButton="true"
+                    minHeight="56" minWidth="280" wrapText="true" styleClass="primary-button"/>
+        </HBox>
+      </bottom>
+    </BorderPane>
+    <ScrollPane fx:id="confirmationView" fitToWidth="true" fitToHeight="true" visible="false" managed="false" styleClass="page-scroll">
+        <VBox alignment="CENTER" spacing="16">
+            <padding><Insets top="32" right="48" bottom="32" left="48"/></padding>
+            <Label text="Su turno está listo" styleClass="page-title"/>
+            <Label text="Anote su número" styleClass="intro"/>
+            <VBox alignment="CENTER" spacing="12" prefWidth="480" maxWidth="560" styleClass="ticket-panel">
+                <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+                <Label fx:id="ticketCodeLabel" text="" alignment="CENTER" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="ticket-code"/>
+                <Label fx:id="ticketServiceLabel" text="" wrapText="true" minHeight="-Infinity" maxWidth="480" alignment="CENTER" styleClass="ticket-service"/>
+            </VBox>
+            <Label fx:id="ticketAttentionLabel" text="" styleClass="intro"/>
+            <Label text="Espere el llamado en la pantalla de la sala." wrapText="true" styleClass="next-step"/>
+            <Label text="Allí verá la ventanilla a la que debe dirigirse." wrapText="true" styleClass="intro"/>
+            <Button fx:id="newPersonButton" text="Terminar" onAction="#finishConfirmation" minHeight="56" prefWidth="280" styleClass="finish-button"/>
+        </VBox>
+    </ScrollPane>
+</StackPane>

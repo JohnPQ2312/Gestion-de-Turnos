@@ -22,7 +22,9 @@ public class App extends Application {
         controller = loader.getController();
 
         stage.setTitle("Generador de turnos");
-        stage.setScene(new Scene(root, 640, 480));
+        stage.setScene(new Scene(root, 1024, 720));
+        stage.setMinWidth(840);
+        stage.setMinHeight(660);
         stage.show();
 
         TurnServerClient client = new TurnServerClient("127.0.0.1", 5000);
