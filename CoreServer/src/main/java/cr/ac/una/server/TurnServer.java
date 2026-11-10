@@ -1,6 +1,7 @@
 package cr.ac.una.server;
 
 import java.io.BufferedReader;
+import cr.ac.una.config.ConnectionMetrics;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -79,8 +80,25 @@ public class TurnServer {
                 return;
             }
 
-            sendLine(output, requestHandler.handle(request));
+            // Mide solo el procesamiento de requestHandler.handle(): no incluye
+            // recibir la solicitud ni enviar la respuesta.
+            ConnectionMetrics.reset();
+            long start = System.nanoTime();
+            String response = requestHandler.handle(request);
+            long processingMillis = (System.nanoTime() - start) / 1_000_000;
 
+            long openingMillis = ConnectionMetrics.openingMillis();
+
+            System.out.println("[tiempo] " + commandName(request)
+                    + " | procesamiento " + processingMillis + " ms"
+                    + " | apertura de conexiones " + openingMillis + " ms"
+                    + " (exitosas " + ConnectionMetrics.successfulOpenings()
+                    + ", fallidas " + ConnectionMetrics.failedOpenings() + ")"
+                    + " | resto: consultas, bloqueos y lógica "
+                    + (processingMillis - openingMillis) + " ms"
+                    + " | " + responseStatus(response));
+
+            sendLine(output, response);
         } catch (IOException exception) {
             System.err.println(
                     "No se pudo atender la conexión: "
@@ -102,6 +120,19 @@ public class TurnServer {
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
         }
+    }
+    
+    // Solo el nombre del comando: los parámetros pueden contener datos
+    // sensibles (por ejemplo, la contraseña cuando exista LOGIN).
+    private static String commandName(String request) {
+        int separator = request.indexOf(';');
+        return separator < 0 ? request : request.substring(0, separator);
+    }
+
+    private static String responseStatus(String response) {
+        String[] parts = response.split(";", 3);
+        return parts.length >= 2 && "OK".equals(parts[0])
+                ? parts[0] + ";" + parts[1] : parts[0];
     }
 
     private void sendLine(BufferedWriter output, String message) throws IOException {
