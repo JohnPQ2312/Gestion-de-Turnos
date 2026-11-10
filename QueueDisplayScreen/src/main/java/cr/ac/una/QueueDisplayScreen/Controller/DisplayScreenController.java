@@ -12,6 +12,7 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
+import javafx.css.PseudoClass;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -35,6 +36,10 @@ public class DisplayScreenController {
     private Label connectionLabel;
     @FXML
     private Label lastCalledLabel;
+    @FXML
+    private Label lastWindowLabel;
+    @FXML
+    private Label lastStateLabel;
     @FXML
     private Label lastCallDetailsLabel;
     @FXML
@@ -71,6 +76,10 @@ public class DisplayScreenController {
         setTextColumn(recentWindowColumn, ticket -> String.valueOf(ticket.windowId()));
         setTextColumn(recentTimeColumn, ticket -> DATE_TIME.format(ticket.calledAt()));
         setTextColumn(recentStateColumn, ticket -> stateName(ticket.state()));
+        ticketsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        recentCallsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        ticketsTable.setSelectionModel(null);
+        recentCallsTable.setSelectionModel(null);
         clockLabel.setText(CLOCK.format(LocalDateTime.now()));
     }
 
@@ -119,21 +128,28 @@ public class DisplayScreenController {
         recentCallsTable.setPlaceholder(new Label("Todavía no hay llamados registrados."));
 
         if (snapshot.recentCalls().isEmpty()) {
-            lastCalledLabel.setText("Todavía no hay llamados registrados.");
-            lastCallDetailsLabel.setText("");
+            lastCalledLabel.setText("—");
+            lastCalledLabel.setStyle("-fx-font-size: 72px;");
+            lastWindowLabel.setText("—");
+            lastStateLabel.setText("");
+            lastCallDetailsLabel.setText("Los turnos llamados aparecerán aquí.");
         } else {
             TicketRow last = snapshot.recentCalls().get(0);
-            lastCalledLabel.setText("Último llamado: " + last.visualCode()
-                    + " → Ventanilla " + last.windowId());
+            lastCalledLabel.setText(last.visualCode());
+            int fontSize = last.visualCode().length() > 12 ? 28
+                    : last.visualCode().length() > 8 ? 48
+                    : last.visualCode().length() > 6 ? 72 : 104;
+            lastCalledLabel.setStyle("-fx-font-size: " + fontSize + "px;");
+            lastWindowLabel.setText(String.valueOf(last.windowId()));
+            lastStateLabel.setText(stateName(last.state()));
             lastCallDetailsLabel.setText(last.serviceName()
-                    + " | Llamado: " + DATE_TIME.format(last.calledAt())
-                    + "\nEstado actual: " + stateName(last.state()));
+                    + "\nLlamado: " + DATE_TIME.format(last.calledAt()));
         }
 
         lastSuccessfulUpdate = LocalDateTime.now();
         connectionLabel.setText("Conectado. Última actualización: "
                 + DATE_TIME.format(lastSuccessfulUpdate));
-        connectionLabel.setStyle("-fx-text-fill: #216e39;");
+        connectionLabel.pseudoClassStateChanged(PseudoClass.getPseudoClass("offline"), false);
     }
 
     private void showFailure(Exception error) {
@@ -143,7 +159,7 @@ public class DisplayScreenController {
                 : "Datos sin actualizar desde " + DATE_TIME.format(lastSuccessfulUpdate)
                 + ". Reintentando la conexión automáticamente.";
         connectionLabel.setText(message);
-        connectionLabel.setStyle("-fx-text-fill: #a45a00; -fx-font-weight: bold;");
+        connectionLabel.pseudoClassStateChanged(PseudoClass.getPseudoClass("offline"), true);
     }
 
     private String stateName(String state) {

@@ -22,9 +22,9 @@ public class App extends Application {
         controller = loader.getController();
 
         stage.setTitle("Pantalla de turnos");
-        stage.setScene(new Scene(root, 900, 760));
-        stage.setMinWidth(850);
-        stage.setMinHeight(700);
+        stage.setScene(new Scene(root, 1180, 860));
+        stage.setMinWidth(900);
+        stage.setMinHeight(740);
         stage.show();
 
         DisplayServerClient client = new DisplayServerClient("127.0.0.1", 5000);

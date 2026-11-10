@@ -1,0 +1,26 @@
+.public-display { -fx-font-family: "Segoe UI"; -fx-font-size: 17px; -fx-background-color: #FFFFFF; }
+.public-display .label { -fx-text-fill: #122D39; }
+.public-display .display-header { -fx-padding: 20px 28px; -fx-background-color: #FFFFFF; }
+.public-display .display-title { -fx-font-size: 24px; -fx-font-weight: bold; }
+.public-display .display-clock { -fx-font-size: 28px; }
+.public-display .display-scroll, .public-display .display-scroll > .viewport { -fx-background-color: #FFFFFF; }
+.public-display .display-scroll { -fx-background-insets: 0; -fx-padding: 0; }
+.public-display .last-call { -fx-background-color: #122D39; -fx-background-radius: 8px; -fx-padding: 18px 26px; }
+.public-display .last-call .call-caption { -fx-text-fill: #E0E9EB; -fx-font-size: 16px; }
+.public-display .last-call .call-code { -fx-text-fill: #FFFFFF; -fx-font-size: 104px; -fx-font-weight: bold; }
+.public-display .last-call .call-window { -fx-text-fill: #FFFFFF; -fx-font-size: 72px; -fx-font-weight: bold; }
+.public-display .last-call .call-details { -fx-text-fill: #E0E9EB; -fx-font-size: 16px; }
+.public-display .last-call .call-state { -fx-text-fill: #FFFFFF; -fx-font-size: 20px; }
+.public-display .section-title { -fx-font-size: 20px; -fx-font-weight: bold; }
+.public-display .table-view { -fx-background-color: #FFFFFF; -fx-border-color: #D2DDDA; -fx-border-width: 1px; -fx-padding: 0; }
+.public-display .table-view .column-header-background, .public-display .table-view .column-header, .public-display .table-view .filler { -fx-background-color: #F1F5F4; }
+.public-display .table-view .column-header { -fx-border-color: #D2DDDA; -fx-border-width: 0 0 1px 0; -fx-size: 36px; }
+.public-display .table-view .column-header .label { -fx-font-size: 15px; -fx-font-weight: bold; -fx-alignment: CENTER_LEFT; -fx-padding: 6px 12px; }
+.public-display .table-row-cell { -fx-background-color: #FFFFFF; -fx-cell-size: 34px; }
+.public-display .table-row-cell:odd { -fx-background-color: #F8FAF9; }
+.public-display .table-cell { -fx-text-fill: #122D39; -fx-font-size: 17px; -fx-alignment: CENTER_LEFT; -fx-padding: 4px 12px; -fx-border-color: #E1E7E5; -fx-border-width: 0 0 1px 0; }
+.public-display .table-row-cell:empty .table-cell { -fx-border-width: 0; }
+.public-display .table-cell.code-column, .public-display .table-cell.window-column { -fx-font-size: 19px; -fx-font-weight: bold; }
+.public-display .placeholder-text, .public-display .table-view .placeholder .label { -fx-text-fill: #4E626B; -fx-font-size: 16px; }
+.public-display .connection-label { -fx-padding: 12px 28px; -fx-background-color: #F8FAF9; -fx-text-fill: #006B60; -fx-font-size: 14px; }
+.public-display .connection-label:offline { -fx-background-color: #FFF4DF; -fx-text-fill: #7A4510; -fx-font-size: 16px; -fx-font-weight: bold; }
