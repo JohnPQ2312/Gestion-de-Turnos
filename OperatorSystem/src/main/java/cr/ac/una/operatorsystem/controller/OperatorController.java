@@ -5,6 +5,11 @@ import cr.ac.una.operatorsystem.model.CalledTicket;
 import cr.ac.una.operatorsystem.model.OperatorAssignment;
 import java.io.IOException;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import javafx.css.PseudoClass;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import java.util.Objects;
 import java.util.Optional;
 import javafx.concurrent.Task;
@@ -76,6 +81,23 @@ public class OperatorController {
     @FXML
     private Label activeTicketLabel;
 
+    @FXML private BorderPane workspace;
+    @FXML private HBox finishOverlay;
+    @FXML private Label ticketCodeLabel;
+    @FXML private Label serviceNameLabel;
+    @FXML private Label ticketStateLabel;
+    @FXML private Label calledStepLabel;
+    @FXML private Label attendingStepLabel;
+    @FXML private Label connectionStatusLabel;
+    @FXML private Label lastFinishedLabel;
+    @FXML private Label finishCodeLabel;
+    @FXML private Label finishServiceLabel;
+    private String displayedCode = "";
+    private String displayedService = "";
+    private String displayedState = "";
+    private boolean finishConfirmationOpen;
+    private final Map<Long, String> lastFinishedByAssignment = new HashMap<>();
+
     public void configure(
             AssignmentsRequest assignmentsRequest,
             CallNextRequest callNextRequest,
@@ -122,6 +144,7 @@ public class OperatorController {
         assignmentCombo.valueProperty().addListener((observable, previous, selected) -> {
             activeTicketKnown = false;
             currentTicket = null;
+            clearTicketPresentation();
             activeTicketLabel.setText("Seleccione una asignación para consultar su turno.");
             updateControls();
 
@@ -142,6 +165,7 @@ public class OperatorController {
         assignmentsLoaded = false;
         activeTicketKnown = false;
         currentTicket = null;
+        clearTicketPresentation();
         assignmentCombo.getItems().clear();
         assignmentCombo.setPromptText("Consultando asignaciones...");
         activeTicketLabel.setText("Seleccione una asignación para consultar su turno.");
@@ -253,7 +277,8 @@ public class OperatorController {
                 showTicket(currentTicket.visualCode(), currentTicket.serviceName(),
                         currentTicket.operatorId(), currentTicket.windowId(), currentTicket.state());
             } else {
-                activeTicketLabel.setText("Sin turno activo en esta asignación.");
+                clearTicketPresentation();
+                activeTicketLabel.setText("Puede llamar al siguiente turno compatible.");
             }
 
             setBusy(false);
@@ -381,7 +406,8 @@ public class OperatorController {
             } else {
                 activeTicketKnown = true;
                 currentTicket = null;
-                activeTicketLabel.setText("Sin turno activo en esta asignación.");
+                clearTicketPresentation();
+                activeTicketLabel.setText("Puede llamar al siguiente turno compatible.");
                 setBusy(false);
                 showMessage(Alert.AlertType.INFORMATION, "No hay turnos compatibles en espera.");
             }
@@ -412,6 +438,33 @@ public class OperatorController {
 
     @FXML
     private void finishAttention() {
+        if (busy || closed || !activeTicketKnown || currentTicket == null
+                || !"EN_ATENCION".equals(currentTicket.state())
+                || finishAttentionRequest == null) {
+            return;
+        }
+        finishCodeLabel.setText(currentTicket.visualCode());
+        finishCodeLabel.setStyle("-fx-font-size: "
+                + (currentTicket.visualCode().length() > 10 ? 26 : 48) + "px;");
+        finishServiceLabel.setText(currentTicket.serviceName());
+        finishConfirmationOpen = true;
+        updatePresentation();
+    }
+
+    @FXML
+    private void cancelFinishConfirmation() {
+        finishConfirmationOpen = false;
+        updatePresentation();
+        finishAttentionButton.requestFocus();
+    }
+
+    @FXML
+    private void confirmFinishAttention() {
+        if (!finishConfirmationOpen) {
+            return;
+        }
+        finishConfirmationOpen = false;
+        updatePresentation();
         changeAttention(AttentionOperation.FINISH);
     }
 
@@ -449,6 +502,9 @@ public class OperatorController {
                 return;
             }
 
+            if (!starting) {
+                lastFinishedByAssignment.put(selected.assignmentId(), target.visualCode());
+            }
             resetOperationButtons();
             setBusy(false);
             loadActiveTicket(null);
@@ -486,13 +542,67 @@ public class OperatorController {
     private void showTicket(
             String visualCode, String serviceName, int operatorId, int windowId, String state
     ) {
-        String stateName = "LLAMADO".equals(state) ? "Llamado" : "En atención";
-        activeTicketLabel.setText(
-                "Turno: " + visualCode
-                + "\nServicio: " + serviceName
-                + "\nOperador: " + operatorId + " - Ventanilla: " + windowId
-                + "\nEstado: " + stateName
-        );
+        displayedCode = visualCode;
+        displayedService = serviceName;
+        displayedState = state;
+        activeTicketLabel.setText("LLAMADO".equals(state)
+                ? "Cuando la persona llegue, inicie la atención."
+                : "Finalice cuando haya concluido la atención.");
+        updatePresentation();
+    }
+
+    private void clearTicketPresentation() {
+        displayedCode = "";
+        displayedService = "";
+        displayedState = "";
+    }
+
+    // La vista representa respuestas confirmadas; no cambia las reglas del servidor.
+    private void updatePresentation() {
+        OperatorAssignment selected = assignmentCombo.getValue();
+        boolean hasTicket = !displayedCode.isEmpty();
+        ticketCodeLabel.setText(hasTicket ? displayedCode : "—");
+        int codeSize = !hasTicket ? 54 : displayedCode.length() > 12 ? 28
+                : displayedCode.length() > 8 ? 48 : displayedCode.length() > 6 ? 76 : 112;
+        ticketCodeLabel.setStyle("-fx-font-size: " + codeSize + "px;");
+        serviceNameLabel.setText(hasTicket ? displayedService : selected == null
+                ? "Seleccione operador y ventanilla" : "Listo para el siguiente turno");
+        String status = !activeTicketKnown ? "Estado sin confirmar"
+                : !hasTicket ? "Sin turno activo" : "LLAMADO".equals(displayedState)
+                ? "Llamado" : "En atención";
+        ticketStateLabel.setText(status);
+        ticketStateLabel.setVisible(!activeTicketKnown || !hasTicket);
+        ticketStateLabel.setManaged(!activeTicketKnown || !hasTicket);
+        ticketStateLabel.pseudoClassStateChanged(PseudoClass.getPseudoClass("called"),
+                activeTicketKnown && "LLAMADO".equals(displayedState));
+        ticketStateLabel.pseudoClassStateChanged(PseudoClass.getPseudoClass("attending"),
+                activeTicketKnown && "EN_ATENCION".equals(displayedState));
+        calledStepLabel.pseudoClassStateChanged(PseudoClass.getPseudoClass("current"),
+                activeTicketKnown && "LLAMADO".equals(displayedState));
+        attendingStepLabel.pseudoClassStateChanged(PseudoClass.getPseudoClass("current"),
+                activeTicketKnown && "EN_ATENCION".equals(displayedState));
+        connectionStatusLabel.setText(closed ? "Ventana cerrada" : busy ? "Consultando…"
+                : !assignmentsLoaded ? "Pendiente de consulta" : selected == null
+                ? "Seleccione una asignación" : activeTicketKnown
+                ? "Estado consultado" : "Estado sin confirmar");
+        connectionStatusLabel.pseudoClassStateChanged(PseudoClass.getPseudoClass("warning"),
+                !busy && !activeTicketKnown);
+        Button visibleAction = "LLAMADO".equals(displayedState) ? startAttentionButton
+                : "EN_ATENCION".equals(displayedState) ? finishAttentionButton : callNextButton;
+        for (Button button : List.of(callNextButton, startAttentionButton, finishAttentionButton)) {
+            button.setVisible(button == visibleAction);
+            button.setManaged(button == visibleAction);
+            button.pseudoClassStateChanged(PseudoClass.getPseudoClass("busy"),
+                    busy && button.getText().endsWith("..."));
+        }
+        String previousCode = selected == null ? null
+                : lastFinishedByAssignment.get(selected.assignmentId());
+        lastFinishedLabel.setText(previousCode == null
+                ? "Sin finalizaciones desde esta ventana."
+                : "Última finalizada aquí: " + previousCode);
+        finishOverlay.setVisible(finishConfirmationOpen);
+        finishOverlay.setManaged(finishConfirmationOpen);
+        workspace.setDisable(finishConfirmationOpen);
     }
 
     private void startTask(Task<?> task) {
@@ -518,6 +628,7 @@ public class OperatorController {
         finishAttentionButton.setDisable(actionsBlocked || finishAttentionRequest == null
                 || currentTicket == null || !"EN_ATENCION".equals(currentTicket.state()));
         reloadAssignmentsButton.setDisable(closed || busy || assignmentsRequest == null);
+        updatePresentation();
     }
 
     private void showFailure(String message, Throwable error) {

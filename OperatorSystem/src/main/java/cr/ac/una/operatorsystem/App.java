@@ -22,7 +22,9 @@ public class App extends Application {
         controller = loader.getController();
 
         stage.setTitle("Atención de turnos");
-        stage.setScene(new Scene(root, 500, 360));
+        stage.setScene(new Scene(root, 1180, 780));
+        stage.setMinWidth(900);
+        stage.setMinHeight(680);
         stage.show();
 
         OperatorServerClient client = new OperatorServerClient("127.0.0.1", 5000);

@@ -1,0 +1,101 @@
+.operator-screen {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 16px;
+    -fx-background-color: #FFFFFF;
+}
+
+.operator-screen .label { -fx-text-fill: #122D39; }
+
+.operator-screen .screen-header {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E1E7E5;
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 20px 32px;
+}
+
+.operator-screen .screen-title { -fx-font-size: 22px; -fx-font-weight: bold; }
+.operator-screen .screen-content { -fx-padding: 40px 56px 32px 56px; }
+.operator-screen .field-label { -fx-font-size: 14px; -fx-text-fill: #4E626B; }
+.operator-screen .ticket-code { -fx-font-size: 112px; -fx-font-weight: bold; }
+.operator-screen .service-name { -fx-font-size: 26px; }
+.operator-screen .ticket-hint { -fx-font-size: 17px; }
+.operator-screen .secondary-text { -fx-font-size: 14px; -fx-text-fill: #4E626B; }
+
+.operator-screen .connection-status { -fx-font-size: 14px; -fx-text-fill: #006B60; }
+.operator-screen .connection-status:warning { -fx-text-fill: #7A4510; }
+.operator-screen .ticket-state { -fx-font-size: 14px; -fx-font-weight: bold; }
+.operator-screen .ticket-state:called { -fx-text-fill: #7A4510; }
+.operator-screen .ticket-state:attending { -fx-text-fill: #006B60; }
+
+.operator-screen .attention-step { -fx-font-size: 14px; -fx-text-fill: #4E626B; }
+.operator-screen .attention-step:current { -fx-text-fill: #006B60; -fx-font-weight: bold; }
+
+.operator-screen .combo-box {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #ADBDC4;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-font-size: 14px;
+}
+
+.operator-screen .combo-box .list-cell { -fx-text-fill: #122D39; -fx-padding: 8px 10px; }
+
+.operator-screen .button, .operator-screen .menu-button {
+    -fx-font-size: 15px;
+    -fx-padding: 10px 14px;
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+    -fx-cursor: hand;
+}
+
+.operator-screen .primary-button {
+    -fx-background-color: #006B60;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+}
+
+.operator-screen .primary-button:hover { -fx-background-color: #00594F; }
+.operator-screen .primary-button:busy:disabled { -fx-background-color: #006B60; -fx-text-fill: #FFFFFF; -fx-opacity: 1; }
+.operator-screen .primary-button:disabled {
+    -fx-opacity: 1;
+    -fx-background-color: #E9EFF1;
+    -fx-text-fill: #677B85;
+}
+
+.operator-screen .secondary-button, .operator-screen .menu-button {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #ADBDC4;
+    -fx-text-fill: #122D39;
+}
+
+.operator-screen .secondary-button:hover, .operator-screen .menu-button:hover { -fx-background-color: #F1F5F4; }
+.operator-screen .secondary-button:disabled { -fx-opacity: 0.65; }
+
+.operator-screen .button:focused, .operator-screen .menu-button:focused, .operator-screen .combo-box:focused {
+    -fx-effect: dropshadow(gaussian, #122D39, 4, 0.6, 0, 0);
+}
+
+.operator-screen .action-bar {
+    -fx-background-color: #F8FAF9;
+    -fx-border-color: #E1E7E5;
+    -fx-border-width: 1px 0 0 0;
+    -fx-padding: 18px 32px;
+}
+
+.operator-screen .summary-label { -fx-font-size: 14px; -fx-text-fill: #4E626B; }
+.operator-screen .content-scroll, .operator-screen .content-scroll > .viewport { -fx-background-color: #FFFFFF; }
+.operator-screen .content-scroll { -fx-padding: 0; -fx-background-insets: 0; }
+.operator-screen .finish-overlay { -fx-background-color: rgba(18,45,57,0.22); }
+.operator-screen .finish-panel { -fx-background-color: #FFFFFF; -fx-border-color: #E1E7E5; -fx-border-width: 0 0 0 1px; }
+.operator-screen .finish-code { -fx-font-size: 48px; -fx-font-weight: bold; }
+.operator-screen .finish-service { -fx-font-size: 22px; -fx-font-weight: bold; }
+.operator-screen .finish-actions { -fx-background-color: #FFFFFF; -fx-border-color: #E1E7E5; -fx-border-width: 1px 0 0 0; -fx-padding: 20px 26px 24px 26px; }
+
+.operator-screen .notice-label {
+    -fx-font-size: 15px;
+    -fx-background-color: #FFF4DF;
+    -fx-text-fill: #7A4510;
+    -fx-border-color: #7A4510;
+    -fx-border-width: 0 0 0 4px;
+    -fx-padding: 12px 16px;
+}

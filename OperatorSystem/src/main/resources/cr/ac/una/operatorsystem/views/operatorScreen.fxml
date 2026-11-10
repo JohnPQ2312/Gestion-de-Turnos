@@ -1,68 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-
-<VBox xmlns="http://javafx.com/javafx/13"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="cr.ac.una.operatorsystem.controller.OperatorController"
-      spacing="12.0"
-      prefWidth="500.0"
-      prefHeight="360.0">
-
-    <padding>
-        <Insets top="20.0" right="20.0"
-                bottom="20.0" left="20.0"/>
-    </padding>
-
-    <children>
-        <Label text="Atención de turnos"
-               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
-
-        <Label text="Asignación de operador y ventanilla"/>
-
-        <ComboBox fx:id="assignmentCombo"
-                  editable="false" disable="true"
-                  promptText="Pendiente de conexión al servidor"
-                  prefWidth="440.0"/>
-
-        <HBox spacing="10.0">
-            <children>
-                <Button fx:id="callNextButton"
-                        text="Llamar siguiente"
-                        disable="true"
-                        onAction="#callNext"/>
-
-                <Button fx:id="reloadAssignmentsButton"
-                        text="Actualizar asignaciones"
-                        disable="true"
-                        onAction="#reloadAssignments"/>
-            </children>
-        </HBox>
-
-        <HBox spacing="10.0">
-            <children>
-                <Button fx:id="startAttentionButton"
-                        text="Iniciar atención"
-                        disable="true"
-                        onAction="#startAttention"/>
-
-                <Button fx:id="finishAttentionButton"
-                        text="Finalizar atención"
-                        disable="true"
-                        onAction="#finishAttention"/>
-            </children>
-        </HBox>
-
-        <Label text="Turno actual:"
-               style="-fx-font-weight: bold;"/>
-
-        <Label fx:id="activeTicketLabel"
-               text="Seleccione una asignación para consultar su turno."
-               wrapText="true"/>
-    </children>
-</VBox>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<StackPane xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cr.ac.una.operatorsystem.controller.OperatorController" styleClass="operator-screen" stylesheets="@operator.css">
+ <BorderPane fx:id="workspace">
+  <top><HBox spacing="20" alignment="CENTER_LEFT" styleClass="screen-header">
+   <VBox spacing="8" HBox.hgrow="ALWAYS">
+    <Label text="Atención de personas" styleClass="screen-title"/>
+    <ComboBox fx:id="assignmentCombo" editable="false" disable="true" promptText="Pendiente de consulta" accessibleText="Asignación de operador y ventanilla" prefWidth="330" maxWidth="420" minHeight="44"/>
+   </VBox>
+   <Label fx:id="connectionStatusLabel" text="Pendiente de consulta" wrapText="true" minHeight="-Infinity" styleClass="connection-status"/>
+   <Button fx:id="reloadAssignmentsButton" text="Actualizar asignaciones" disable="true" onAction="#reloadAssignments" minHeight="44" styleClass="secondary-button"/>
+  </HBox></top>
+  <center><ScrollPane fitToWidth="true" fitToHeight="true" styleClass="content-scroll">
+   <VBox spacing="16" styleClass="screen-content">
+    <Label text="Turno actual" styleClass="field-label"/>
+    <Label fx:id="ticketCodeLabel" text="—" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="ticket-code"/>
+    <Label fx:id="serviceNameLabel" text="Seleccione operador y ventanilla" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="service-name"/>
+    <HBox spacing="20" alignment="CENTER_LEFT">
+     <padding><Insets top="14" bottom="8"/></padding>
+     <Label fx:id="calledStepLabel" text="Llamado" styleClass="attention-step"/>
+     <Label text="›" styleClass="secondary-text"/>
+     <Label fx:id="attendingStepLabel" text="En atención" styleClass="attention-step"/>
+     <Label text="›" styleClass="secondary-text"/>
+     <Label text="Finalizado" styleClass="attention-step"/>
+    </HBox>
+    <Label fx:id="ticketStateLabel" text="Estado sin confirmar" styleClass="ticket-state"/>
+    <Label fx:id="activeTicketLabel" text="Seleccione una asignación para consultar su turno." wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="ticket-hint"/>
+   </VBox>
+  </ScrollPane></center>
+  <bottom><HBox spacing="24" alignment="CENTER_LEFT" styleClass="action-bar">
+   <Label fx:id="lastFinishedLabel" text="Sin finalizaciones desde esta ventana." wrapText="true" minHeight="-Infinity" minWidth="0" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="summary-label"/>
+   <StackPane minWidth="205" prefWidth="205">
+    <Button fx:id="callNextButton" text="Llamar siguiente" disable="true" onAction="#callNext" minHeight="48" maxWidth="Infinity" styleClass="primary-button"/>
+    <Button fx:id="startAttentionButton" text="Iniciar atención" disable="true" onAction="#startAttention" visible="false" managed="false" minHeight="48" maxWidth="Infinity" styleClass="primary-button"/>
+    <Button fx:id="finishAttentionButton" text="Finalizar atención" disable="true" onAction="#finishAttention" visible="false" managed="false" minHeight="48" maxWidth="Infinity" styleClass="primary-button"/>
+   </StackPane>
+  </HBox></bottom>
+ </BorderPane>
+ <HBox fx:id="finishOverlay" visible="false" managed="false" alignment="CENTER_RIGHT" styleClass="finish-overlay">
+  <Region HBox.hgrow="ALWAYS"/>
+  <BorderPane minWidth="390" prefWidth="430" maxWidth="430" styleClass="finish-panel">
+   <center><ScrollPane fitToWidth="true" styleClass="content-scroll"><VBox spacing="20">
+    <padding><Insets top="28" right="26" bottom="26" left="26"/></padding>
+    <Label text="Finalizar atención" styleClass="screen-title"/>
+    <Label text="Turno actual" styleClass="field-label"/>
+    <Label fx:id="finishCodeLabel" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="finish-code"/>
+    <Label fx:id="finishServiceLabel" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="finish-service"/>
+    <Separator/>
+    <Label text="Confirme que ha terminado de atender a esta persona." wrapText="true" minHeight="-Infinity" styleClass="ticket-hint"/>
+   </VBox></ScrollPane></center>
+   <bottom><VBox spacing="14" styleClass="finish-actions">
+    <Label text="Al confirmarse la finalización, la ventanilla podrá llamar al siguiente turno." wrapText="true" minHeight="-Infinity" styleClass="secondary-text"/>
+    <Button text="Seguir atendiendo" onAction="#cancelFinishConfirmation" cancelButton="true" minHeight="46" maxWidth="Infinity" styleClass="secondary-button"/>
+    <Button fx:id="confirmFinishButton" text="Finalizar atención" onAction="#confirmFinishAttention" minHeight="46" maxWidth="Infinity" styleClass="primary-button"/>
+   </VBox></bottom>
+  </BorderPane>
+ </HBox>
+</StackPane>
