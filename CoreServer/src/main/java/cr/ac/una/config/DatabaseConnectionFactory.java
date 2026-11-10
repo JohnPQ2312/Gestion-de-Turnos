@@ -51,8 +51,17 @@ public final class DatabaseConnectionFactory {
         this.password = properties.getProperty("db.clave");
     }
 
-    public Connection openConnection() throws SQLException {
-        return DriverManager.getConnection(url, username, password);
+       public Connection openConnection() throws SQLException {
+        long start = System.nanoTime();
+        try {
+            Connection connection
+                    = DriverManager.getConnection(url, username, password);
+            ConnectionMetrics.recordSuccess(System.nanoTime() - start);
+            return connection;
+        } catch (SQLException | RuntimeException exception) {
+            ConnectionMetrics.recordFailure(System.nanoTime() - start);
+            throw exception;
+        }
     }
 
     private static String requireProperty(
