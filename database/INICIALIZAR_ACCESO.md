@@ -34,8 +34,20 @@ Un funcionario `INACTIVO`, o sin credencial, no puede iniciar sesión.
 
 - El token vive solo en la memoria de CoreServer y de OperatorSystem; no se guarda en archivos.
 - Vence tras 30 minutos sin uso o 8 horas desde el inicio. El botón **Cerrar sesión** la termina de inmediato.
-- Cada 60 segundos CoreServer vuelve a leer el estado y el rol del funcionario: una baja o un cambio de rol hacen efecto en la siguiente verificación.
 - Al reiniciar CoreServer todas las sesiones terminan y OperatorSystem vuelve a la pantalla de acceso.
+
+### Revocación por cambios en la cuenta
+
+Cada sesión guarda, solo en la memoria del servidor, una huella (SHA-256) del hash de la contraseña con que se inició. Como máximo cada 60 segundos de uso, CoreServer vuelve a leer la cuenta y revoca la sesión si:
+
+- el funcionario quedó `INACTIVO`, pasó a un rol sin acceso o perdió su credencial;
+- la contraseña cambió (la huella ya no coincide). En ese caso se revocan **todas** las sesiones de esa cuenta.
+
+Después de restablecer una contraseña con `CredentialSetup`, los tokens anteriores dejan de autorizar operaciones en un máximo de 60 segundos, la contraseña anterior ya no permite entrar y la nueva sí. La herramienta se ejecuta en otro proceso, por eso no puede cerrar las sesiones del servidor en el acto; la administración de usuarios (bloque 5) podrá revocarlas de inmediato con `AuthService.revokeSessions`.
+
+### Cierre al salir de OperatorSystem
+
+Al cerrar la ventana con una sesión abierta, el aviso de `LOGOUT` se envía en otro hilo, con un plazo de 2 segundos para conectar y 2 para la respuesta. La interfaz no espera ese aviso. Si el servidor confirma, el token queda revocado; si no responde a tiempo, la sesión **no** se considera revocada: vence en CoreServer por inactividad (30 minutos) o al reiniciarlo.
 
 ## 5. Protocolo
 

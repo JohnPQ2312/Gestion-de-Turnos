@@ -24,6 +24,8 @@ public class App extends Application {
 
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 5000;
+    // Plazo del aviso de cierre al salir de la aplicación.
+    private static final int EXIT_LOGOUT_TIMEOUT_MS = 2000;
 
     private final AuthServerClient authClient = new AuthServerClient(HOST, PORT);
 
@@ -195,6 +197,13 @@ public class App extends Application {
         alert.showAndWait();
     }
 
+    /**
+     * Al salir, el aviso de cierre se envía en otro hilo y el hilo de JavaFX
+     * no espera la red. Ese hilo no es daemon: el proceso lo espera como
+     * máximo unos EXIT_LOGOUT_TIMEOUT_MS (conexión y lectura). Si el servidor
+     * no responde a tiempo, la sesión no se da por revocada: vence en
+     * CoreServer por inactividad (30 min) o al reiniciarlo.
+     */
     @Override
     public void stop() {
         UserSession closing = session;
@@ -202,11 +211,14 @@ public class App extends Application {
         closeLogin();
 
         if (closing != null) {
-            try {
-                authClient.logout(closing);
-            } catch (IOException | RuntimeException exception) {
-                System.err.println("No se pudo avisar el cierre de sesión: " + exception.getMessage());
-            }
+            Thread.ofPlatform().daemon(false).name("operatorsystem-logout-on-exit").start(() -> {
+                try {
+                    authClient.logout(closing, EXIT_LOGOUT_TIMEOUT_MS, EXIT_LOGOUT_TIMEOUT_MS);
+                } catch (IOException | RuntimeException exception) {
+                    System.err.println("No se confirmó el cierre de sesión al salir; "
+                            + "vencerá en el servidor. Detalle: " + exception.getMessage());
+                }
+            });
         }
     }
 

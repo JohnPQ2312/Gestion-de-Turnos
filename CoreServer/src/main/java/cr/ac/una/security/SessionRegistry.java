@@ -30,8 +30,14 @@ public final class SessionRegistry {
 
     private static final int TOKEN_BYTES = 32;
 
+    /**
+     * credentialFingerprint identifica la contraseña con que se inició la
+     * sesión (huella del hash guardado). Si la contraseña cambia, la huella
+     * deja de coincidir y la sesión se revoca. Nunca sale del servidor.
+     */
     public record Session(
             AuthenticatedUser user,
+            String credentialFingerprint,
             Instant createdAt,
             Instant lastUsedAt,
             Instant verifiedAt
@@ -46,12 +52,13 @@ public final class SessionRegistry {
         this.clock = Objects.requireNonNull(clock, "El reloj es obligatorio.");
     }
 
-    public String create(AuthenticatedUser user) {
+    public String create(AuthenticatedUser user, String credentialFingerprint) {
         Objects.requireNonNull(user, "El usuario es obligatorio.");
+        Objects.requireNonNull(credentialFingerprint, "La huella de la credencial es obligatoria.");
         purgeExpired();
 
         Instant now = clock.instant();
-        Session session = new Session(user, now, now, now);
+        Session session = new Session(user, credentialFingerprint, now, now, now);
 
         while (true) {
             String token = newToken();
@@ -88,14 +95,16 @@ public final class SessionRegistry {
     public void touch(String token) {
         Instant now = clock.instant();
         sessions.computeIfPresent(token, (key, current)
-                -> new Session(current.user(), current.createdAt(), now, current.verifiedAt()));
+                -> new Session(current.user(), current.credentialFingerprint(),
+                        current.createdAt(), now, current.verifiedAt()));
     }
 
     /** Registra el uso y los datos del funcionario recién leídos de la base. */
     public void refresh(String token, AuthenticatedUser user) {
         Instant now = clock.instant();
         sessions.computeIfPresent(token, (key, current)
-                -> new Session(user, current.createdAt(), now, now));
+                -> new Session(user, current.credentialFingerprint(),
+                        current.createdAt(), now, now));
     }
 
     public void remove(String token) {

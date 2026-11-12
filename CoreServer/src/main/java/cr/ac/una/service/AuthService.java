@@ -82,7 +82,8 @@ public class AuthService {
             requireUsable(account);
 
             AuthenticatedUser user = toUser(account);
-            return new LoginResult(sessions.create(user), user);
+            String token = sessions.create(user, PasswordHasher.fingerprint(account.passwordHash()));
+            return new LoginResult(token, user);
 
         } finally {
             PasswordHasher.clear(secret);
@@ -91,6 +92,15 @@ public class AuthService {
 
     public void logout(String token) {
         sessions.remove(token);
+    }
+
+    /**
+     * Revoca de inmediato todas las sesiones de un funcionario. Lo usará la
+     * administración de usuarios (bloque 5) al cambiar contraseña, rol o
+     * estado dentro de este mismo servidor.
+     */
+    public void revokeSessions(int operatorId) {
+        sessions.removeAllFor(operatorId);
     }
 
     /** Valida el token y devuelve el funcionario con su rol vigente. */
@@ -117,6 +127,16 @@ public class AuthService {
             sessions.remove(token);
             throw new AccessDeniedException(
                     Reason.SESSION_EXPIRED, "La cuenta cambió. Inicie sesión de nuevo."
+            );
+        }
+
+        // Contraseña cambiada (por ejemplo, con CredentialSetup): se revocan
+        // todas las sesiones de la cuenta, no solo la que hizo la consulta.
+        String currentFingerprint = PasswordHasher.fingerprint(current.get().passwordHash());
+        if (!currentFingerprint.equals(session.credentialFingerprint())) {
+            sessions.removeAllFor(session.user().operatorId());
+            throw new AccessDeniedException(
+                    Reason.SESSION_EXPIRED, "La contraseña de la cuenta cambió. Inicie sesión de nuevo."
             );
         }
 

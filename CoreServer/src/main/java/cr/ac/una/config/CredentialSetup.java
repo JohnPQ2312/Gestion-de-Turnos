@@ -62,7 +62,7 @@ public final class CredentialSetup {
                 accounts.saveCredential(account.operatorId(), hash);
                 System.out.println("Contraseña guardada para " + account.username() + ".");
                 System.out.println("Si CoreServer está en ejecución, las sesiones abiertas de esta "
-                        + "cuenta siguen válidas hasta que venzan o se reinicie el servidor.");
+                        + "cuenta dejan de autorizar operaciones en un máximo de 60 segundos.");
             } finally {
                 PasswordHasher.clear(password);
                 PasswordHasher.clear(confirmation);

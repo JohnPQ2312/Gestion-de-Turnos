@@ -103,6 +103,21 @@ public final class PasswordHasher {
         }
     }
 
+    /**
+     * Huella SHA-256 del hash guardado. Solo sirve para detectar en memoria
+     * que la contraseña de una cuenta cambió; no permite verificar ni
+     * recuperar la contraseña y nunca se envía al cliente.
+     */
+    public static String fingerprint(String storedHash) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(storedHash.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(digest);
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("No se pudo calcular la huella de la credencial.", exception);
+        }
+    }
+
     /** Borra una copia de la contraseña que ya no se necesita. */
     public static void clear(char[] password) {
         if (password != null) {

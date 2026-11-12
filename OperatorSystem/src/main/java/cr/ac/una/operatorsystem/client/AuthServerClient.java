@@ -16,6 +16,10 @@ import java.util.Objects;
 /** Inicio y cierre de sesión en CoreServer. No guarda nada en disco. */
 public class AuthServerClient {
 
+    // Tiempos de las solicitudes normales, iguales a los demás clientes.
+    private static final int CONNECT_TIMEOUT_MS = 3000;
+    private static final int READ_TIMEOUT_MS = 15000;
+
     private final String host;
     private final int port;
 
@@ -38,7 +42,8 @@ public class AuthServerClient {
 
         String[] response = ServerProtocol.request(host, port, "LOGIN;"
                 + URLEncoder.encode(username.trim(), StandardCharsets.UTF_8) + ";"
-                + URLEncoder.encode(password, StandardCharsets.UTF_8));
+                + URLEncoder.encode(password, StandardCharsets.UTF_8),
+                CONNECT_TIMEOUT_MS, READ_TIMEOUT_MS);
 
         if (response.length != 7 || !"LOGIN".equals(response[1])) {
             throw new IOException("La respuesta de inicio de sesión no es válida.");
@@ -56,9 +61,19 @@ public class AuthServerClient {
 
     /** Cierra la sesión en el servidor. Si ya había vencido, no es un error. */
     public void logout(UserSession session) throws IOException {
+        logout(session, CONNECT_TIMEOUT_MS, READ_TIMEOUT_MS);
+    }
+
+    /**
+     * Igual que logout, con tiempos propios. Al cerrar la aplicación se usa un
+     * plazo corto para no retener el proceso si el servidor no responde.
+     */
+    public void logout(UserSession session, int connectTimeoutMs, int readTimeoutMs)
+            throws IOException {
         Objects.requireNonNull(session, "La sesión es obligatoria.");
         try {
-            ServerProtocol.request(host, port, "AUTH;" + session.token() + ";LOGOUT");
+            ServerProtocol.request(host, port, "AUTH;" + session.token() + ";LOGOUT",
+                    connectTimeoutMs, readTimeoutMs);
         } catch (AccessDeniedException ignored) {
             // La sesión ya no existía en el servidor.
         }
@@ -73,12 +88,14 @@ public class AuthServerClient {
         private ServerProtocol() {
         }
 
-        static String[] request(String host, int port, String message) throws IOException {
+        static String[] request(
+                String host, int port, String message, int connectTimeoutMs, int readTimeoutMs
+        ) throws IOException {
             String line;
 
             try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(host, port), 3000);
-                socket.setSoTimeout(15000);
+                socket.connect(new InetSocketAddress(host, port), connectTimeoutMs);
+                socket.setSoTimeout(readTimeoutMs);
 
                 try (
                         BufferedWriter output = new BufferedWriter(
