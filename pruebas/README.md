@@ -66,3 +66,57 @@ Se comprobó una ejecución de dos llamados coordinados contra MySQL. Quedan por
 Los tiempos de respuesta de 5,5 y 6,5 segundos quedan registrados para medir y optimizar las consultas y conexiones. Son tiempos de llamado completos, distintos del tiempo que tarda la pantalla en mostrar un aviso.
 
 Tras esta ejecución, A008 y A009 permanecen LLAMADO. Para trabajar desde los operadores, utilizar Actualizar asignaciones y revisar el estado recuperado antes de iniciar o finalizar sus atenciones.
+
+# Prueba de llamados simultáneos sobre una misma asignación
+
+`SameAssignmentCallingCheck.java` envía dos `CALL_NEXT` sobre **la misma** asignación, liberados por una señal común. Comprueba que el sistema admita un solo llamado y rechace el otro por ocupación, y después verifica el estado guardado mediante el servidor.
+
+## Preparación
+
+Coordinar con el equipo quién prepara los datos y cuándo se ejecuta. Ninguna otra operación debe modificar la asignación ni la cola durante la prueba.
+
+1. Iniciar CoreServer.
+2. Elegir una asignación vigente (por defecto, operador 1 en ventanilla 1) y comprobar desde OperatorSystem que no tenga turno activo. Si conserva un turno de pruebas anteriores, como A008 o A009, completar o revisar su atención antes.
+3. Tener al menos dos turnos `EN_ESPERA` compatibles con esa asignación y menos de 50 turnos en espera en total.
+
+La herramienta detiene la ejecución si la asignación no existe, no está libre o hay menos de dos turnos en espera. La compatibilidad no se puede consultar por el protocolo; se comprueba antes en MySQL con la consulta siguiente, que debe devolver al menos dos filas:
+```sql
+SELECT t.ticket_id, t.visual_code, t.`priority`, t.created_at
+FROM ticket t
+JOIN operator_window_assignment a ON a.assignment_id = 1   -- cambiar 1 por la asignación de la prueba
+JOIN operator_service os ON os.operator_id = a.operator_id AND os.service_code = t.service_id
+JOIN window_service ws ON ws.window_id = a.window_id AND ws.service_code = t.service_id
+JOIN `window` w ON w.window_id = a.window_id
+JOIN service s ON s.service_code = t.service_id AND s.service_state = 'ACTIVO'
+WHERE t.ticket_state = 'EN_ESPERA'
+  AND (w.attention_mode = 'MIXED' OR t.`priority` = TRUE)
+ORDER BY t.`priority` DESC, t.created_at, t.ticket_id;
+```
+
+## Ejecución
+
+Desde PowerShell, en la raíz del repositorio:
+
+```powershell
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+java '-Dstdout.encoding=UTF-8' '-Dstderr.encoding=UTF-8' pruebas/SameAssignmentCallingCheck.java 1 1
+```
+
+Los dos números son el operador y la ventanilla de la asignación. No reintenta escrituras.
+
+## Resultado esperado
+
+- Exactamente una respuesta `OK;CALLED` para el operador y la ventanilla de la asignación.
+- Exactamente una respuesta `ERROR` con el mensaje de ocupación: «La asignación, el operador o la ventanilla ya tienen un turno activo.» Un error distinto (por ejemplo, de base de datos) cuenta como falla.
+- `GET_ACTIVE_TICKET` devuelve el turno llamado, en estado `LLAMADO`.
+- El turno llamado ya no aparece en espera, los demás turnos siguen en espera y la espera baja exactamente en uno.
+
+Al final la herramienta imprime dos consultas para confirmar en phpMyAdmin el estado de los turnos involucrados y que la asignación tiene un solo turno activo. Las líneas `[tiempo]` de la consola de CoreServer registran el procesamiento de cada `CALL_NEXT`.
+
+## Resultados
+
+| Fecha | Asignación | Respuestas | Turno llamado | Comprobaciones | MySQL |
+| --- | --- | --- | --- | --- | --- |
+| Pendiente | — | — | — | — | — |
+
+Pendiente de ejecución contra MySQL. La herramienta se comprobó únicamente contra un servidor simulado: con un servidor que serializa el llamado reportó un llamado y un rechazo por ocupación; con un servidor defectuoso que entregaba dos turnos reportó cuatro comprobaciones fallidas; y se detuvo con una asignación ocupada o inexistente. Esto valida la lógica de la herramienta, no el comportamiento de CoreServer con MySQL.
