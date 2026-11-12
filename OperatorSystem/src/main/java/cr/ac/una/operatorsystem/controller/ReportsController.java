@@ -1,5 +1,6 @@
 package cr.ac.una.operatorsystem.controller;
 
+import cr.ac.una.operatorsystem.client.AccessDeniedException;
 import cr.ac.una.operatorsystem.model.ReportResult;
 import cr.ac.una.operatorsystem.model.ReportType;
 import java.io.IOException;
@@ -7,6 +8,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -65,6 +67,7 @@ public class ReportsController {
     private Label summaryLabel;
 
     private ReportRequest reportRequest;
+    private Consumer<String> sessionEndedHandler;
     private Task<ReportResult> currentTask;
     private boolean busy;
     private boolean closed;
@@ -85,12 +88,15 @@ public class ReportsController {
         updateControls();
     }
 
-    public void configure(ReportRequest reportRequest) {
+    public void configure(ReportRequest reportRequest, Consumer<String> sessionEndedHandler) {
         if (busy || closed) {
             throw new IllegalStateException("La vista de consultas no se puede configurar en este momento.");
         }
         this.reportRequest = Objects.requireNonNull(
                 reportRequest, "La solicitud de consultas es obligatoria."
+        );
+        this.sessionEndedHandler = Objects.requireNonNull(
+                sessionEndedHandler, "El aviso de fin de sesión es obligatorio."
         );
         updateControls();
     }
@@ -144,6 +150,16 @@ public class ReportsController {
             System.err.println("No se pudo obtener la consulta " + type.command() + ". Detalle: " + error);
             clearResult();
             summaryLabel.setText("");
+
+            if (error instanceof AccessDeniedException denied) {
+                setBusy(false);
+                showError(denied.getMessage());
+                if (denied.endsSession()) {
+                    sessionEndedHandler.accept(denied.getMessage());
+                }
+                return;
+            }
+
             // IllegalArgumentException = el servidor rechazó la solicitud con
             // un mensaje para el usuario (por ejemplo, un rango inválido).
             showError(error instanceof IllegalArgumentException && error.getMessage() != null

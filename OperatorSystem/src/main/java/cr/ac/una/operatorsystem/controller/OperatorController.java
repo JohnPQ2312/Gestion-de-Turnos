@@ -1,5 +1,6 @@
 package cr.ac.una.operatorsystem.controller;
 
+import cr.ac.una.operatorsystem.client.AccessDeniedException;
 import cr.ac.una.operatorsystem.model.ActiveTicket;
 import cr.ac.una.operatorsystem.model.CalledTicket;
 import cr.ac.una.operatorsystem.model.OperatorAssignment;
@@ -12,6 +13,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -93,8 +95,12 @@ public class OperatorController {
     @FXML private Label finishCodeLabel;
     @FXML private Label finishServiceLabel;
     @FXML private Button reportsButton;
+    @FXML private Button logoutButton;
+    @FXML private Label sessionUserLabel;
 
     private Runnable reportsOpener;
+    private Runnable logoutHandler;
+    private Consumer<String> sessionEndedHandler;
     private String displayedCode = "";
     private String displayedService = "";
     private String displayedState = "";
@@ -210,6 +216,9 @@ public class OperatorController {
             if (closed) {
                 return;
             }
+            if (handleAccessDenied(task.getException())) {
+                return;
+            }
 
             assignmentCombo.setPromptText("No se pudieron cargar las asignaciones");
             reloadAssignmentsButton.setText("Reintentar conexión");
@@ -293,6 +302,9 @@ public class OperatorController {
 
         task.setOnFailed(event -> {
             if (closed) {
+                return;
+            }
+            if (handleAccessDenied(task.getException())) {
                 return;
             }
 
@@ -420,6 +432,9 @@ public class OperatorController {
             if (closed) {
                 return;
             }
+            if (handleAccessDenied(task.getException())) {
+                return;
+            }
 
             resetOperationButtons();
             activeTicketKnown = false;
@@ -515,6 +530,9 @@ public class OperatorController {
 
         task.setOnFailed(event -> {
             if (closed) {
+                return;
+            }
+            if (handleAccessDenied(task.getException())) {
                 return;
             }
 
@@ -670,6 +688,59 @@ public class OperatorController {
         if (!closed && reportsOpener != null) {
             reportsOpener.run();
         }
+    }
+
+    /**
+     * Datos de la sesión iniciada. App decide qué hacer al cerrar la sesión o
+     * cuando el servidor la da por terminada.
+     */
+    public void configureSession(
+            String userDescription,
+            Runnable logoutHandler,
+            Consumer<String> sessionEndedHandler
+    ) {
+        this.logoutHandler = Objects.requireNonNull(logoutHandler, "El cierre de sesión es obligatorio.");
+        this.sessionEndedHandler = Objects.requireNonNull(
+                sessionEndedHandler, "El aviso de fin de sesión es obligatorio."
+        );
+        sessionUserLabel.setText(userDescription == null ? "" : userDescription);
+        logoutButton.setDisable(closed);
+    }
+
+    /** Oculta Consultas a quien no tiene perfil administrador. */
+    public void hideReports() {
+        reportsButton.setVisible(false);
+        reportsButton.setManaged(false);
+    }
+
+    @FXML
+    private void logout() {
+        if (!closed && logoutHandler != null) {
+            logoutHandler.run();
+        }
+    }
+
+    // Un DENIED del servidor no es una falla de red: la operación no se
+    // ejecutó. Si la sesión ya no sirve se vuelve al acceso; si es falta de
+    // permiso se informa. En ambos casos el estado del turno queda por
+    // confirmar con "Actualizar asignaciones".
+    private boolean handleAccessDenied(Throwable error) {
+        if (!(error instanceof AccessDeniedException denied)) {
+            return false;
+        }
+
+        System.err.println("Acceso rechazado por CoreServer: " + denied.getReason());
+        resetOperationButtons();
+        reloadAssignmentsButton.setText("Actualizar asignaciones");
+        activeTicketKnown = false;
+        setBusy(false);
+
+        if (denied.endsSession() && sessionEndedHandler != null) {
+            sessionEndedHandler.accept(denied.getMessage());
+        } else {
+            showMessage(Alert.AlertType.ERROR, denied.getMessage());
+        }
+        return true;
     }
 
     public void close() {

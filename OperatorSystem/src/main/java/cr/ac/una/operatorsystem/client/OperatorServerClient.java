@@ -3,6 +3,7 @@ package cr.ac.una.operatorsystem.client;
 import cr.ac.una.operatorsystem.model.ActiveTicket;
 import cr.ac.una.operatorsystem.model.CalledTicket;
 import cr.ac.una.operatorsystem.model.OperatorAssignment;
+import cr.ac.una.operatorsystem.model.UserSession;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -22,8 +24,10 @@ public class OperatorServerClient {
 
     private final String host;
     private final int port;
+    private final UserSession session;
 
-    public OperatorServerClient(String host, int port) {
+    // Todas las operaciones del operador van con la sesión: AUTH;token;comando.
+    public OperatorServerClient(String host, int port, UserSession session) {
         if (host == null || host.isBlank()) {
             throw new IllegalArgumentException("La dirección del servidor es obligatoria.");
         }
@@ -32,6 +36,7 @@ public class OperatorServerClient {
         }
         this.host = host;
         this.port = port;
+        this.session = Objects.requireNonNull(session, "La sesión es obligatoria.");
     }
 
     public List<OperatorAssignment> listAssignments() throws IOException {
@@ -218,7 +223,7 @@ public class OperatorServerClient {
                     ); BufferedReader input = new BufferedReader(
                             new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
                     )) {
-                output.write(message);
+                output.write("AUTH;" + session.token() + ";" + message);
                 output.newLine();
                 output.flush();
                 line = input.readLine();
@@ -238,6 +243,9 @@ public class OperatorServerClient {
             throw new IOException("La respuesta tiene una codificación inválida.", exception);
         }
 
+        if (response.length == 3 && "DENIED".equals(response[0])) {
+            throw new AccessDeniedException(response[1], response[2]);
+        }
         if (response.length == 2 && "ERROR".equals(response[0])) {
             throw new IllegalArgumentException(response[1]);
         }

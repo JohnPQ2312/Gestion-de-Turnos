@@ -2,6 +2,7 @@ package cr.ac.una.operatorsystem.client;
 
 import cr.ac.una.operatorsystem.model.ReportResult;
 import cr.ac.una.operatorsystem.model.ReportType;
+import cr.ac.una.operatorsystem.model.UserSession;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -27,9 +28,8 @@ import java.util.Objects;
  * solicitud, una línea UTF-8 y campos separados por punto y coma con los
  * textos codificados.
  *
- * Pendiente de autorización: cuando exista la autenticación, cada solicitud
- * deberá enviar la sesión del usuario y el servidor solo deberá atender a un
- * perfil autorizado.
+ * Cada solicitud va con la sesión (AUTH;token;comando). CoreServer solo
+ * atiende las consultas a un perfil ADMIN.
  */
 public class ReportServerClient {
 
@@ -38,8 +38,9 @@ public class ReportServerClient {
 
     private final String host;
     private final int port;
+    private final UserSession session;
 
-    public ReportServerClient(String host, int port) {
+    public ReportServerClient(String host, int port, UserSession session) {
         if (host == null || host.isBlank()) {
             throw new IllegalArgumentException("El servidor es obligatorio.");
         }
@@ -48,6 +49,7 @@ public class ReportServerClient {
         }
         this.host = host;
         this.port = port;
+        this.session = Objects.requireNonNull(session, "La sesión es obligatoria.");
     }
 
     public ReportResult fetch(ReportType type, LocalDate from, LocalDate to) throws IOException {
@@ -242,7 +244,7 @@ public class ReportServerClient {
                     ); BufferedReader input = new BufferedReader(
                             new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
                     )) {
-                output.write(message);
+                output.write("AUTH;" + session.token() + ";" + message);
                 output.newLine();
                 output.flush();
                 line = input.readLine();
@@ -262,6 +264,9 @@ public class ReportServerClient {
             throw new IOException("La respuesta tiene una codificación inválida.", exception);
         }
 
+        if (response.length == 3 && "DENIED".equals(response[0])) {
+            throw new AccessDeniedException(response[1], response[2]);
+        }
         // Igual que OperatorServerClient: un ERROR del servidor es un rechazo
         // con mensaje para el usuario, no una falla de comunicación.
         if (response.length == 2 && "ERROR".equals(response[0])) {

@@ -7,11 +7,13 @@
   <top><HBox spacing="20" alignment="CENTER_LEFT" styleClass="screen-header">
    <VBox spacing="8" HBox.hgrow="ALWAYS">
     <Label text="Atención de personas" styleClass="screen-title"/>
+    <Label fx:id="sessionUserLabel" wrapText="true" minHeight="-Infinity" styleClass="secondary-text"/>
     <ComboBox fx:id="assignmentCombo" editable="false" disable="true" promptText="Pendiente de consulta" accessibleText="Asignación de operador y ventanilla" prefWidth="330" maxWidth="420" minHeight="44"/>
    </VBox>
    <Label fx:id="connectionStatusLabel" text="Pendiente de consulta" wrapText="true" minHeight="-Infinity" styleClass="connection-status"/>
    <Button fx:id="reloadAssignmentsButton" text="Actualizar asignaciones" disable="true" onAction="#reloadAssignments" minHeight="44" styleClass="secondary-button"/>
-   <Button fx:id="reportsButton" text="Consultas" disable="true" onAction="#openReports" minHeight="44" styleClass="secondary-button"/>
+   <Button fx:id="reportsButton" text="Consultas" disable="true" onAction="#openReports" minWidth="-Infinity" minHeight="44" styleClass="secondary-button"/>
+   <Button fx:id="logoutButton" text="Cerrar sesión" disable="true" onAction="#logout" minWidth="-Infinity" minHeight="44" styleClass="secondary-button"/>
   </HBox></top>
   <center><ScrollPane fitToWidth="true" fitToHeight="true" styleClass="content-scroll">
    <VBox spacing="16" styleClass="screen-content">

@@ -21,7 +21,6 @@
    <Button fx:id="queryButton" text="Consultar" onAction="#runReport" defaultButton="true" disable="true" minWidth="-Infinity" minHeight="44" styleClass="primary-button"/>
   </HBox>
   <Label fx:id="criterionLabel" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="secondary-text"/>
-  <Label text="Pendiente de autorización: estas consultas todavía no exigen inicio de sesión. El acceso se restringirá cuando exista la autenticación." wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="secondary-text"/>
  </VBox></top>
  <center><VBox spacing="12">
   <padding><Insets top="20" right="32" bottom="12" left="32"/></padding>

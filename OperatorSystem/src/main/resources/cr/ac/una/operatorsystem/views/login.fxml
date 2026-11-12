@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<StackPane xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cr.ac.una.operatorsystem.controller.LoginController" styleClass="operator-screen" stylesheets="@operator.css">
+ <VBox spacing="14" alignment="CENTER_LEFT" maxWidth="420" maxHeight="-Infinity">
+  <padding><Insets top="32" right="32" bottom="32" left="32"/></padding>
+  <Label text="Atención de turnos" styleClass="secondary-text"/>
+  <Label text="Iniciar sesión" styleClass="screen-title"/>
+  <Label fx:id="noticeLabel" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="notice-label"/>
+  <Label text="Usuario" styleClass="field-label"/>
+  <TextField fx:id="usernameField" accessibleText="Usuario" promptText="Nombre de usuario" minHeight="44"/>
+  <Label text="Contraseña" styleClass="field-label"/>
+  <PasswordField fx:id="passwordField" accessibleText="Contraseña" minHeight="44"/>
+  <Label fx:id="errorLabel" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="notice-label"/>
+  <Button fx:id="loginButton" text="Iniciar sesión" onAction="#login" defaultButton="true" disable="true" minHeight="48" maxWidth="Infinity" styleClass="primary-button"/>
+ </VBox>
+</StackPane>
