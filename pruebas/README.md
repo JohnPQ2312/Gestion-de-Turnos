@@ -115,11 +115,14 @@ Al final la herramienta imprime dos consultas para confirmar en phpMyAdmin el es
 
 ## Resultados
 
-| Fecha | Asignación | Respuestas | Turno llamado | Comprobaciones | MySQL |
-| --- | --- | --- | --- | --- | --- |
-| Pendiente | — | — | — | — | — |
+| Fecha | Entorno | Asignación | Respuestas | Turno llamado | Comprobaciones | MySQL |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-11-11 | Ensayo local (ver abajo) | 1 (operador 1, ventanilla 1) | `OK;CALLED` y `ERROR` de ocupación | A002, preferencial | 7 de 7; 20 de 20 repeticiones consistentes | A002 `LLAMADO` en la asignación 1; A001 y B001 `EN_ESPERA` |
+| Pendiente | `gamabasis_p3g9` | — | — | — | — | — |
 
-Pendiente de ejecución contra MySQL. La herramienta se comprobó únicamente contra un servidor simulado: con un servidor que serializa el llamado reportó un llamado y un rechazo por ocupación; con un servidor defectuoso que entregaba dos turnos reportó cuatro comprobaciones fallidas; y se detuvo con una asignación ocupada o inexistente. Esto valida la lógica de la herramienta, no el comportamiento de CoreServer con MySQL.
+**Ensayo local del 11 de noviembre.** Ejecutado por Claude en un entorno aislado, no sobre la base del equipo: MySQL 8.0.46 en la misma máquina, base nueva creada con `database/script borrador.sql` y `database/datos_prueba.sql`, y CoreServer compilado desde `main` (0d6216a) sin modificaciones. Como en ese entorno Maven Central no estaba disponible, el controlador JDBC fue MariaDB Connector/J compilado desde su código fuente, no MySQL Connector/J 9.1.0. Antes de la prueba se generaron A001 (Información general, regular), B001 (Trámites, regular) y A002 (Información general, preferencial). Se llamó primero A002, conforme a la prioridad acordada. La prueba se repitió 20 veces, cada una sobre una base recién creada, y todas terminaron consistentes. Cada `CALL_NEXT` abrió 6 conexiones (unos 30 ms en total, por la ausencia de latencia de red).
+
+Además, la herramienta se comprobó contra servidores simulados (correcto, defectuoso y sin preparación) para validar su propia lógica. Queda pendiente repetir la prueba sobre `gamabasis_p3g9` en una sesión coordinada.
 
 # Prueba de un único turno elegible para dos ventanillas
 
@@ -169,8 +172,9 @@ Al final la herramienta imprime dos consultas para confirmar en phpMyAdmin el es
 
 ## Resultados
 
-| Fecha | Asignaciones | Respuestas | Ventanilla ganadora | Comprobaciones | MySQL |
-| --- | --- | --- | --- | --- | --- |
-| Pendiente | — | — | — | — | — |
+| Fecha | Entorno | Asignaciones | Respuestas | Ventanilla ganadora | Comprobaciones | MySQL |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2026-11-11 | Ensayo local (mismo entorno que la prueba anterior) | 1 (ventanilla 1) y 2 (ventanilla 2) | `OK;CALLED` y `OK;NO_TICKET` | Ventanilla 1 en la ejecución detallada; en 20 repeticiones, la 1 ganó 9 veces y la 2, 11 | 5 de 5; 20 de 20 repeticiones consistentes | A001 `LLAMADO` en la asignación 1; ninguna asignación con más de un turno activo |
+| Pendiente | `gamabasis_p3g9` | — | — | — | — | — |
 
-Pendiente de ejecución contra MySQL. La herramienta se comprobó únicamente contra un servidor simulado: con un servidor que serializa el llamado reportó un llamado y un `OK;NO_TICKET`; con un servidor defectuoso que entregaba el mismo turno a ambas ventanillas reportó tres comprobaciones fallidas; y se detuvo cuando había dos turnos en espera. Esto valida la lógica de la herramienta, no el comportamiento de CoreServer con MySQL.
+En el ensayo local el turno en disputa fue A001 (Información general, regular), compatible con ambas asignaciones según la consulta de preparación. Que la ventanilla ganadora variara entre repeticiones muestra que las dos solicitudes competían realmente por el mismo turno. Queda pendiente repetir la prueba sobre `gamabasis_p3g9` en una sesión coordinada.
