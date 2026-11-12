@@ -1,6 +1,8 @@
 package cr.ac.una.security;
 
 import cr.ac.una.model.AuthenticatedUser;
+import cr.ac.una.model.OperatorAccount;
+import cr.ac.una.model.AccountChange;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
@@ -123,6 +125,20 @@ public final class SessionRegistry {
         Objects.requireNonNull(fingerprint, "La huella de la credencial es obligatoria.");
         sessions.values().removeIf(session -> session.user().operatorId() == operatorId
                 && session.credentialFingerprint().equals(fingerprint));
+    }
+
+    // Revoca solo la versión reemplazada; una confirmación atrasada no cierra accesos nuevos.
+    public void removeSupersededFor(AccountChange change) {
+        OperatorAccount before = change.before();
+        OperatorAccount after = change.after();
+        if (before.equals(after)) return;
+        String previousFingerprint = before.hasCredential()
+                ? PasswordHasher.fingerprint(before.passwordHash()) : "";
+        sessions.values().removeIf(session -> session.user().operatorId() == before.operatorId()
+                && session.credentialFingerprint().equals(previousFingerprint)
+                && session.user().role() == before.role()
+                && session.user().username().equals(before.username())
+                && session.user().name().equals(before.name()));
     }
 
     private void purgeExpired() {

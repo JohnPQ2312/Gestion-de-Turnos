@@ -3,6 +3,8 @@ package cr.ac.una.service;
 import cr.ac.una.exception.AccessDeniedException;
 import cr.ac.una.exception.AccessDeniedException.Reason;
 import cr.ac.una.model.AuthenticatedUser;
+import cr.ac.una.model.AdministrationActor;
+import cr.ac.una.model.AccountChange;
 import cr.ac.una.model.OperatorAccount;
 import cr.ac.una.model.OperatorWindowAssignment;
 import cr.ac.una.model.UserRole;
@@ -105,6 +107,23 @@ public class AuthService {
 
     /** Valida el token y devuelve el funcionario con su rol vigente. */
     public AuthenticatedUser authenticate(String token) {
+        return authenticate(token, false);
+    }
+
+    // La administración revalida siempre, aunque la sesión aún esté en caché.
+    public AdministrationActor administrationActor(String token) {
+        AuthenticatedUser user = authenticate(token, true);
+        requireRole(user, UserRole.ADMIN);
+        SessionRegistry.Session current = sessions.find(token).orElseThrow(() ->
+                new AccessDeniedException(Reason.SESSION_EXPIRED, "La sesión terminó. Inicie sesión de nuevo."));
+        return new AdministrationActor(user.operatorId(), current.credentialFingerprint());
+    }
+
+    public void accountChanged(AccountChange change) {
+        sessions.removeSupersededFor(change);
+    }
+
+    private AuthenticatedUser authenticate(String token, boolean forceRevalidation) {
         if (token == null || token.isBlank()) {
             throw new AccessDeniedException(
                     Reason.UNAUTHENTICATED, "Debe iniciar sesión para esta operación."
@@ -117,7 +136,7 @@ public class AuthService {
                         "La sesión venció o fue cerrada. Inicie sesión de nuevo."
                 ));
 
-        if (!sessions.needsRevalidation(session)) {
+        if (!forceRevalidation && !sessions.needsRevalidation(session)) {
             sessions.touch(token);
             return session.user();
         }

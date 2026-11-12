@@ -1,6 +1,8 @@
 package cr.ac.una.operatorsystem;
 
 import cr.ac.una.operatorsystem.client.AuthServerClient;
+import cr.ac.una.operatorsystem.client.PeopleServerClient;
+import cr.ac.una.operatorsystem.controller.PeopleController;
 import cr.ac.una.operatorsystem.client.OperatorServerClient;
 import cr.ac.una.operatorsystem.client.ReportServerClient;
 import cr.ac.una.operatorsystem.controller.LoginController;
@@ -33,6 +35,8 @@ public class App extends Application {
     private UserSession session;
     private LoginController loginController;
     private OperatorController controller;
+    private Stage peopleStage;
+    private PeopleController peopleController;
     private Stage reportsStage;
     private ReportsController reportsController;
 
@@ -93,6 +97,8 @@ public class App extends Application {
             if (session.isAdmin()) {
                 ReportServerClient reportClient = new ReportServerClient(HOST, PORT, session);
                 controller.configureReports(() -> openReports(reportClient));
+                PeopleServerClient peopleClient = new PeopleServerClient(HOST, PORT, session);
+                controller.configurePeople(() -> openPeople(peopleClient));
             } else {
                 controller.hideReports();
             }
@@ -135,6 +141,14 @@ public class App extends Application {
         if (controller != null) {
             controller.close();
             controller = null;
+        }
+        if (peopleController != null) {
+            peopleController.close();
+            peopleController = null;
+        }
+        if (peopleStage != null) {
+            peopleStage.close();
+            peopleStage = null;
         }
         if (reportsController != null) {
             reportsController.close();
@@ -182,6 +196,34 @@ public class App extends Application {
 
         } catch (IOException exception) {
             showOpenError("No se pudo abrir la vista de consultas.", exception);
+        }
+    }
+
+    private void openPeople(PeopleServerClient client) {
+        if (peopleStage != null) {
+            peopleStage.show();
+            peopleStage.toFront();
+            return;
+        }
+        try {
+            FXMLLoader loader = new FXMLLoader(App.class.getResource("/cr/ac/una/operatorsystem/views/people.fxml"));
+            Parent root = loader.load();
+            peopleController = loader.getController();
+            peopleStage = new Stage();
+            peopleStage.initOwner(stage);
+            peopleStage.setTitle("Administración de personas");
+            peopleStage.setScene(new Scene(root, 1180, 780));
+            peopleStage.setMinWidth(980);
+            peopleStage.setMinHeight(650);
+            peopleStage.setOnHidden(event -> {
+                if (peopleController != null) peopleController.close();
+                peopleController = null;
+                peopleStage = null;
+            });
+            peopleController.configure(client, session.operatorId(), this::sessionEnded);
+            peopleStage.show();
+        } catch (IOException exception) {
+            showOpenError("No se pudo abrir la administración de personas.", exception);
         }
     }
 

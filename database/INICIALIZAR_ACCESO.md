@@ -70,3 +70,5 @@ Las herramientas de `pruebas/` utilizan este contrato y solicitan la cuenta de c
 Con la comunicación local (127.0.0.1) las credenciales no salen del equipo. Si se usa la red, el bloque de configuración de red debe agregar un transporte protegido antes de enviar contraseñas fuera del equipo.
 
 El rellamado usa `RECALL_TICKET;<asignación>;<ticket>` y la pantalla pública usa `GET_DISPLAY_SNAPSHOT_V2`. El detalle de esos contratos y su compatibilidad está en [RELLAMADO.md](RELLAMADO.md).
+
+La vista [Administración de personas](ADMINISTRAR_PERSONAS.md), exclusiva de ADMIN, permite gestionar funcionarios y credenciales desde OperatorSystem. Reutiliza este acceso inicial; no crea contraseñas predeterminadas ni reemplaza la preparación de la primera cuenta administrativa.

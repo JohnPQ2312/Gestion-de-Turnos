@@ -21,6 +21,9 @@ import cr.ac.una.server.TurnServer;
 import cr.ac.una.security.PasswordHasher;
 import cr.ac.una.security.SessionRegistry;
 import cr.ac.una.service.AuthService;
+import cr.ac.una.service.PeopleAdministrationService;
+import cr.ac.una.repository.JdbcPeopleAdministrationRepository;
+import cr.ac.una.server.PeopleAdministrationHandler;
 import cr.ac.una.service.ReportService;
 import cr.ac.una.service.TicketAttentionService;
 import cr.ac.una.service.TicketLifecycleService;
@@ -60,21 +63,25 @@ public class App {
 
             DisplayEventHub displayEvents = new DisplayEventHub();
 
+            AuthService authService = new AuthService(
+                    new JdbcAccountRepository(connectionFactory), new PasswordHasher(),
+                    new SessionRegistry(Clock.systemUTC()),
+                    new JdbcOperatorWindowAssignmentRepository(connectionFactory));
+            PeopleAdministrationHandler peopleAdministration = new PeopleAdministrationHandler(
+                    new PeopleAdministrationService(new JdbcPeopleAdministrationRepository(connectionFactory),
+                            new PasswordHasher(), authService));
+
             TurnRequestHandler requestHandler = new TurnRequestHandler(
                     serviceRepository, ticketService, attentionService,
                     new JdbcActiveTicketRepository(connectionFactory), lifecycleService,
                     new JdbcDisplayRepository(connectionFactory), displayEvents,
                     new ReportService(new JdbcReportRepository(connectionFactory)),
-                    new AuthService(
-                            new JdbcAccountRepository(connectionFactory),
-                            new PasswordHasher(),
-                            new SessionRegistry(Clock.systemUTC()),
-                            new JdbcOperatorWindowAssignmentRepository(connectionFactory)
-                    ),
+                    authService,
                     new WindowAvailabilityService(
                             new JdbcWindowAvailabilityRepository(connectionFactory)
                     ),
-                    new TicketRecallService(new JdbcTicketRecallRepository(connectionFactory))
+                    new TicketRecallService(new JdbcTicketRecallRepository(connectionFactory)),
+                    peopleAdministration
             );
 
             TurnServer server = new TurnServer(5000, requestHandler, displayEvents);

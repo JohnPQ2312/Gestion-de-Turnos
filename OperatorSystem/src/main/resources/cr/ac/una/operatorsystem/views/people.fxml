@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cr.ac.una.operatorsystem.controller.PeopleController" styleClass="operator-screen" stylesheets="@operator.css">
+ <top><VBox spacing="10" styleClass="screen-header">
+  <HBox spacing="16" alignment="CENTER_LEFT">
+   <Label text="Administración de personas" styleClass="screen-title" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+   <Button fx:id="reloadButton" text="Actualizar" onAction="#reload" minHeight="44" minWidth="-Infinity" styleClass="secondary-button"/>
+  </HBox>
+  <Label text="Gestione el personal que accede al sistema y los usuarios relacionados con los turnos." wrapText="true" minHeight="-Infinity" styleClass="secondary-text"/>
+ </VBox></top>
+ <center><BorderPane fx:id="content">
+  <center><TabPane tabClosingPolicy="UNAVAILABLE">
+   <tabs>
+    <Tab text="Funcionarios">
+     <SplitPane dividerPositions="0.60">
+      <items>
+       <VBox spacing="12" minWidth="320">
+        <padding><Insets top="20" right="16" bottom="20" left="24"/></padding>
+        <HBox alignment="CENTER_LEFT" spacing="12">
+         <Label text="Personal registrado" styleClass="field-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+         <Button text="Nuevo funcionario" onAction="#newOperator" minHeight="40" minWidth="-Infinity" styleClass="secondary-button"/>
+        </HBox>
+        <TableView fx:id="operatorsTable" accessibleText="Funcionarios registrados" VBox.vgrow="ALWAYS">
+         <placeholder><Label text="Sin funcionarios para mostrar."/></placeholder>
+        </TableView>
+       </VBox>
+       <ScrollPane fitToWidth="true" minWidth="340" styleClass="content-scroll">
+        <VBox spacing="12">
+         <padding><Insets top="20" right="24" bottom="24" left="20"/></padding>
+         <Label fx:id="operatorSelection" styleClass="screen-title"/>
+         <Label text="Nombre" styleClass="field-label"/>
+         <TextField fx:id="operatorName" accessibleText="Nombre del funcionario" prefHeight="40"/>
+         <Label text="Nombre de acceso" styleClass="field-label"/>
+         <TextField fx:id="operatorUsername" accessibleText="Nombre de acceso del funcionario" prefHeight="40"/>
+         <Label text="Perfil" styleClass="field-label"/>
+         <ComboBox fx:id="operatorRole" accessibleText="Perfil del funcionario" maxWidth="Infinity" minHeight="40"/>
+         <CheckBox fx:id="operatorActive" text="Funcionario activo"/>
+         <Separator/>
+         <Label text="Contraseña inicial o nueva" styleClass="field-label"/>
+         <PasswordField fx:id="operatorPassword" accessibleText="Contraseña inicial o nueva" prefHeight="40"/>
+         <Label fx:id="credentialLabel" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="secondary-text"/>
+         <Button fx:id="saveOperatorButton" onAction="#saveOperator" minHeight="44" maxWidth="Infinity" styleClass="primary-button"/>
+         <Button fx:id="resetPasswordButton" text="Restablecer contraseña" onAction="#resetPassword" minHeight="44" maxWidth="Infinity" styleClass="secondary-button"/>
+        </VBox>
+       </ScrollPane>
+      </items>
+     </SplitPane>
+    </Tab>
+    <Tab text="Usuarios de turnos">
+     <SplitPane dividerPositions="0.60">
+      <items>
+       <VBox spacing="12" minWidth="320">
+        <padding><Insets top="20" right="16" bottom="20" left="24"/></padding>
+        <HBox alignment="CENTER_LEFT" spacing="12">
+         <Label text="Usuarios registrados" styleClass="field-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+         <Button text="Nuevo usuario" onAction="#newUser" minHeight="40" minWidth="-Infinity" styleClass="secondary-button"/>
+        </HBox>
+        <TableView fx:id="usersTable" accessibleText="Usuarios relacionados con turnos" VBox.vgrow="ALWAYS">
+         <placeholder><Label text="Sin usuarios para mostrar."/></placeholder>
+        </TableView>
+       </VBox>
+       <ScrollPane fitToWidth="true" minWidth="340" styleClass="content-scroll">
+        <VBox spacing="12">
+         <padding><Insets top="20" right="24" bottom="24" left="20"/></padding>
+         <Label fx:id="userSelection" styleClass="screen-title"/>
+         <Label text="Estos usuarios no son cuentas de acceso del personal. No es obligatorio registrar uno para emitir un turno." wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="secondary-text"/>
+         <Label text="Nombre de usuario" styleClass="field-label"/>
+         <TextField fx:id="userUsername" accessibleText="Nombre del usuario de turnos" prefHeight="40"/>
+         <CheckBox fx:id="userActive" text="Usuario activo"/>
+         <Button fx:id="saveUserButton" onAction="#saveUser" minHeight="44" maxWidth="Infinity" styleClass="primary-button"/>
+         <Label text="Las bajas conservan el historial. Un usuario con turnos pendientes no puede darse de baja." wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="secondary-text"/>
+        </VBox>
+       </ScrollPane>
+      </items>
+     </SplitPane>
+    </Tab>
+   </tabs>
+  </TabPane></center>
+ </BorderPane></center>
+ <bottom><VBox spacing="8" styleClass="action-bar">
+  <Label fx:id="noticeLabel" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="summary-label"/>
+ </VBox></bottom>
+</BorderPane>

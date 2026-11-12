@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.*?>
 <StackPane xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cr.ac.una.operatorsystem.controller.OperatorController" styleClass="operator-screen" stylesheets="@operator.css">
  <BorderPane fx:id="workspace">
-  <top><HBox spacing="20" alignment="CENTER_LEFT" styleClass="screen-header">
+  <top><FlowPane hgap="16" vgap="12" alignment="CENTER_LEFT" styleClass="screen-header">
    <VBox spacing="8" HBox.hgrow="ALWAYS">
     <Label text="Atención de personas" styleClass="screen-title"/>
     <Label fx:id="sessionUserLabel" wrapText="true" minHeight="-Infinity" styleClass="secondary-text"/>
@@ -13,8 +13,9 @@
    <Label fx:id="connectionStatusLabel" text="Pendiente de consulta" wrapText="true" minWidth="100" minHeight="-Infinity" styleClass="connection-status"/>
    <Button fx:id="reloadAssignmentsButton" text="Actualizar asignaciones" disable="true" onAction="#reloadAssignments" minWidth="-Infinity" minHeight="44" styleClass="secondary-button"/>
    <Button fx:id="reportsButton" text="Consultas" disable="true" onAction="#openReports" minWidth="-Infinity" minHeight="44" styleClass="secondary-button"/>
+   <Button fx:id="peopleButton" text="Personas" visible="false" managed="false" disable="true" onAction="#openPeople" minWidth="-Infinity" minHeight="44" styleClass="secondary-button"/>
    <Button fx:id="logoutButton" text="Cerrar sesión" disable="true" onAction="#logout" minWidth="-Infinity" minHeight="44" styleClass="secondary-button"/>
-  </HBox></top>
+  </FlowPane></top>
   <center><ScrollPane fitToWidth="true" fitToHeight="true" styleClass="content-scroll">
    <VBox spacing="16" styleClass="screen-content">
     <Label text="Turno actual" styleClass="field-label"/>
