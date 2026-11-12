@@ -120,3 +120,57 @@ Al final la herramienta imprime dos consultas para confirmar en phpMyAdmin el es
 | Pendiente | — | — | — | — | — |
 
 Pendiente de ejecución contra MySQL. La herramienta se comprobó únicamente contra un servidor simulado: con un servidor que serializa el llamado reportó un llamado y un rechazo por ocupación; con un servidor defectuoso que entregaba dos turnos reportó cuatro comprobaciones fallidas; y se detuvo con una asignación ocupada o inexistente. Esto valida la lógica de la herramienta, no el comportamiento de CoreServer con MySQL.
+
+# Prueba de un único turno elegible para dos ventanillas
+
+`SingleEligibleTicketCheck.java` envía `CALL_NEXT` desde dos asignaciones distintas, liberados por una señal común, cuando existe un solo turno en espera compatible con ambas. Comprueba que solo una ventanilla obtenga el turno y que la otra reciba `OK;NO_TICKET`.
+
+## Preparación
+
+Coordinar con el equipo quién prepara los datos y cuándo se ejecuta. Nadie debe generar ni llamar turnos durante la prueba.
+
+1. Iniciar CoreServer.
+2. Comprobar que las dos asignaciones (por defecto, operador 1 en ventanilla 1 y operador 2 en ventanilla 2) estén libres.
+3. Dejar exactamente un turno `EN_ESPERA` en todo el sistema, compatible con ambas asignaciones.
+
+La herramienta se detiene si alguna asignación no existe o no está libre, o si no hay exactamente un turno en espera. La compatibilidad se comprueba antes en MySQL; la consulta siguiente debe devolver dos filas, una por asignación, con el mismo turno:
+
+```sql
+SELECT a.assignment_id, a.window_id, t.visual_code, t.`priority`, w.attention_mode
+FROM ticket t
+JOIN operator_window_assignment a ON a.assignment_id IN (1, 2)   -- cambiar por las asignaciones de la prueba
+JOIN operator_service os ON os.operator_id = a.operator_id AND os.service_code = t.service_id
+JOIN window_service ws ON ws.window_id = a.window_id AND ws.service_code = t.service_id
+JOIN `window` w ON w.window_id = a.window_id
+JOIN service s ON s.service_code = t.service_id AND s.service_state = 'ACTIVO'
+WHERE t.ticket_state = 'EN_ESPERA'
+  AND (w.attention_mode = 'MIXED' OR t.`priority` = TRUE);
+```
+
+## Ejecución
+
+Desde PowerShell, en la raíz del repositorio:
+
+```powershell
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+java '-Dstdout.encoding=UTF-8' '-Dstderr.encoding=UTF-8' pruebas/SingleEligibleTicketCheck.java 1 1 2 2
+```
+
+Los números son operador y ventanilla de la primera asignación y de la segunda. No reintenta escrituras.
+
+## Resultado esperado
+
+- Exactamente una ventanilla recibe `OK;CALLED` con el turno en disputa.
+- La otra recibe `OK;NO_TICKET`. Un `ERROR` o un segundo `OK;CALLED` cuenta como falla.
+- `GET_ACTIVE_TICKET` muestra el turno `LLAMADO` en la ventanilla ganadora y ningún turno activo en la otra.
+- No quedan turnos en espera.
+
+Al final la herramienta imprime dos consultas para confirmar en phpMyAdmin el estado del turno y que cada asignación tiene como máximo un turno activo.
+
+## Resultados
+
+| Fecha | Asignaciones | Respuestas | Ventanilla ganadora | Comprobaciones | MySQL |
+| --- | --- | --- | --- | --- | --- |
+| Pendiente | — | — | — | — | — |
+
+Pendiente de ejecución contra MySQL. La herramienta se comprobó únicamente contra un servidor simulado: con un servidor que serializa el llamado reportó un llamado y un `OK;NO_TICKET`; con un servidor defectuoso que entregaba el mismo turno a ambas ventanillas reportó tres comprobaciones fallidas; y se detuvo cuando había dos turnos en espera. Esto valida la lógica de la herramienta, no el comportamiento de CoreServer con MySQL.
