@@ -80,6 +80,9 @@ public class App extends Application {
                     client::listAssignments, client::callNext, client::getActiveTicket,
                     client::startAttention, client::finishAttention
             );
+            controller.configurePause(
+                    client::getWindowState, client::pauseWindow, client::resumeWindow
+            );
             controller.configureSession(
                     session.name() + " · " + session.username() + " · " + session.role(),
                     this::logout,

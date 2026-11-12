@@ -29,11 +29,13 @@
      <Label text="Finalizado" styleClass="attention-step"/>
     </HBox>
     <Label fx:id="ticketStateLabel" text="Estado sin confirmar" styleClass="ticket-state"/>
+    <Label fx:id="windowStateLabel" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="secondary-text"/>
     <Label fx:id="activeTicketLabel" text="Seleccione una asignación para consultar su turno." wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="ticket-hint"/>
    </VBox>
   </ScrollPane></center>
   <bottom><HBox spacing="24" alignment="CENTER_LEFT" styleClass="action-bar">
    <Label fx:id="lastFinishedLabel" text="Sin finalizaciones desde esta ventana." wrapText="true" minHeight="-Infinity" minWidth="0" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="summary-label"/>
+   <Button fx:id="pauseButton" text="Pausar ventanilla" disable="true" onAction="#togglePause" minWidth="-Infinity" minHeight="48" styleClass="secondary-button"/>
    <StackPane minWidth="205" prefWidth="205">
     <Button fx:id="callNextButton" text="Llamar siguiente" disable="true" onAction="#callNext" minHeight="48" maxWidth="Infinity" styleClass="primary-button"/>
     <Button fx:id="startAttentionButton" text="Iniciar atención" disable="true" onAction="#startAttention" visible="false" managed="false" minHeight="48" maxWidth="Infinity" styleClass="primary-button"/>

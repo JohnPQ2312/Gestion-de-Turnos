@@ -202,6 +202,40 @@ public class OperatorServerClient {
         }
     }
 
+    // Estado operativo de la ventanilla de la asignación (ACTIVA, PAUSADA o
+    // INACTIVA). Las tres solicitudes responden OK;WINDOW_STATE;ventanilla;estado.
+    public String getWindowState(long assignmentId) throws IOException {
+        return windowState(request("GET_WINDOW_STATE;" + requireAssignment(assignmentId)));
+    }
+
+    public String pauseWindow(long assignmentId) throws IOException {
+        return windowState(request("PAUSE_WINDOW;" + requireAssignment(assignmentId)));
+    }
+
+    public String resumeWindow(long assignmentId) throws IOException {
+        return windowState(request("RESUME_WINDOW;" + requireAssignment(assignmentId)));
+    }
+
+    private static long requireAssignment(long assignmentId) {
+        if (assignmentId <= 0) {
+            throw new IllegalArgumentException("Seleccione una asignación válida.");
+        }
+        return assignmentId;
+    }
+
+    private String windowState(String[] response) throws IOException {
+        if (response.length != 4 || !"WINDOW_STATE".equals(response[1])) {
+            throw new IOException("La respuesta del estado de la ventanilla no es válida.");
+        }
+        positiveInt(response[2], "ventanilla");
+
+        String state = response[3];
+        if (!"ACTIVA".equals(state) && !"PAUSADA".equals(state) && !"INACTIVA".equals(state)) {
+            throw new IOException("El estado de la ventanilla no es válido.");
+        }
+        return state;
+    }
+
     private int positiveInt(String value, String field) throws IOException {
         long number = positiveLong(value, field);
         if (number > Integer.MAX_VALUE) {

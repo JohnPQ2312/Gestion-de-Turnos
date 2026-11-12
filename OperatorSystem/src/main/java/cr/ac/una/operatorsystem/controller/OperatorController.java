@@ -13,6 +13,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -46,6 +47,13 @@ public class OperatorController {
     public interface AttentionRequest {
 
         void execute(long assignmentId, long ticketId) throws IOException;
+    }
+
+    /** Consulta o cambia el estado de la ventanilla; devuelve el estado resultante. */
+    @FunctionalInterface
+    public interface WindowStateRequest {
+
+        String apply(long assignmentId) throws IOException;
     }
 
     private enum AttentionOperation {
@@ -97,6 +105,15 @@ public class OperatorController {
     @FXML private Button reportsButton;
     @FXML private Button logoutButton;
     @FXML private Label sessionUserLabel;
+    @FXML private Button pauseButton;
+    @FXML private Label windowStateLabel;
+
+    private WindowStateRequest windowStateRequest;
+    private WindowStateRequest pauseRequest;
+    private WindowStateRequest resumeRequest;
+    // Estado de la ventanilla según el servidor; null mientras no se conoce.
+    private String windowState;
+    private boolean pauseInProgress;
 
     private Runnable reportsOpener;
     private Runnable logoutHandler;
@@ -153,6 +170,7 @@ public class OperatorController {
         assignmentCombo.valueProperty().addListener((observable, previous, selected) -> {
             activeTicketKnown = false;
             currentTicket = null;
+            windowState = null;
             clearTicketPresentation();
             activeTicketLabel.setText("Seleccione una asignación para consultar su turno.");
             updateControls();
@@ -245,7 +263,13 @@ public class OperatorController {
 
         activeTicketKnown = false;
         currentTicket = null;
+        windowState = null;
         activeTicketLabel.setText("Consultando turno activo...");
+
+        // El estado de la ventanilla se consulta en la misma tarea, después
+        // del turno activo, para que pantalla y botones partan del servidor.
+        WindowStateRequest stateRequest = windowStateRequest;
+        AtomicReference<String> fetchedState = new AtomicReference<>();
 
         Task<Optional<ActiveTicket>> task = new Task<>() {
             @Override
@@ -266,6 +290,10 @@ public class OperatorController {
                     }
                 }
 
+                if (stateRequest != null) {
+                    fetchedState.set(stateRequest.apply(selected.assignmentId()));
+                }
+
                 return active;
             }
         };
@@ -284,13 +312,16 @@ public class OperatorController {
             Optional<ActiveTicket> active = task.getValue();
             activeTicketKnown = true;
             currentTicket = active.orElse(null);
+            windowState = fetchedState.get();
 
             if (currentTicket != null) {
                 showTicket(currentTicket.visualCode(), currentTicket.serviceName(),
                         currentTicket.operatorId(), currentTicket.windowId(), currentTicket.state());
             } else {
                 clearTicketPresentation();
-                activeTicketLabel.setText("Puede llamar al siguiente turno compatible.");
+                activeTicketLabel.setText("PAUSADA".equals(windowState)
+                        ? "Ventanilla en pausa. Reanúdela para llamar turnos."
+                        : "Puede llamar al siguiente turno compatible.");
             }
 
             setBusy(false);
@@ -643,12 +674,16 @@ public class OperatorController {
                 || !activeTicketKnown || assignmentCombo.getValue() == null;
 
         assignmentCombo.setDisable(closed || busy || !assignmentsLoaded || noAssignments);
-        callNextButton.setDisable(actionsBlocked || currentTicket != null || callNextRequest == null);
+        // Con la pausa configurada, solo se llama si el servidor confirmó ACTIVA.
+        boolean windowAllowsCall = windowStateRequest == null || "ACTIVA".equals(windowState);
+        callNextButton.setDisable(actionsBlocked || currentTicket != null || callNextRequest == null
+                || !windowAllowsCall);
         startAttentionButton.setDisable(actionsBlocked || startAttentionRequest == null
                 || currentTicket == null || !"LLAMADO".equals(currentTicket.state()));
         finishAttentionButton.setDisable(actionsBlocked || finishAttentionRequest == null
                 || currentTicket == null || !"EN_ATENCION".equals(currentTicket.state()));
         reloadAssignmentsButton.setDisable(closed || busy || assignmentsRequest == null);
+        updatePauseControls(actionsBlocked);
         updatePresentation();
     }
 
@@ -688,6 +723,90 @@ public class OperatorController {
         if (!closed && reportsOpener != null) {
             reportsOpener.run();
         }
+    }
+
+    /** Habilita la pausa y reanudación de la ventanilla (§4.3). */
+    public void configurePause(
+            WindowStateRequest windowStateRequest,
+            WindowStateRequest pauseRequest,
+            WindowStateRequest resumeRequest
+    ) {
+        this.windowStateRequest = Objects.requireNonNull(
+                windowStateRequest, "La consulta del estado de la ventanilla es obligatoria."
+        );
+        this.pauseRequest = Objects.requireNonNull(pauseRequest, "La pausa es obligatoria.");
+        this.resumeRequest = Objects.requireNonNull(resumeRequest, "La reanudación es obligatoria.");
+        updateControls();
+    }
+
+    @FXML
+    private void togglePause() {
+        if (busy || closed || !assignmentsLoaded || !activeTicketKnown || pauseInProgress) {
+            return;
+        }
+
+        OperatorAssignment selected = assignmentCombo.getValue();
+        boolean pausing = "ACTIVA".equals(windowState);
+        boolean resuming = "PAUSADA".equals(windowState);
+        WindowStateRequest request = pausing ? pauseRequest : resuming ? resumeRequest : null;
+        if (selected == null || request == null) {
+            return;
+        }
+
+        Task<String> task = new Task<>() {
+            @Override
+            protected String call() throws IOException {
+                return request.apply(selected.assignmentId());
+            }
+        };
+
+        task.setOnSucceeded(event -> {
+            if (closed) {
+                return;
+            }
+            pauseInProgress = false;
+            windowState = task.getValue();
+            setBusy(false);
+            loadActiveTicket(null);
+        });
+
+        task.setOnFailed(event -> {
+            if (closed) {
+                return;
+            }
+            pauseInProgress = false;
+            if (handleAccessDenied(task.getException())) {
+                return;
+            }
+            // Sin confirmación no se repite la operación: se consulta el
+            // estado guardado en el servidor.
+            windowState = null;
+            setBusy(false);
+            showFailure(pausing
+                    ? "No se confirmó la pausa. Se consultará el estado actual de la ventanilla."
+                    : "No se confirmó la reanudación. Se consultará el estado actual de la ventanilla.",
+                    task.getException());
+            loadActiveTicket(null);
+        });
+
+        pauseInProgress = true;
+        startTask(task);
+    }
+
+    private void updatePauseControls(boolean actionsBlocked) {
+        boolean paused = "PAUSADA".equals(windowState);
+
+        pauseButton.setDisable(actionsBlocked || pauseInProgress || windowStateRequest == null
+                || !("ACTIVA".equals(windowState) || paused));
+        pauseButton.setText(pauseInProgress ? (paused ? "Reanudando..." : "Pausando...")
+                : paused ? "Reanudar ventanilla" : "Pausar ventanilla");
+
+        windowStateLabel.setText(windowState == null ? ""
+                : paused ? "Ventanilla en pausa: no se llaman turnos nuevos."
+                : "INACTIVA".equals(windowState) ? "Ventanilla dada de baja."
+                : "Ventanilla disponible.");
+        windowStateLabel.getStyleClass().removeAll("notice-label", "secondary-text");
+        windowStateLabel.getStyleClass().add(paused ? "notice-label" : "secondary-text");
     }
 
     /**
