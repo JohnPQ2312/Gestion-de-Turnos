@@ -13,12 +13,13 @@ import java.util.concurrent.*;
  * y los demás turnos que estaban en espera siguen en espera.
  *
  * No reintenta ninguna escritura. Uso:
- *   java pruebas/SameAssignmentCallingCheck.java [operador] [ventanilla]
+ *   ver pruebas/README.md (Ejecutar.ps1 SameAssignmentCallingCheck)
  * Por defecto utiliza el operador 1 en la ventanilla 1.
  */
 public class SameAssignmentCallingCheck {
     private static final String HOST = "127.0.0.1";
-    private static final int PORT = 5000;
+    private static final int PORT = Integer.getInteger("turnos.pruebas.puerto", 5000);
+    private static final TestAccess ACCESS = new TestAccess(HOST, PORT);
     private static final int SNAPSHOT_WAITING_LIMIT = 50;
     private static final int TICKET_FIELDS = 7;
     private static final String OCCUPIED_MESSAGE
@@ -48,7 +49,7 @@ public class SameAssignmentCallingCheck {
         }
 
         String request(String command) throws IOException {
-            output.write(command);
+            output.write(ACCESS.authorize(command));
             output.newLine();
             output.flush();
             String response = input.readLine();
@@ -74,7 +75,7 @@ public class SameAssignmentCallingCheck {
     }
 
     private static Assignment findAssignment(int operator, int window) throws IOException {
-        String[] response = fields(request("LIST_ASSIGNMENTS"));
+        String[] response = fields(ACCESS.listAssignments(operator));
         if (response.length < 3 || !"OK".equals(response[0]) || !"ASSIGNMENTS".equals(response[1])
                 || response.length != 3 + 3 * Integer.parseInt(response[2])) {
             throw new IllegalStateException("No se recibió una lista válida de asignaciones.");
@@ -82,7 +83,9 @@ public class SameAssignmentCallingCheck {
         for (int index = 3; index < response.length; index += 3) {
             if (Integer.parseInt(response[index + 1]) == operator
                     && Integer.parseInt(response[index + 2]) == window) {
-                return new Assignment(Long.parseLong(response[index]), operator, window);
+                Assignment assignment = new Assignment(Long.parseLong(response[index]), operator, window);
+                ACCESS.bindAssignment(assignment.id(), operator);
+                return assignment;
             }
         }
         throw new IllegalStateException("No aparece una asignación activa del operador " + operator
@@ -152,10 +155,12 @@ public class SameAssignmentCallingCheck {
     }
 
     public static void main(String[] args) {
-        int operator = args.length >= 1 ? Integer.parseInt(args[0]) : 1;
-        int window = args.length >= 2 ? Integer.parseInt(args[1]) : 1;
-
+        int exitCode = 1;
         try {
+            if (args.length > 2) throw new IllegalArgumentException("Se admite operador y ventanilla.");
+            int operator = args.length >= 1 ? Integer.parseInt(args[0]) : 1;
+            int window = args.length >= 2 ? Integer.parseInt(args[1]) : 1;
+            if (operator <= 0 || window <= 0) throw new IllegalArgumentException("Los identificadores deben ser positivos.");
             System.out.println("PRUEBA DE DOS LLAMADOS SIMULTÁNEOS SOBRE UNA MISMA ASIGNACIÓN - "
                     + LocalDateTime.now());
 
@@ -247,6 +252,7 @@ public class SameAssignmentCallingCheck {
                     "La espera bajó exactamente en uno (" + waitingBefore.size() + " -> "
                     + waitingAfter.size() + ")");
 
+            exitCode = failures.isEmpty() ? 0 : 1;
             System.out.println(failures.isEmpty()
                     ? "RESULTADO: UN SOLO LLAMADO Y UN RECHAZO POR OCUPACIÓN. ESTADO CONSISTENTE."
                     : "RESULTADO: REVISAR. Fallaron " + failures.size()
@@ -264,9 +270,13 @@ public class SameAssignmentCallingCheck {
                     + "el turno llamado queda LLAMADO para inspeccionarlo.");
 
         } catch (Exception exception) {
+            exitCode = 1;
             System.err.println("PRUEBA DETENIDA: " + exception);
             System.err.println("Consultar la asignación y revisar CoreServer antes de repetir la prueba.");
+        } finally {
+            ACCESS.close();
         }
+        if (exitCode != 0) System.exit(exitCode);
     }
 
     private static String quoted(Set<String> codes) {

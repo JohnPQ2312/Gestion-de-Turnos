@@ -1,0 +1,77 @@
+CoreServer escuchando en el puerto 33318
+[tiempo] LIST_SERVICES | procesamiento 44 ms | apertura de conexiones 5 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 39 ms | OK;SERVICES
+[tiempo] LIST_SERVICES | procesamiento 4 ms | apertura de conexiones 3 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;SERVICES
+[tiempo] GENERATE_TICKET | procesamiento 27 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 23 ms | OK;TICKET
+[tiempo] LOGIN | procesamiento 212 ms | apertura de conexiones 3 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 209 ms | OK;LOGIN
+[tiempo] AUTH:LIST_ASSIGNMENTS | procesamiento 27 ms | apertura de conexiones 16 ms (exitosas 7, fallidas 0) | resto: consultas, bloqueos y lógica 11 ms | OK;ASSIGNMENTS
+PASS | Clientes de producción: acceso, asignación propia y emisión
+[tiempo] LIST_ASSIGNMENTS | procesamiento 1 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | DENIED
+[tiempo] CALL_NEXT | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] GET_ACTIVE_TICKET | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] START_ATTENTION | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] FINISH_ATTENTION | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] GET_WINDOW_STATE | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] PAUSE_WINDOW | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] RESUME_WINDOW | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] REPORT_ATTENDED | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+PASS | Protocolo niega operaciones protegidas sin sesión
+[tiempo] AUTH:LIST_ASSIGNMENTS | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] LOGIN | procesamiento 164 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 162 ms | OK;LOGIN
+[tiempo] AUTH:CALL_NEXT | procesamiento 4 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | DENIED
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 3 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | DENIED
+[tiempo] AUTH:PAUSE_WINDOW | procesamiento 2 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:RESUME_WINDOW | procesamiento 2 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:GET_WINDOW_STATE | procesamiento 2 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:START_ATTENTION | procesamiento 2 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:FINISH_ATTENTION | procesamiento 2 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:REPORT_ATTENDED | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+PASS | Protocolo niega token falso, asignación ajena y reporte a OPERADOR
+[tiempo]  | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | ERROR
+[tiempo] DESCONOCIDO | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | ERROR
+[tiempo] GENERATE_TICKET | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | ERROR
+[tiempo] GENERATE_TICKET | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | ERROR
+[tiempo] GENERATE_TICKET | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | ERROR
+[tiempo] LOGIN | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | ERROR
+[tiempo] AUTH:CALL_NEXT | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] LIST_SERVICES | procesamiento 2 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;SERVICES
+PASS | Formato inválido y límites no tumban el servidor ni escriben datos
+[tiempo] GENERATE_TICKET | procesamiento 8 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;TICKET
+[tiempo] LOGIN | procesamiento 131 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 129 ms | OK;LOGIN
+[tiempo] AUTH:CALL_NEXT | procesamiento 25 ms | apertura de conexiones 14 ms (exitosas 7, fallidas 0) | resto: consultas, bloqueos y lógica 11 ms | OK;CALLED
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 8 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;ACTIVE_TICKET
+[tiempo] AUTH:PAUSE_WINDOW | procesamiento 8 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;WINDOW_STATE
+[tiempo] AUTH:LIST_ASSIGNMENTS | procesamiento 19 ms | apertura de conexiones 14 ms (exitosas 7, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;ASSIGNMENTS
+[tiempo] AUTH:START_ATTENTION | procesamiento 9 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;ATTENTION_STARTED
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 5 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;ACTIVE_TICKET
+[tiempo] AUTH:FINISH_ATTENTION | procesamiento 8 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 4 ms | OK;ATTENTION_FINISHED
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 5 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;NO_ACTIVE_TICKET
+[tiempo] AUTH:GET_WINDOW_STATE | procesamiento 5 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;WINDOW_STATE
+[tiempo] AUTH:RESUME_WINDOW | procesamiento 6 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 3 ms | OK;WINDOW_STATE
+PASS | Ciclo TCP con pausa y recuperación del turno activo
+[tiempo] LOGIN | procesamiento 134 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 132 ms | OK;LOGIN
+[tiempo] AUTH:REPORT_ATTENDED | procesamiento 8 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 6 ms | OK;REPORT_ATTENDED
+[tiempo] AUTH:REPORT_BY_OPERATOR | procesamiento 4 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 3 ms | OK;REPORT_BY_OPERATOR
+[tiempo] AUTH:REPORT_BY_SERVICE | procesamiento 4 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;REPORT_BY_SERVICE
+[tiempo] AUTH:REPORT_WAIT_TIMES | procesamiento 5 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 3 ms | OK;REPORT_WAIT_TIMES
+[tiempo] AUTH:REPORT_ATTENTION_TIMES | procesamiento 3 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;REPORT_ATTENTION_TIMES
+PASS | Cinco clientes de reportes ADMIN y rango mayor de un año
+[tiempo] GENERATE_TICKET | procesamiento 8 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 4 ms | OK;TICKET
+[tiempo] GET_DISPLAY_SNAPSHOT | procesamiento 5 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 4 ms | OK;DISPLAY_SNAPSHOT
+[tiempo] LOGIN | procesamiento 130 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 129 ms | OK;LOGIN
+[tiempo] AUTH:CALL_NEXT | procesamiento 21 ms | apertura de conexiones 13 ms (exitosas 7, fallidas 0) | resto: consultas, bloqueos y lógica 8 ms | OK;CALLED
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 4 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;ACTIVE_TICKET
+[tiempo] AUTH:START_ATTENTION | procesamiento 6 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 3 ms | OK;ATTENTION_STARTED
+[tiempo] AUTH:FINISH_ATTENTION | procesamiento 7 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 4 ms | OK;ATTENTION_FINISHED
+PASS | Dos suscripciones reciben creación, llamado, inicio y final
+[tiempo] GET_DISPLAY_SNAPSHOT | procesamiento 3 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;DISPLAY_SNAPSHOT
+PASS | Suscripción nueva recupera snapshot completo sin duplicados
+PASS | Heartbeat no se interpreta como cambio
+PASS | Cliente sin confirmación no reintenta emisión automáticamente
+[tiempo] LIST_SERVICES | procesamiento 3 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;SERVICES
+PASS | Cliente recupera disponibilidad después de un fallo de conexión
+[tiempo] LOGIN | procesamiento 132 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 130 ms | OK;LOGIN
+[tiempo] AUTH:LOGOUT | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | OK;LOGOUT
+[tiempo] AUTH:LIST_ASSIGNMENTS | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] LOGIN | procesamiento 135 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 133 ms | OK;LOGIN
+PASS | Cierre de sesión invalida token y un registro nuevo no lo hereda
+RESULTADO | 12 casos aprobados, 0 fallidos

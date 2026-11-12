@@ -13,12 +13,13 @@ import java.util.concurrent.*;
  * OK;NO_TICKET. Ninguna recibe el mismo turno dos veces.
  *
  * No reintenta ninguna escritura. Uso:
- *   java pruebas/SingleEligibleTicketCheck.java [op1] [vent1] [op2] [vent2]
+ *   ver pruebas/README.md (Ejecutar.ps1 SingleEligibleTicketCheck)
  * Por defecto: operador 1 en ventanilla 1 y operador 2 en ventanilla 2.
  */
 public class SingleEligibleTicketCheck {
     private static final String HOST = "127.0.0.1";
-    private static final int PORT = 5000;
+    private static final int PORT = Integer.getInteger("turnos.pruebas.puerto", 5000);
+    private static final TestAccess ACCESS = new TestAccess(HOST, PORT);
     private static final int TICKET_FIELDS = 7;
 
     private record Assignment(long id, int operator, int window) {}
@@ -42,7 +43,7 @@ public class SingleEligibleTicketCheck {
         }
 
         String request(String command) throws IOException {
-            output.write(command);
+            output.write(ACCESS.authorize(command));
             output.newLine();
             output.flush();
             String response = input.readLine();
@@ -67,11 +68,18 @@ public class SingleEligibleTicketCheck {
                 .toArray(String[]::new);
     }
 
-    private static Assignment findAssignment(String[] list, int operator, int window) {
+    private static Assignment findAssignment(int operator, int window) throws IOException {
+        String[] list = fields(ACCESS.listAssignments(operator));
+        if (list.length < 3 || !"OK".equals(list[0]) || !"ASSIGNMENTS".equals(list[1])
+                || list.length != 3 + 3 * Integer.parseInt(list[2])) {
+            throw new IllegalStateException("No se recibió una lista válida de asignaciones propias.");
+        }
         for (int index = 3; index < list.length; index += 3) {
             if (Integer.parseInt(list[index + 1]) == operator
                     && Integer.parseInt(list[index + 2]) == window) {
-                return new Assignment(Long.parseLong(list[index]), operator, window);
+                Assignment assignment = new Assignment(Long.parseLong(list[index]), operator, window);
+                ACCESS.bindAssignment(assignment.id(), operator);
+                return assignment;
             }
         }
         throw new IllegalStateException("No aparece una asignación activa del operador " + operator
@@ -132,23 +140,20 @@ public class SingleEligibleTicketCheck {
     }
 
     public static void main(String[] args) {
-        int[] values = {1, 1, 2, 2};
-        for (int index = 0; index < Math.min(args.length, 4); index++) {
-            values[index] = Integer.parseInt(args[index]);
-        }
-
+        int exitCode = 1;
         try {
+            if (args.length > 4) throw new IllegalArgumentException("Se admiten op1, vent1, op2 y vent2.");
+            int[] values = {1, 1, 2, 2};
+            for (int index = 0; index < args.length; index++) {
+                values[index] = Integer.parseInt(args[index]);
+                if (values[index] <= 0) throw new IllegalArgumentException("Los identificadores deben ser positivos.");
+            }
             System.out.println("PRUEBA DE UN ÚNICO TURNO ELEGIBLE PARA DOS VENTANILLAS - "
                     + LocalDateTime.now());
 
             // 1. Preparación: dos asignaciones distintas, libres, y un solo turno en espera.
-            String[] list = fields(request("LIST_ASSIGNMENTS"));
-            if (list.length < 3 || !"OK".equals(list[0]) || !"ASSIGNMENTS".equals(list[1])
-                    || list.length != 3 + 3 * Integer.parseInt(list[2])) {
-                throw new IllegalStateException("No se recibió una lista válida de asignaciones.");
-            }
-            Assignment first = findAssignment(list, values[0], values[1]);
-            Assignment second = findAssignment(list, values[2], values[3]);
+            Assignment first = findAssignment(values[0], values[1]);
+            Assignment second = findAssignment(values[2], values[3]);
             if (first.id() == second.id() || first.window() == second.window()
                     || first.operator() == second.operator()) {
                 throw new IllegalStateException("Las dos asignaciones deben tener operador y ventanilla distintos.");
@@ -239,6 +244,7 @@ public class SingleEligibleTicketCheck {
             check(failures, waitingAfter.isEmpty(),
                     "No quedan turnos en espera (quedan: " + waitingAfter + ")");
 
+            exitCode = failures.isEmpty() ? 0 : 1;
             System.out.println(failures.isEmpty()
                     ? "RESULTADO: UNA SOLA VENTANILLA OBTUVO EL TURNO Y LA OTRA NO RECIBIÓ NINGUNO. ESTADO CONSISTENTE."
                     : "RESULTADO: REVISAR. Fallaron " + failures.size()
@@ -256,8 +262,12 @@ public class SingleEligibleTicketCheck {
                     + "el turno llamado queda LLAMADO para inspeccionarlo.");
 
         } catch (Exception exception) {
+            exitCode = 1;
             System.err.println("PRUEBA DETENIDA: " + exception);
             System.err.println("Consultar las asignaciones y revisar CoreServer antes de repetir la prueba.");
+        } finally {
+            ACCESS.close();
         }
+        if (exitCode != 0) System.exit(exitCode);
     }
 }

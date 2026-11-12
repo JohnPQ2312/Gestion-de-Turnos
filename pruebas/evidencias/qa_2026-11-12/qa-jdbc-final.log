@@ -1,0 +1,33 @@
+PASS | Instalación limpia del DDL y datos ficticios
+PASS | Migraciones conservan historial y alcanzan esquema actual
+PASS | Catálogo, asignaciones y caracteres Unicode
+PASS | Consecutivos por servicio, preferencia y persistencia
+PASS | Servicio inactivo no emite ni consume consecutivo
+PASS | Generación simultánea: 32 turnos sin repetidos ni saltos
+PASS | Llamado respeta prioridad y FIFO entre compatibles
+PASS | Ventanilla exclusiva no llama regulares
+PASS | Intersección de habilitaciones excluye servicios ajenos
+PASS | Dos ventanillas llaman simultáneamente (10 rondas)
+PASS | Misma asignación: exactamente un llamado y un rechazo (8 rondas)
+PASS | Último turno compartido: solo una ventanilla lo recibe
+PASS | Pausa sin turno impide llamado, reanudación lo permite
+PASS | Pausa permite iniciar/finalizar y conserva asignación e historial
+PASS | Pausa y llamado simultáneos mantienen coherencia (6 rondas)
+PASS | Pausa/reanudación duplicadas e identificadores inválidos
+PASS | Transiciones inválidas no modifican el turno
+PASS | Cronología inmediata: emitir/llamar/iniciar/finalizar sin esperas (20 rondas)
+PASS | Restricciones SQL impiden estados, cronología y activos duplicados
+PASS | Pantalla limita filas, prioriza y conserva llamados finalizados
+PASS | Cinco reportes: límites de día, ceros, espera y atención
+PASS | Rangos inválidos y consultas vacías
+PASS | Error SQL al guardar consecutivo revierte también el ticket insertado
+PASS | Consecutivo agotado se rechaza sin desbordar ni insertar
+PASS | Servicio sin fila de secuencia falla sin dejar datos parciales
+PASS | Colisión de código se rechaza y revierte la transacción
+PASS | Operador y ventanilla inactivos impiden nuevos llamados
+PASS | Asignación cerrada no se llama, pausa ni reanuda
+PASS | Acceso JDBC: credenciales, Unicode, inactivo, roles y pertenencia
+PASS | Sesión: caducidad por inactividad y duración absoluta
+PASS | Cambio de rol y estado se revalida sin reiniciar servidor
+PASS | Cambio de contraseña revoca sesiones antiguas y conserva nuevas
+RESULTADO | 32 casos aprobados, 0 fallidos

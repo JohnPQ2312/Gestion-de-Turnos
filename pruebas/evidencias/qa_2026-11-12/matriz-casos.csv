@@ -1,0 +1,61 @@
+﻿Área,Caso,Resultado
+MySQL,Instalación limpia del DDL y datos ficticios,APROBADO
+MySQL,Migraciones conservan historial y alcanzan esquema actual,APROBADO
+MySQL,"Catálogo, asignaciones y caracteres Unicode",APROBADO
+MySQL,"Consecutivos por servicio, preferencia y persistencia",APROBADO
+MySQL,Servicio inactivo no emite ni consume consecutivo,APROBADO
+MySQL,Generación simultánea: 32 turnos sin repetidos ni saltos,APROBADO
+MySQL,Llamado respeta prioridad y FIFO entre compatibles,APROBADO
+MySQL,Ventanilla exclusiva no llama regulares,APROBADO
+MySQL,Intersección de habilitaciones excluye servicios ajenos,APROBADO
+MySQL,Dos ventanillas llaman simultáneamente (10 rondas),APROBADO
+MySQL,Misma asignación: exactamente un llamado y un rechazo (8 rondas),APROBADO
+MySQL,Último turno compartido: solo una ventanilla lo recibe,APROBADO
+MySQL,"Pausa sin turno impide llamado, reanudación lo permite",APROBADO
+MySQL,Pausa permite iniciar/finalizar y conserva asignación e historial,APROBADO
+MySQL,Pausa y llamado simultáneos mantienen coherencia (6 rondas),APROBADO
+MySQL,Pausa/reanudación duplicadas e identificadores inválidos,APROBADO
+MySQL,Transiciones inválidas no modifican el turno,APROBADO
+MySQL,Cronología inmediata: emitir/llamar/iniciar/finalizar sin esperas (20 rondas),APROBADO
+MySQL,"Restricciones SQL impiden estados, cronología y activos duplicados",APROBADO
+MySQL,"Pantalla limita filas, prioriza y conserva llamados finalizados",APROBADO
+MySQL,"Cinco reportes: límites de día, ceros, espera y atención",APROBADO
+MySQL,Rangos inválidos y consultas vacías,APROBADO
+MySQL,Error SQL al guardar consecutivo revierte también el ticket insertado,APROBADO
+MySQL,Consecutivo agotado se rechaza sin desbordar ni insertar,APROBADO
+MySQL,Servicio sin fila de secuencia falla sin dejar datos parciales,APROBADO
+MySQL,Colisión de código se rechaza y revierte la transacción,APROBADO
+MySQL,Operador y ventanilla inactivos impiden nuevos llamados,APROBADO
+MySQL,"Asignación cerrada no se llama, pausa ni reanuda",APROBADO
+MySQL,"Acceso JDBC: credenciales, Unicode, inactivo, roles y pertenencia",APROBADO
+MySQL,Sesión: caducidad por inactividad y duración absoluta,APROBADO
+MySQL,Cambio de rol y estado se revalida sin reiniciar servidor,APROBADO
+MySQL,Cambio de contraseña revoca sesiones antiguas y conserva nuevas,APROBADO
+Sockets,"Clientes de producción: acceso, asignación propia y emisión",APROBADO
+Sockets,Protocolo niega operaciones protegidas sin sesión,APROBADO
+Sockets,"Protocolo niega token falso, asignación ajena y reporte a OPERADOR",APROBADO
+Sockets,Formato inválido y límites no tumban el servidor ni escriben datos,APROBADO
+Sockets,Ciclo TCP con pausa y recuperación del turno activo,APROBADO
+Sockets,Cinco clientes de reportes ADMIN y rango mayor de un año,APROBADO
+Sockets,"Dos suscripciones reciben creación, llamado, inicio y final",APROBADO
+Sockets,Suscripción nueva recupera snapshot completo sin duplicados,APROBADO
+Sockets,Heartbeat no se interpreta como cambio,APROBADO
+Sockets,Cliente sin confirmación no reintenta emisión automáticamente,APROBADO
+Sockets,Cliente recupera disponibilidad después de un fallo de conexión,APROBADO
+Sockets,Cierre de sesión invalida token y un registro nuevo no lo hereda,APROBADO
+Interfaz,"Generador: FXML/CSS real, selección obligatoria y tildes",APROBADO
+Interfaz,Generador: doble clic emite una vez y reinicio limpia preferencia,APROBADO
+Interfaz,Generador: catálogo vacío se puede actualizar sin reiniciar,APROBADO
+Interfaz,Generador: fallo inicial ofrece reconexión y luego recupera catálogo,APROBADO
+Interfaz,Operador: asignación propia y consultas ocultas para OPERADOR,APROBADO
+Interfaz,Operador: pausa bloquea llamado y reanudación lo habilita,APROBADO
+Interfaz,Operador: llamado/inicio/finalización con confirmación y cancelación,APROBADO
+Interfaz,Cabecera ADMIN permanece visible en ancho mínimo,APROBADO
+Interfaz,"Pantalla pública: snapshot, aviso de emisión y reloj vivo",APROBADO
+Interfaz,"Acceso: FXML, clave enmascarada y validación de campos vacíos",APROBADO
+Interfaz,Consultas: FXML y ejecución real de los cinco tipos,APROBADO
+Interfaz,Cerrar pantalla durante consulta impide actualizaciones tardías,APROBADO
+Interfaz,Confirmación perdida: la interfaz advierte y no vuelve a emitir,APROBADO
+Interfaz,Pantalla conserva filas al desconectarse y recupera nuevos datos,APROBADO
+Interfaz,App.stop devuelve el control sin esperar a un servidor que no responde,APROBADO
+Interfaz,Aviso de confirmación perdida completo en tamaño mínimo,APROBADO

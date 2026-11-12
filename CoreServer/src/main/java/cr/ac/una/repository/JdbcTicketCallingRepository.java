@@ -370,7 +370,8 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, ticket.getAssignmentId());
-            statement.setTimestamp(2, Timestamp.valueOf(ticket.getCalledAt()));
+            // TIMESTAMP guarda segundos: truncar evita que MySQL redondee al futuro.
+            statement.setTimestamp(2, Timestamp.valueOf(ticket.getCalledAt().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)));
             statement.setLong(3, ticketId);
 
             if (statement.executeUpdate() != 1) {

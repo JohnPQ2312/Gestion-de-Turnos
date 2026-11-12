@@ -6,7 +6,7 @@ Sistema de gestión de turnos en Java, organizado en cuatro proyectos Maven que 
 | --- | --- |
 | `CoreServer` | Entidades, reglas de atención, repositorios y servidor TCP. Catálogo, generación y ciclo de atención persistente en MySQL. |
 | `CostumerTurn` | Pantalla de solicitud de turnos y confirmación, conectada al servidor. |
-| `OperatorSystem` | Consulta de asignaciones, llamado, inicio, finalización y recuperación del turno actual mediante el servidor. |
+| `OperatorSystem` | Inicio de sesión, asignaciones propias, pausa/reanudación, ciclo de atención y consultas para ADMIN. |
 | `QueueDisplayScreen` | Pantalla pública conectada al servidor, con último llamado, ventanilla, llamados recientes, turnos en espera y reloj. |
 
 ## Estado actual
@@ -33,11 +33,15 @@ Las interfaces separan los contratos de creación (`TicketCreationRepository`), 
 
 La escucha y las consultas se ejecutan sobre un hilo virtual. El controlador actualiza JavaFX mediante `Platform.runLater` y mantiene el reloj con `Timeline`. Si falla la conexión o una consulta, conserva los datos visibles, muestra que están desactualizados y vuelve a intentar la suscripción después de dos segundos. Al reconectar obtiene una captura completa. Al cerrar la pantalla detiene el reloj, cierra el canal e interrumpe la escucha. La hora de última actualización permanece fija mientras no se reciben nuevos datos; el reloj sigue avanzando.
 
+OperatorSystem exige sesión: cada funcionario atiende únicamente sus asignaciones; ADMIN dispone además de las cinco consultas. La pausa de una ventanilla impide llamar turnos nuevos y permite completar el que ya está llamado o en atención. No cierra la asignación ni elimina el historial.
+
 ## Configuración y ejecución
 
 - Utilizar JDK 21 o superior y abrir cada carpeta de proyecto en NetBeans.
 - Los tres clientes utilizan JavaFX 13, con sus FXML ajustados a la misma versión. Java y JavaFX tienen versiones independientes.
 - Disponer de la estructura MySQL del proyecto y de los servicios y filas de `ticket_sequence` inicializados. La estructura está en `database/script borrador.sql`.
+- Para una instalación nueva, ejecutar también `database/datos_prueba.sql`. Para una base existente, revisar las migraciones sin volver a ejecutar el esquema ni los datos iniciales.
+- Inicializar las credenciales y revisar los permisos siguiendo [database/INICIALIZAR_ACCESO.md](database/INICIALIZAR_ACCESO.md). No hay contraseñas predeterminadas.
 - Crear localmente `CoreServer/src/main/resources/db.properties` con las propiedades indicadas debajo. Este archivo está excluido de Git.
 
 ```properties
@@ -49,7 +53,7 @@ db.clave=CONTRASEÑA_LOCAL
 - Iniciar primero `CoreServer` con su clase `cr.ac.una.CoreServer.App` y mantenerlo ejecutándose.
 - Ejecutar `CostumerTurn` con **Run Project**. Se conecta a `127.0.0.1:5000` y carga los servicios automáticamente.
 - Si falla la carga del catálogo, comprobar el servidor y su acceso a MySQL, y utilizar **Reconectar** en el generador.
-- Ejecutar `OperatorSystem` con **Run Project** y seleccionar una asignación. Se conecta a `127.0.0.1:5000`, consulta su turno activo y habilita el llamado si está libre. **Actualizar asignaciones** vuelve a consultar la lista y el estado de la selección conservada.
+- Ejecutar `OperatorSystem` con **Run Project** e iniciar sesión con una cuenta habilitada; después seleccionar su asignación. Se conecta a `127.0.0.1:5000`, consulta su turno activo y habilita el llamado si está libre. **Actualizar asignaciones** vuelve a consultar la lista y el estado de la selección conservada.
 - Para atender, utilizar **Llamar siguiente**, **Iniciar atención** y **Finalizar atención**, en ese orden. Al confirmar que la asignación quedó libre, se habilita un nuevo llamado.
 - El cliente del operador espera hasta 15 segundos por una respuesta. Una espera agotada no demuestra que el llamado haya fallado; la pantalla intenta consultar el estado guardado.
 - Los parámetros de zona horaria permiten convertir los `TIMESTAMP` entre la sesión MySQL y la zona de Java. La configuración es necesaria para comparar correctamente el inicio de las asignaciones.
@@ -83,8 +87,10 @@ La prueba coordinada del 4 de noviembre de 2026 liberó dos solicitudes de llama
 
 ## Continuación
 
-Ampliar las pruebas concurrentes a otros escenarios. Medir y optimizar la duración del llamado: en la ejecución coordinada se observaron 5525 y 6518 ms. Hacer configurables el host y puerto y probar entre computadoras.
+Quedan pendientes el rellamado, la administración de servicios, ventanillas y funcionarios, la gestión de habilitaciones y asignaciones, la configuración de red y las pruebas entre computadoras. Los bloques se incorporan sin alterar el historial existente.
 
-Para completar el proyecto también faltan la autenticación y los permisos, las funciones administrativas, la pausa y el rellamado del operador, los reportes y la validación integral con varios clientes y operadores independientes.
+El acceso, los permisos, la pausa y las cinco consultas ya están implementados. El esquema y los datos iniciales están incluidos; su aplicación a la base compartida debe coordinarse con el equipo.
 
-También quedan pendientes la medición y optimización de la duración del llamado y la revisión de las fechas de los datos de prueba grabados antes del ajuste horario, antes de utilizarlos para validar métricas de espera. También se deben completar las reglas de modificación administrativa, incorporar el script de datos iniciales al repositorio y actualizar los diagramas, documento técnico y presentación.
+La revisión de QA local se documenta en [pruebas/QA_2026-11-12.md](pruebas/QA_2026-11-12.md). Las tres herramientas de concurrencia ya utilizan sesiones propias por funcionario, con inicio y cierre de sesión. Su [ejecución](pruebas/README.md) y [validación](pruebas/QA_herramientas_2026-11-12.md) están documentadas.
+
+Se mantienen pendientes la medición del rendimiento con la base remota, la revisión de las fechas anteriores al ajuste horario y la actualización de diagramas, documento técnico y presentación. Los tiempos de una base local no sustituyen mediciones en el servidor compartido.

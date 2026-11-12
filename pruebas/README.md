@@ -1,10 +1,12 @@
 # Prueba de llamados concurrentes
 
+> Estado actual: las tres herramientas utilizan el protocolo autenticado. `TestAccess` inicia una sesión propia por funcionario, asocia sus asignaciones y cierra las sesiones al terminar. Se conservaron las evidencias históricas. Ver también [QA integral](QA_2026-11-12.md) y [validación de estas correcciones](QA_herramientas_2026-11-12.md).
+
 Esta prueba prepara dos conexiones a CoreServer y libera sus solicitudes CALL_NEXT desde una misma señal. Comprueba las respuestas y vuelve a leer los turnos activos mediante el servidor. CoreServer ejecuta las operaciones reales sobre la base configurada.
 
 ## Preparación
 
-1. Usar Java 21 o superior e iniciar CoreServer.
+1. Usar JDK 21 o superior e iniciar CoreServer. Cada funcionario de la prueba debe tener una credencial habilitada (ver [inicialización del acceso](../database/INICIALIZAR_ACCESO.md)).
 2. Abrir los dos operadores y comprobar las asignaciones del operador 1 con ventanilla 1 y del operador 2 con ventanilla 2.
 3. Completar las atenciones existentes para que ambas asignaciones queden libres.
 4. Preparar dos turnos preferenciales de Información general como primeros turnos de la lista de espera.
@@ -18,12 +20,39 @@ Desde PowerShell, en la raíz del repositorio y con el JDK disponible en PATH:
 
 ```powershell
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-java '-Dstdout.encoding=UTF-8' '-Dstderr.encoding=UTF-8' pruebas/ConcurrentCallingCheck.java
+.\pruebas\Ejecutar.ps1 -Prueba ConcurrentCallingCheck
 ```
 
-También se puede sustituir java por la ruta completa al ejecutable del JDK. La prueba utiliza 127.0.0.1:5000. No necesita las credenciales de la base.
+El lanzador compila las cuatro clases auxiliares en `pruebas/.build`; los `.class` están excluidos de Git. La prueba utiliza 127.0.0.1:5000. No necesita las credenciales de la base: solicita el usuario y la contraseña de los funcionarios 1 y 2. Cada cuenta solo consulta y utiliza sus propias asignaciones.
 
 Envía dos llamados y deja los turnos llamados para inspeccionarlos. Si se agota la espera, revisar la consola de CoreServer y las asignaciones guardadas antes de repetir. La herramienta no reintenta escrituras automáticamente.
+
+## Acceso y resultados de las herramientas
+
+- Ingresar la cuenta de cada funcionario solicitado. Una cuenta ADMIN no permite hacerse pasar por otro operador.
+- La contraseña se oculta cuando Java dispone de consola interactiva. Si no existe, se informa que la entrada será visible. No pasar contraseñas ni tokens como argumentos ni guardarlos en archivos de pruebas.
+- Las sesiones se cierran al terminar, incluso ante un error de preparación. Si no se confirma LOGOUT por un corte, se informa y la sesión vence según la política de CoreServer.
+- El proceso devuelve código **0** si pasan las comprobaciones y **1** si la prueba falla o se detiene. Se puede consultar `$LASTEXITCODE` en PowerShell.
+- No se reintentan escrituras automáticamente. Un tiempo de espera agotado exige revisar el estado antes de repetir.
+
+Ejemplos para las otras pruebas:
+
+```powershell
+.\pruebas\Ejecutar.ps1 -Prueba SameAssignmentCallingCheck -Parametros 1,1
+.\pruebas\Ejecutar.ps1 -Prueba SingleEligibleTicketCheck -Parametros 1,1,2,2
+```
+
+`-Puerto` permite utilizar otro servidor **local**, por ejemplo el 33318 del entorno aislado. No configura los clientes de la aplicación ni cambia la conexión MySQL de CoreServer.
+
+Si se prefiere compilar sin el lanzador, desde la raíz del repositorio:
+
+```powershell
+New-Item -ItemType Directory -Path pruebas/.build -Force | Out-Null
+javac -encoding UTF-8 --release 21 -d pruebas/.build pruebas/TestAccess.java pruebas/ConcurrentCallingCheck.java pruebas/SameAssignmentCallingCheck.java pruebas/SingleEligibleTicketCheck.java
+java -cp pruebas/.build ConcurrentCallingCheck
+```
+
+Las herramientas ahora comparten `TestAccess`; no se ejecutan mediante `java pruebas/Nombre.java` de forma aislada.
 
 ## Ejecución observada el 4 de noviembre de 2026
 
@@ -61,11 +90,11 @@ La primera consulta devolvió los dos registros esperados. La segunda devolvió 
 
 ## Alcance y continuación
 
-Se comprobó una ejecución de dos llamados coordinados contra MySQL. Quedan por ampliar escenarios con un solo turno elegible, solicitudes sobre una misma asignación, generación concurrente y fallos de transacción.
+Se comprobó una ejecución de dos llamados coordinados contra MySQL. Los escenarios adicionales con un solo turno elegible, la misma asignación, generación concurrente y fallos de transacción se ensayaron posteriormente en MySQL local; ver [QA integral](QA_2026-11-12.md). Los resultados locales no sustituyen mediciones con la base remota.
 
 Los tiempos de respuesta de 5,5 y 6,5 segundos quedan registrados para medir y optimizar las consultas y conexiones. Son tiempos de llamado completos, distintos del tiempo que tarda la pantalla en mostrar un aviso.
 
-Tras esta ejecución, A008 y A009 permanecen LLAMADO. Para trabajar desde los operadores, utilizar Actualizar asignaciones y revisar el estado recuperado antes de iniciar o finalizar sus atenciones.
+En esa ejecución histórica, A008 y A009 quedaron LLAMADO; su estado actual puede ser distinto. Para trabajar desde los operadores, utilizar Actualizar asignaciones y revisar el estado recuperado antes de iniciar o finalizar sus atenciones.
 
 # Prueba de llamados simultáneos sobre una misma asignación
 
@@ -99,7 +128,7 @@ Desde PowerShell, en la raíz del repositorio:
 
 ```powershell
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-java '-Dstdout.encoding=UTF-8' '-Dstderr.encoding=UTF-8' pruebas/SameAssignmentCallingCheck.java 1 1
+.\pruebas\Ejecutar.ps1 -Prueba SameAssignmentCallingCheck -Parametros 1,1
 ```
 
 Los dos números son el operador y la ventanilla de la asignación. No reintenta escrituras.
@@ -156,7 +185,7 @@ Desde PowerShell, en la raíz del repositorio:
 
 ```powershell
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-java '-Dstdout.encoding=UTF-8' '-Dstderr.encoding=UTF-8' pruebas/SingleEligibleTicketCheck.java 1 1 2 2
+.\pruebas\Ejecutar.ps1 -Prueba SingleEligibleTicketCheck -Parametros 1,1,2,2
 ```
 
 Los números son operador y ventanilla de la primera asignación y de la segunda. No reintenta escrituras.

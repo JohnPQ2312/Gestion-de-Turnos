@@ -7,7 +7,8 @@ import java.util.concurrent.*;
 
 public class ConcurrentCallingCheck {
     private static final String HOST = "127.0.0.1";
-    private static final int PORT = 5000;
+    private static final int PORT = Integer.getInteger("turnos.pruebas.puerto", 5000);
+    private static final TestAccess ACCESS = new TestAccess(HOST, PORT);
 
     private record Assignment(long id, int operator, int window) {}
     private record Result(String response, String error, long sentAt, long durationMs) {}
@@ -30,7 +31,7 @@ public class ConcurrentCallingCheck {
         }
 
         String request(String command) throws IOException {
-            output.write(command);
+            output.write(ACCESS.authorize(command));
             output.newLine();
             output.flush();
             String response = input.readLine();
@@ -55,11 +56,19 @@ public class ConcurrentCallingCheck {
                 .toArray(String[]::new);
     }
 
-    private static Assignment findAssignment(String[] response, int operator, int window) {
+    private static Assignment findAssignment(int operator, int window) throws IOException {
+        String[] response = fields(ACCESS.listAssignments(operator));
+        if (response.length < 3 || !"OK".equals(response[0])
+                || !"ASSIGNMENTS".equals(response[1])
+                || response.length != 3 + 3 * Integer.parseInt(response[2])) {
+            throw new IllegalStateException("No se recibió una lista válida de asignaciones propias.");
+        }
         for (int index = 3; index < response.length; index += 3) {
             if (Integer.parseInt(response[index + 1]) == operator
                     && Integer.parseInt(response[index + 2]) == window) {
-                return new Assignment(Long.parseLong(response[index]), operator, window);
+                Assignment assignment = new Assignment(Long.parseLong(response[index]), operator, window);
+                ACCESS.bindAssignment(assignment.id(), operator);
+                return assignment;
             }
         }
         throw new IllegalStateException("No aparece la asignación activa del operador " + operator
@@ -97,16 +106,12 @@ public class ConcurrentCallingCheck {
     }
 
     public static void main(String[] args) {
+        int exitCode = 1;
         try {
+            if (args.length != 0) throw new IllegalArgumentException("Esta prueba no recibe parámetros.");
             System.out.println("PRUEBA DE DOS LLAMADOS COORDINADOS - " + LocalDateTime.now());
-            String[] assignments = fields(request("LIST_ASSIGNMENTS"));
-            if (assignments.length < 3 || !"OK".equals(assignments[0])
-                    || !"ASSIGNMENTS".equals(assignments[1])
-                    || assignments.length != 3 + 3 * Integer.parseInt(assignments[2])) {
-                throw new IllegalStateException("No se recibió una lista válida de asignaciones.");
-            }
-            Assignment first = findAssignment(assignments, 1, 1);
-            Assignment second = findAssignment(assignments, 2, 2);
+            Assignment first = findAssignment(1, 1);
+            Assignment second = findAssignment(2, 2);
             for (Assignment assignment : List.of(first, second)) {
                 String active = request("GET_ACTIVE_TICKET;" + assignment.id());
                 System.out.println("Antes, asignación " + assignment.id() + ": " + active);
@@ -169,12 +174,17 @@ public class ConcurrentCallingCheck {
             double differenceMs = Math.abs(firstResult.sentAt() - secondResult.sentAt()) / 1_000_000.0;
             System.out.printf(Locale.ROOT, "Separación entre inicios de envío: %.3f ms%n", differenceMs);
             passed &= received.equals(expected);
+            exitCode = passed ? 0 : 1;
             System.out.println(passed ? "RESULTADO: DOS TURNOS DISTINTOS, ASIGNACIONES CORRECTAS."
                     : "RESULTADO: REVISAR RESPUESTAS Y CONSOLA DE CORESERVER.");
             System.out.println("Guardar esta salida y comprobar las filas en MySQL. No se repitió ningún llamado automáticamente.");
         } catch (Exception exception) {
+            exitCode = 1;
             System.err.println("PRUEBA DETENIDA: " + exception);
             System.err.println("Consultar las asignaciones y revisar CoreServer antes de repetir la prueba.");
+        } finally {
+            ACCESS.close();
         }
+        if (exitCode != 0) System.exit(exitCode);
     }
 }

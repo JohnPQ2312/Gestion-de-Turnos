@@ -112,7 +112,7 @@ public class TicketsGeneratorController {
             } else {
                 show(statusLabel, false);
             }
-            genTurnButton.setText("Generar turno");
+            genTurnButton.setText(task.getValue().isEmpty() ? "Actualizar servicios" : "Generar turno");
             setBusy(false);
         });
         task.setOnFailed(event -> {
@@ -131,7 +131,7 @@ public class TicketsGeneratorController {
         if (busy || closed || confirmationShowing || ticketRequest == null) {
             return;
         }
-        if (!catalogLoaded) {
+        if (!catalogLoaded || servicesGroup.getToggles().isEmpty()) {
             loadServices();
             return;
         }
@@ -229,8 +229,8 @@ public class TicketsGeneratorController {
         boolean noServices = servicesGroup.getToggles().isEmpty();
         serviceOptions.setDisable(closed || busy || !catalogLoaded || confirmationShowing);
         priorityCheck.setDisable(closed || busy || !catalogLoaded || noServices || confirmationShowing);
-        genTurnButton.setDisable(closed || busy || confirmationShowing || ticketRequest == null
-                || (catalogLoaded && noServices));
+        // Un catálogo vacío permite consultar de nuevo sin reiniciar la terminal.
+        genTurnButton.setDisable(closed || busy || confirmationShowing || ticketRequest == null);
         genTurnButton.pseudoClassStateChanged(PseudoClass.getPseudoClass("busy"), busy);
     }
 

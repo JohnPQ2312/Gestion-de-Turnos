@@ -20,7 +20,7 @@
                 <Label text="Solicite su turno" styleClass="page-title"/>
                 <Label text="Elija un servicio. Su número aparecerá al terminar." wrapText="true" styleClass="intro"/>
             </VBox>
-            <Label fx:id="statusLabel" wrapText="true" visible="false" managed="false" maxWidth="Infinity" styleClass="status-message"/>
+            <Label fx:id="statusLabel" wrapText="true" minHeight="-Infinity" visible="false" managed="false" maxWidth="Infinity" styleClass="status-message"/>
             <HBox spacing="28" alignment="TOP_LEFT" fillHeight="false" VBox.vgrow="ALWAYS">
                 <VBox fx:id="serviceArea" spacing="12" prefWidth="560" minWidth="300" HBox.hgrow="ALWAYS">
                     <Label text="¿Qué servicio necesita?" styleClass="section-title"/>

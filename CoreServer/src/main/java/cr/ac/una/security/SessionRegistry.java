@@ -118,6 +118,13 @@ public final class SessionRegistry {
         sessions.values().removeIf(session -> session.user().operatorId() == operatorId);
     }
 
+    // Revoca la versión antigua sin cerrar accesos con una clave más reciente.
+    public void removeSessionsWithCredential(int operatorId, String fingerprint) {
+        Objects.requireNonNull(fingerprint, "La huella de la credencial es obligatoria.");
+        sessions.values().removeIf(session -> session.user().operatorId() == operatorId
+                && session.credentialFingerprint().equals(fingerprint));
+    }
+
     private void purgeExpired() {
         Instant now = clock.instant();
         sessions.values().removeIf(session -> isExpired(session, now));

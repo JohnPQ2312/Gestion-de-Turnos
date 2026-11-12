@@ -244,7 +244,8 @@ public class JdbcTicketLifecycleRepository implements TicketLifecycleRepository 
         LocalDateTime transitionTime = starting ? ticket.getStartedAt() : ticket.getEndedAt();
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setTimestamp(1, Timestamp.valueOf(transitionTime));
+            // TIMESTAMP guarda segundos: truncar evita que MySQL redondee al futuro.
+            statement.setTimestamp(1, Timestamp.valueOf(transitionTime.truncatedTo(java.time.temporal.ChronoUnit.SECONDS)));
             statement.setLong(2, ticketId);
             statement.setLong(3, assignmentId);
 

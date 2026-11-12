@@ -4,7 +4,7 @@ OperatorSystem exige iniciar sesión. Ningún funcionario tiene contraseña por 
 
 ## 1. Estructura
 
-- **Base existente** (por ejemplo, la del equipo): aplicar una vez `database/migraciones/001_credenciales_operador.sql`. Solo crea la tabla `operator_credential`; no modifica registros.
+- **Base existente** (por ejemplo, la del equipo): aplicar una vez `database/migraciones/001_credenciales_operador.sql` y después `002_estado_pausada_ventanilla.sql`. La primera crea `operator_credential`; la segunda permite `PAUSADA`. Conservan los registros existentes.
 - **Instalación nueva**: `database/script borrador.sql` ya incluye esa tabla. No aplicar además la migración.
 
 ## 2. Crear la primera cuenta administrativa
@@ -38,12 +38,12 @@ Un funcionario `INACTIVO`, o sin credencial, no puede iniciar sesión.
 
 ### Revocación por cambios en la cuenta
 
-Cada sesión guarda, solo en la memoria del servidor, una huella (SHA-256) del hash de la contraseña con que se inició. Como máximo cada 60 segundos de uso, CoreServer vuelve a leer la cuenta y revoca la sesión si:
+Cada sesión guarda, solo en la memoria del servidor, una huella (SHA-256) del hash de la contraseña con que se inició. En una solicitud protegida, si pasaron al menos 60 segundos desde la última verificación de esa sesión, CoreServer vuelve a leer la cuenta. No hay una tarea que revise las sesiones sin solicitudes. La sesión se revoca si:
 
 - el funcionario quedó `INACTIVO`, pasó a un rol sin acceso o perdió su credencial;
-- la contraseña cambió (la huella ya no coincide). En ese caso se revocan **todas** las sesiones de esa cuenta.
+- la contraseña cambió (la huella ya no coincide). En ese caso se revocan las sesiones que usaron esa credencial anterior; se conservan las iniciadas con la nueva contraseña.
 
-Después de restablecer una contraseña con `CredentialSetup`, los tokens anteriores dejan de autorizar operaciones en un máximo de 60 segundos, la contraseña anterior ya no permite entrar y la nueva sí. La herramienta se ejecuta en otro proceso, por eso no puede cerrar las sesiones del servidor en el acto; la administración de usuarios (bloque 5) podrá revocarlas de inmediato con `AuthService.revokeSessions`.
+Después de restablecer una contraseña con `CredentialSetup`, la contraseña anterior ya no permite entrar y la nueva sí. Un token anterior puede seguir autorizando hasta que corresponda su siguiente revalidación; la primera solicitud protegida después de ese plazo detecta el cambio y lo rechaza. La herramienta se ejecuta en otro proceso, por eso no puede cerrar las sesiones del servidor en el acto; la administración de usuarios (bloque 5) podrá revocarlas de inmediato con `AuthService.revokeSessions`.
 
 ### Cierre al salir de OperatorSystem
 
@@ -63,6 +63,6 @@ Pausa de la ventanilla (migración 002): `GET_WINDOW_STATE;<asignación>`, `PAUS
 
 Los rechazos de acceso responden `DENIED;<motivo>;<mensaje>`, distinto de `ERROR;<mensaje>` de las reglas de negocio. Motivos: `INVALID_CREDENTIALS`, `ACCOUNT_DISABLED`, `UNAUTHENTICATED`, `SESSION_EXPIRED`, `FORBIDDEN`.
 
-Las herramientas de `pruebas/` todavía envían los comandos de atención sin sesión; deben adaptarse a este contrato.
+Las herramientas de `pruebas/` utilizan este contrato y solicitan la cuenta de cada funcionario participante. `TestAccess` asocia cada asignación con su sesión y envía LOGOUT al terminar. Ejecutarlas con `pruebas/Ejecutar.ps1`, según el [procedimiento](../pruebas/README.md). No requieren credenciales MySQL.
 
 Con la comunicación local (127.0.0.1) las credenciales no salen del equipo. Si se usa la red, el bloque de configuración de red debe agregar un transporte protegido antes de enviar contraseñas fuera del equipo.

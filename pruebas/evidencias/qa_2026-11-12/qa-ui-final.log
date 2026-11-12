@@ -1,0 +1,66 @@
+CoreServer escuchando en el puerto 33318
+[tiempo] LIST_SERVICES | procesamiento 40 ms | apertura de conexiones 5 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 35 ms | OK;SERVICES
+[tiempo] LIST_SERVICES | procesamiento 5 ms | apertura de conexiones 4 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;SERVICES
+PASS | Generador: FXML/CSS real, selección obligatoria y tildes
+[tiempo] GENERATE_TICKET | procesamiento 26 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 21 ms | OK;TICKET
+PASS | Generador: doble clic emite una vez y reinicio limpia preferencia
+[tiempo] LIST_SERVICES | procesamiento 4 ms | apertura de conexiones 3 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;SERVICES
+PASS | Generador: catálogo vacío se puede actualizar sin reiniciar
+[tiempo] LIST_SERVICES | procesamiento 4 ms | apertura de conexiones 3 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;SERVICES
+PASS | Generador: fallo inicial ofrece reconexión y luego recupera catálogo
+[tiempo] LOGIN | procesamiento 175 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 173 ms | OK;LOGIN
+[tiempo] AUTH:LIST_ASSIGNMENTS | procesamiento 33 ms | apertura de conexiones 20 ms (exitosas 7, fallidas 0) | resto: consultas, bloqueos y lógica 13 ms | OK;ASSIGNMENTS
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 8 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 3 ms | OK;NO_ACTIVE_TICKET
+[tiempo] AUTH:GET_WINDOW_STATE | procesamiento 8 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 3 ms | OK;WINDOW_STATE
+PASS | Operador: asignación propia y consultas ocultas para OPERADOR
+[tiempo] AUTH:PAUSE_WINDOW | procesamiento 9 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 4 ms | OK;WINDOW_STATE
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 6 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;NO_ACTIVE_TICKET
+[tiempo] AUTH:GET_WINDOW_STATE | procesamiento 6 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;WINDOW_STATE
+[tiempo] AUTH:GET_WINDOW_STATE | procesamiento 7 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;WINDOW_STATE
+[tiempo] AUTH:RESUME_WINDOW | procesamiento 8 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 3 ms | OK;WINDOW_STATE
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 6 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;NO_ACTIVE_TICKET
+[tiempo] AUTH:GET_WINDOW_STATE | procesamiento 6 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;WINDOW_STATE
+PASS | Operador: pausa bloquea llamado y reanudación lo habilita
+[tiempo] AUTH:CALL_NEXT | procesamiento 28 ms | apertura de conexiones 16 ms (exitosas 7, fallidas 0) | resto: consultas, bloqueos y lógica 12 ms | OK;CALLED
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 16 ms | apertura de conexiones 10 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 6 ms | OK;ACTIVE_TICKET
+[tiempo] AUTH:GET_WINDOW_STATE | procesamiento 5 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;WINDOW_STATE
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 6 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;ACTIVE_TICKET
+[tiempo] AUTH:START_ATTENTION | procesamiento 10 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 6 ms | OK;ATTENTION_STARTED
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 6 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;ACTIVE_TICKET
+[tiempo] AUTH:GET_WINDOW_STATE | procesamiento 5 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;WINDOW_STATE
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 7 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;ACTIVE_TICKET
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 5 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;ACTIVE_TICKET
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 7 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;ACTIVE_TICKET
+[tiempo] AUTH:FINISH_ATTENTION | procesamiento 9 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;ATTENTION_FINISHED
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 6 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;NO_ACTIVE_TICKET
+[tiempo] AUTH:GET_WINDOW_STATE | procesamiento 5 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;WINDOW_STATE
+[tiempo] AUTH:GET_ACTIVE_TICKET | procesamiento 5 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;NO_ACTIVE_TICKET
+PASS | Operador: llamado/inicio/finalización con confirmación y cancelación
+[tiempo] LOGIN | procesamiento 277 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 275 ms | OK;LOGIN
+[tiempo] AUTH:LIST_ASSIGNMENTS | procesamiento 21 ms | apertura de conexiones 16 ms (exitosas 7, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;ASSIGNMENTS
+PASS | Cabecera ADMIN permanece visible en ancho mínimo
+[tiempo] GET_DISPLAY_SNAPSHOT | procesamiento 8 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 6 ms | OK;DISPLAY_SNAPSHOT
+[tiempo] GENERATE_TICKET | procesamiento 10 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;TICKET
+[tiempo] GET_DISPLAY_SNAPSHOT | procesamiento 4 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;DISPLAY_SNAPSHOT
+PASS | Pantalla pública: snapshot, aviso de emisión y reloj vivo
+PASS | Acceso: FXML, clave enmascarada y validación de campos vacíos
+[tiempo] LOGIN | procesamiento 146 ms | apertura de conexiones 3 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 143 ms | OK;LOGIN
+[tiempo] AUTH:REPORT_ATTENDED | procesamiento 9 ms | apertura de conexiones 3 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 6 ms | OK;REPORT_ATTENDED
+[tiempo] AUTH:REPORT_BY_OPERATOR | procesamiento 6 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 4 ms | OK;REPORT_BY_OPERATOR
+[tiempo] AUTH:REPORT_BY_SERVICE | procesamiento 8 ms | apertura de conexiones 3 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;REPORT_BY_SERVICE
+[tiempo] AUTH:REPORT_WAIT_TIMES | procesamiento 8 ms | apertura de conexiones 3 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;REPORT_WAIT_TIMES
+[tiempo] AUTH:REPORT_ATTENTION_TIMES | procesamiento 4 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;REPORT_ATTENTION_TIMES
+PASS | Consultas: FXML y ejecución real de los cinco tipos
+PASS | Cerrar pantalla durante consulta impide actualizaciones tardías
+[tiempo] LIST_SERVICES | procesamiento 3 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | OK;SERVICES
+[tiempo] GENERATE_TICKET | procesamiento 10 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;TICKET
+[tiempo] GET_DISPLAY_SNAPSHOT | procesamiento 4 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;DISPLAY_SNAPSHOT
+PASS | Confirmación perdida: la interfaz advierte y no vuelve a emitir
+[tiempo] GET_DISPLAY_SNAPSHOT | procesamiento 6 ms | apertura de conexiones 4 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;DISPLAY_SNAPSHOT
+[tiempo] GENERATE_TICKET | procesamiento 9 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;TICKET
+[tiempo] GET_DISPLAY_SNAPSHOT | procesamiento 5 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 3 ms | OK;DISPLAY_SNAPSHOT
+[tiempo] GET_DISPLAY_SNAPSHOT | procesamiento 5 ms | apertura de conexiones 3 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;DISPLAY_SNAPSHOT
+PASS | Pantalla conserva filas al desconectarse y recupera nuevos datos
+MEDICIÓN | App.stop: 0 ms con servidor silencioso
+PASS | App.stop devuelve el control sin esperar a un servidor que no responde
+RESULTADO | 15 casos aprobados, 0 fallidos

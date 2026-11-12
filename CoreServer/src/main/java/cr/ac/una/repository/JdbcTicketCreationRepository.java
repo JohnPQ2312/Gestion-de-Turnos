@@ -142,7 +142,8 @@ public class JdbcTicketCreationRepository implements TicketCreationRepository {
             statement.setInt(2, ticket.getSequentialNumber());
             statement.setBoolean(3, ticket.isPriority());
             statement.setString(4, ticket.getVisualCode());
-            statement.setTimestamp(5, Timestamp.valueOf(ticket.getCreatedAt()));
+            // TIMESTAMP guarda segundos: truncar evita que MySQL redondee al futuro.
+            statement.setTimestamp(5, Timestamp.valueOf(ticket.getCreatedAt().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)));
 
             if (statement.executeUpdate() != 1) {
                 throw new SQLException("No se insertó el turno esperado.");

@@ -130,11 +130,13 @@ public class AuthService {
             );
         }
 
-        // Contraseña cambiada (por ejemplo, con CredentialSetup): se revocan
-        // todas las sesiones de la cuenta, no solo la que hizo la consulta.
+        // Revocar solo las sesiones que usaron la credencial reemplazada.
+        // Una sesión con la nueva contraseña debe seguir siendo válida.
         String currentFingerprint = PasswordHasher.fingerprint(current.get().passwordHash());
         if (!currentFingerprint.equals(session.credentialFingerprint())) {
-            sessions.removeAllFor(session.user().operatorId());
+            sessions.removeSessionsWithCredential(
+                    session.user().operatorId(), session.credentialFingerprint()
+            );
             throw new AccessDeniedException(
                     Reason.SESSION_EXPIRED, "La contraseña de la cuenta cambió. Inicie sesión de nuevo."
             );
