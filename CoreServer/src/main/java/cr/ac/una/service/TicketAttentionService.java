@@ -60,7 +60,9 @@ public class TicketAttentionService {
                     assignment.getWindowId()
             );
 
-            if (window.isPresent() && window.get().isActive()) {
+            // Una ventanilla en pausa sigue en la lista: su operador debe poder
+            // ver su turno, completarlo y reanudar.
+            if (window.isPresent() && window.get().isOperational()) {
                 activeAssignments.add(assignment);
             }
         }
@@ -99,6 +101,12 @@ public class TicketAttentionService {
                 .orElseThrow(() -> new IllegalStateException(
                 "La ventanilla asignada no existe."
         ));
+
+        if (window.isPaused()) {
+            throw new IllegalStateException(
+                    "La ventanilla está en pausa. Reanúdela para llamar turnos."
+            );
+        }
 
         if (!window.isActive()) {
             throw new IllegalStateException(

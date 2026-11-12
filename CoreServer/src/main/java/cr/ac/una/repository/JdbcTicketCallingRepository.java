@@ -183,8 +183,16 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
             statement.setInt(1, windowId);
 
             try (ResultSet result = statement.executeQuery()) {
-                if (!result.next()
-                        || !"ACTIVA".equals(result.getString("window_state"))) {
+                String state = result.next() ? result.getString("window_state") : null;
+
+                // Se vuelve a comprobar dentro de la transacción: una pausa
+                // confirmada justo antes del llamado lo rechaza.
+                if ("PAUSADA".equals(state)) {
+                    throw new IllegalStateException(
+                            "La ventanilla está en pausa. Reanúdela para llamar turnos."
+                    );
+                }
+                if (!"ACTIVA".equals(state)) {
                     throw new IllegalStateException(
                             "La ventanilla no existe o está inactiva."
                     );

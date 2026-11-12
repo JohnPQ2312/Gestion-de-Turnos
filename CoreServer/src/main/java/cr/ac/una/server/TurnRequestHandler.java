@@ -10,6 +10,7 @@ import cr.ac.una.model.AttendedTicket;
 import cr.ac.una.model.DurationReport;
 import cr.ac.una.model.OperatorAttentionCount;
 import cr.ac.una.model.ReportPeriod;
+import cr.ac.una.model.ServiceWindow;
 import cr.ac.una.model.ServiceTicketCount;
 import cr.ac.una.model.TicketDuration;
 import cr.ac.una.model.DisplaySnapshot;
@@ -24,6 +25,7 @@ import cr.ac.una.service.ReportService;
 import cr.ac.una.service.TicketAttentionService;
 import cr.ac.una.service.TicketLifecycleService;
 import cr.ac.una.service.TicketService;
+import cr.ac.una.service.WindowAvailabilityService;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -50,6 +52,7 @@ public class TurnRequestHandler {
     private final DisplayEventHub displayEvents;
     private final ReportService reportService;
     private final AuthService authService;
+    private final WindowAvailabilityService windowAvailabilityService;
 
     public TurnRequestHandler(
             ServiceRepository serviceRepository,
@@ -60,7 +63,8 @@ public class TurnRequestHandler {
             DisplayRepository displayRepository,
             DisplayEventHub displayEvents,
             ReportService reportService,
-            AuthService authService
+            AuthService authService,
+            WindowAvailabilityService windowAvailabilityService
     ) {
         this.serviceRepository = Objects.requireNonNull(
                 serviceRepository, "El repositorio de servicios es obligatorio."
@@ -88,6 +92,9 @@ public class TurnRequestHandler {
         );
         this.authService = Objects.requireNonNull(
                 authService, "El servicio de acceso es obligatorio."
+        );
+        this.windowAvailabilityService = Objects.requireNonNull(
+                windowAvailabilityService, "El servicio de disponibilidad es obligatorio."
         );
     }
 
@@ -181,6 +188,26 @@ public class TurnRequestHandler {
         if (parts.length == 3 && "FINISH_ATTENTION".equals(parts[0])) {
             authService.requireOwnAssignment(user, parseAssignmentId(parts[1]));
             return finishAttention(parts[1], parts[2]);
+        }
+
+        // Estado operativo de la ventanilla de una asignación propia.
+        // Las tres respuestas: OK;WINDOW_STATE;ventanilla;estado.
+        if (parts.length == 2 && "GET_WINDOW_STATE".equals(parts[0])) {
+            long assignmentId = parseAssignmentId(parts[1]);
+            authService.requireOwnAssignment(user, assignmentId);
+            return windowState(windowAvailabilityService.currentState(assignmentId));
+        }
+
+        if (parts.length == 2 && "PAUSE_WINDOW".equals(parts[0])) {
+            long assignmentId = parseAssignmentId(parts[1]);
+            authService.requireOwnAssignment(user, assignmentId);
+            return windowState(windowAvailabilityService.pause(assignmentId));
+        }
+
+        if (parts.length == 2 && "RESUME_WINDOW".equals(parts[0])) {
+            long assignmentId = parseAssignmentId(parts[1]);
+            authService.requireOwnAssignment(user, assignmentId);
+            return windowState(windowAvailabilityService.resume(assignmentId));
         }
 
         // Reportes de la sección 13: COMANDO;AAAA-MM-DD;AAAA-MM-DD. Solo ADMIN.
@@ -373,6 +400,10 @@ public class TurnRequestHandler {
                 .append(";").append(ticket.windowId() == null ? "" : ticket.windowId())
                 .append(";").append(ticket.calledAt() == null
                 ? "" : encode(ticket.calledAt().toString()));
+    }
+
+    private String windowState(ServiceWindow window) {
+        return "OK;WINDOW_STATE;" + window.getWindowId() + ";" + window.getState().name();
     }
 
     private ReportPeriod parsePeriod(String fromText, String toText) {

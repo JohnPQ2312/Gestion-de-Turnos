@@ -12,6 +12,7 @@ import cr.ac.una.repository.JdbcServiceWindowRepository;
 import cr.ac.una.repository.JdbcTicketCallingRepository;
 import cr.ac.una.repository.JdbcTicketCreationRepository;
 import cr.ac.una.repository.JdbcTicketLifecycleRepository;
+import cr.ac.una.repository.JdbcWindowAvailabilityRepository;
 import cr.ac.una.repository.ServiceRepository;
 import cr.ac.una.repository.TicketCreationRepository;
 import cr.ac.una.server.DisplayEventHub;
@@ -24,6 +25,7 @@ import cr.ac.una.service.ReportService;
 import cr.ac.una.service.TicketAttentionService;
 import cr.ac.una.service.TicketLifecycleService;
 import cr.ac.una.service.TicketService;
+import cr.ac.una.service.WindowAvailabilityService;
 import java.io.IOException;
 import java.time.Clock;
 import java.sql.SQLException;
@@ -66,6 +68,9 @@ public class App {
                             new PasswordHasher(),
                             new SessionRegistry(Clock.systemUTC()),
                             new JdbcOperatorWindowAssignmentRepository(connectionFactory)
+                    ),
+                    new WindowAvailabilityService(
+                            new JdbcWindowAvailabilityRepository(connectionFactory)
                     )
             );
 
