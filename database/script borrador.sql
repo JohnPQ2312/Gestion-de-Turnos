@@ -12,6 +12,23 @@ CREATE TABLE `operator` (
         CHECK (operator_state IN ('ACTIVO', 'INACTIVO'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Credenciales de acceso (migración 001). Ver database/migraciones.
+CREATE TABLE operator_credential (
+    operator_id INT UNSIGNED NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (operator_id),
+
+    CONSTRAINT ck_operator_credential_format
+        CHECK (password_hash LIKE 'pbkdf2_sha256$%'),
+
+    CONSTRAINT fk_operator_credential_operator
+        FOREIGN KEY (operator_id)
+        REFERENCES `operator` (operator_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE TABLE service (
     service_code VARCHAR(20) NOT NULL,
     services_name VARCHAR(80) NOT NULL,

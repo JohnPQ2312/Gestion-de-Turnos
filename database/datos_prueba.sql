@@ -30,10 +30,12 @@ INSERT INTO `operator` (operator_id, operator_name, operator_username, operator_
     (1, 'Ana Mora Solís',      'amora',   'OPERADOR', 'ACTIVO'),
     (2, 'Luis Vargas Rojas',   'lvargas', 'OPERADOR', 'ACTIVO'),
     (3, 'María Jiménez Castro','mjimenez','OPERADOR', 'ACTIVO'),
-    (4, 'Carlos Araya Brenes', 'caraya',  'OPERADOR', 'INACTIVO');
+    (4, 'Carlos Araya Brenes', 'caraya',  'OPERADOR', 'INACTIVO'),
+    (5, 'Administración',      'admin',   'ADMIN',    'ACTIVO');
 
--- La cuenta administrativa se agregará cuando el grupo acuerde el modelo de
--- autenticación (cuentas, contraseñas y roles). No se incluyen contraseñas.
+-- Ningún funcionario recibe contraseña desde este script. Para iniciar
+-- sesión, crear cada credencial con cr.ac.una.config.CredentialSetup
+-- (ver database/INICIALIZAR_ACCESO.md).
 
 -- ---------------------------------------------------------------------
 -- Servicios y su consecutivo (cada servicio necesita su fila en
