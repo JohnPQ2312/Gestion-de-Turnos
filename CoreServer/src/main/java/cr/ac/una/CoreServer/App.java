@@ -5,6 +5,7 @@ import cr.ac.una.repository.JdbcActiveTicketRepository;
 import cr.ac.una.repository.JdbcDisplayRepository;
 import cr.ac.una.repository.JdbcOperatorRepository;
 import cr.ac.una.repository.JdbcOperatorWindowAssignmentRepository;
+import cr.ac.una.repository.JdbcReportRepository;
 import cr.ac.una.repository.JdbcServiceRepository;
 import cr.ac.una.repository.JdbcServiceWindowRepository;
 import cr.ac.una.repository.JdbcTicketCallingRepository;
@@ -15,6 +16,7 @@ import cr.ac.una.repository.TicketCreationRepository;
 import cr.ac.una.server.DisplayEventHub;
 import cr.ac.una.server.TurnRequestHandler;
 import cr.ac.una.server.TurnServer;
+import cr.ac.una.service.ReportService;
 import cr.ac.una.service.TicketAttentionService;
 import cr.ac.una.service.TicketLifecycleService;
 import cr.ac.una.service.TicketService;
@@ -52,7 +54,8 @@ public class App {
             TurnRequestHandler requestHandler = new TurnRequestHandler(
                     serviceRepository, ticketService, attentionService,
                     new JdbcActiveTicketRepository(connectionFactory), lifecycleService,
-                    new JdbcDisplayRepository(connectionFactory), displayEvents
+                    new JdbcDisplayRepository(connectionFactory), displayEvents,
+                    new ReportService(new JdbcReportRepository(connectionFactory))
             );
 
             TurnServer server = new TurnServer(5000, requestHandler, displayEvents);

@@ -11,6 +11,7 @@
    </VBox>
    <Label fx:id="connectionStatusLabel" text="Pendiente de consulta" wrapText="true" minHeight="-Infinity" styleClass="connection-status"/>
    <Button fx:id="reloadAssignmentsButton" text="Actualizar asignaciones" disable="true" onAction="#reloadAssignments" minHeight="44" styleClass="secondary-button"/>
+   <Button fx:id="reportsButton" text="Consultas" disable="true" onAction="#openReports" minHeight="44" styleClass="secondary-button"/>
   </HBox></top>
   <center><ScrollPane fitToWidth="true" fitToHeight="true" styleClass="content-scroll">
    <VBox spacing="16" styleClass="screen-content">

@@ -92,6 +92,9 @@ public class OperatorController {
     @FXML private Label lastFinishedLabel;
     @FXML private Label finishCodeLabel;
     @FXML private Label finishServiceLabel;
+    @FXML private Button reportsButton;
+
+    private Runnable reportsOpener;
     private String displayedCode = "";
     private String displayedService = "";
     private String displayedState = "";
@@ -649,6 +652,24 @@ public class OperatorController {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    /**
+     * Habilita el botón Consultas. App indica cómo abrir la vista de reportes;
+     * este controlador no conoce el cliente ni la ventana de consultas.
+     */
+    public void configureReports(Runnable reportsOpener) {
+        this.reportsOpener = Objects.requireNonNull(
+                reportsOpener, "La apertura de consultas es obligatoria."
+        );
+        reportsButton.setDisable(closed);
+    }
+
+    @FXML
+    private void openReports() {
+        if (!closed && reportsOpener != null) {
+            reportsOpener.run();
+        }
     }
 
     public void close() {
