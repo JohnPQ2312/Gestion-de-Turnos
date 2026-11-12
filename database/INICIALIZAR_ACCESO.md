@@ -57,7 +57,9 @@ Al cerrar la ventana con una sesión abierta, el aviso de `LOGOUT` se envía en 
 | `AUTH;<token>;LOGOUT` | `OK;LOGOUT` |
 | `AUTH;<token>;<comando protegido>` | La respuesta normal del comando |
 
-Comandos protegidos: `LIST_ASSIGNMENTS` (solo devuelve las asignaciones propias), `CALL_NEXT`, `GET_ACTIVE_TICKET`, `START_ATTENTION`, `FINISH_ATTENTION` (solo sobre asignación propia) y los cinco `REPORT_*` (solo ADMIN). Enviados sin `AUTH` se rechazan; no existe un modo anónimo.
+Comandos protegidos: `LIST_ASSIGNMENTS` (solo devuelve las asignaciones propias), `CALL_NEXT`, `GET_ACTIVE_TICKET`, `START_ATTENTION`, `FINISH_ATTENTION`, `GET_WINDOW_STATE`, `PAUSE_WINDOW`, `RESUME_WINDOW` (solo sobre asignación propia) y los cinco `REPORT_*` (solo ADMIN). Enviados sin `AUTH` se rechazan; no existe un modo anónimo.
+
+Pausa de la ventanilla (migración 002): `GET_WINDOW_STATE;<asignación>`, `PAUSE_WINDOW;<asignación>` y `RESUME_WINDOW;<asignación>` responden `OK;WINDOW_STATE;<ventanilla>;<ACTIVA|PAUSADA|INACTIVA>`. En `PAUSADA` se rechaza `CALL_NEXT`, pero el turno en curso puede iniciarse y finalizarse; la asignación sigue en `LIST_ASSIGNMENTS`. Reanudar solo pasa de `PAUSADA` a `ACTIVA`; una ventanilla `INACTIVA` (baja administrativa) no se pausa ni se reanuda.
 
 Los rechazos de acceso responden `DENIED;<motivo>;<mensaje>`, distinto de `ERROR;<mensaje>` de las reglas de negocio. Motivos: `INVALID_CREDENTIALS`, `ACCOUNT_DISABLED`, `UNAUTHENTICATED`, `SESSION_EXPIRED`, `FORBIDDEN`.
 
