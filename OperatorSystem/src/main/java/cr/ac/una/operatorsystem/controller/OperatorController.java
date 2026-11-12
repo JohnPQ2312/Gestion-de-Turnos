@@ -106,6 +106,8 @@ public class OperatorController {
     @FXML private Button reportsButton;
     @FXML private Button peopleButton;
     private Runnable peopleOpener;
+    @FXML private Button assignmentsButton;
+    private Runnable assignmentsOpener;
     @FXML private Button logoutButton;
     @FXML private Label sessionUserLabel;
     @FXML private Button pauseButton;
@@ -748,6 +750,18 @@ public class OperatorController {
      * Habilita el botón Consultas. App indica cómo abrir la vista de reportes;
      * este controlador no conoce el cliente ni la ventana de consultas.
      */
+    public void configureAssignments(Runnable opener) {
+        assignmentsOpener = Objects.requireNonNull(opener);
+        assignmentsButton.setVisible(true);
+        assignmentsButton.setManaged(true);
+        assignmentsButton.setDisable(closed);
+    }
+
+    @FXML
+    private void openAssignments() {
+        if (!closed && assignmentsOpener != null) assignmentsOpener.run();
+    }
+
     public void configurePeople(Runnable opener) {
         peopleOpener = Objects.requireNonNull(opener);
         peopleButton.setVisible(true);

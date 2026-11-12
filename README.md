@@ -6,7 +6,7 @@ Sistema de gestión de turnos en Java, organizado en cuatro proyectos Maven que 
 | --- | --- |
 | `CoreServer` | Entidades, reglas de atención, repositorios y servidor TCP. Catálogo, generación y ciclo de atención persistente en MySQL. |
 | `CostumerTurn` | Pantalla de solicitud de turnos y confirmación, conectada al servidor. |
-| `OperatorSystem` | Inicio de sesión, asignaciones propias, pausa/reanudación, rellamado, ciclo de atención, consultas y administración de personas para ADMIN. |
+| `OperatorSystem` | Inicio de sesión, asignaciones propias, pausa/reanudación, rellamado, ciclo de atención, consultas, administración de personas y configuración de asignaciones para ADMIN. |
 | `QueueDisplayScreen` | Pantalla pública conectada al servidor, con último llamado, ventanilla, llamados recientes, turnos en espera y reloj. |
 
 ## Estado actual
@@ -38,6 +38,8 @@ OperatorSystem exige sesión: cada funcionario atiende únicamente sus asignacio
 El botón **Volver a llamar** conserva el ticket y su primer llamado; actualiza la fecha del último llamado y el contador. La pantalla pública reconoce y destaca la repetición. Solo se permite sobre un turno propio LLAMADO y con la ventanilla ACTIVA. Ver [instalación y funcionamiento del rellamado](database/RELLAMADO.md).
 
 La vista **Personas**, exclusiva de ADMIN, permite gestionar funcionarios, credenciales y usuarios relacionados con los turnos. Conserva el historial, protege al último administrador con acceso y rechaza cambios de rol/estado con asignaciones abiertas. No asigna servicios o ventanillas automáticamente. Ver [uso y contratos](database/ADMINISTRAR_PERSONAS.md) y [pruebas locales](pruebas/QA_personas_2026-11-12.md).
+
+La vista **Asignaciones**, exclusiva de ADMIN, gestiona los servicios habilitados de funcionarios/ventanillas y la apertura/cierre de asignaciones, conservando el historial. La baja de un funcionario con asignación abierta requiere cerrarla primero desde esta vista, después de finalizar su turno y reanudar la ventanilla si estaba pausada. Ver [guía y contratos](database/CONFIGURAR_ATENCION.md) y [pruebas locales](pruebas/QA_asignaciones_2026-11-12.md).
 
 ## Configuración y ejecución
 
@@ -91,9 +93,9 @@ La prueba coordinada del 4 de noviembre de 2026 liberó dos solicitudes de llama
 
 ## Continuación
 
-Quedan pendientes la administración de servicios y ventanillas, la gestión de habilitaciones y asignaciones, la configuración de red y las pruebas entre computadoras. Los bloques se incorporan sin alterar el historial existente.
+Quedan pendientes la administración de servicios y ventanillas, la configuración de red y las pruebas entre computadoras. Los bloques se incorporan sin alterar el historial existente.
 
-El acceso, los permisos, la pausa, el rellamado, las cinco consultas y la administración de personas ya están implementados. El esquema y los datos iniciales están incluidos; su aplicación a la base compartida debe coordinarse con el equipo.
+El acceso, los permisos, la pausa, el rellamado, las cinco consultas y la administración de personas y la gestión de habilitaciones/asignaciones ya están implementados. El esquema y los datos iniciales están incluidos; su aplicación a la base compartida debe coordinarse con el equipo.
 
 La revisión de QA local se documenta en [pruebas/QA_2026-11-12.md](pruebas/QA_2026-11-12.md). Las tres herramientas de concurrencia ya utilizan sesiones propias por funcionario, con inicio y cierre de sesión. Su [ejecución](pruebas/README.md) y [validación](pruebas/QA_herramientas_2026-11-12.md) están documentadas.
 

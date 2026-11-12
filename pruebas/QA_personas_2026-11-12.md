@@ -1,5 +1,7 @@
 # Validación de administración de personas — 12 de noviembre de 2026
 
+> Seguimiento: ya se implementó el bloque de asignaciones. Su [validación](QA_asignaciones_2026-11-12.md) incluye la regresión de Personas; los pendientes de este informe describen su corte anterior.
+
 Base de implementación: `e8dcca8`, más los cambios del bloque de usuarios, funcionarios y credenciales. No se modificó la base compartida para estas pruebas.
 
 ## Resultado

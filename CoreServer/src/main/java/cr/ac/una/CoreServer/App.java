@@ -21,6 +21,9 @@ import cr.ac.una.server.TurnServer;
 import cr.ac.una.security.PasswordHasher;
 import cr.ac.una.security.SessionRegistry;
 import cr.ac.una.service.AuthService;
+import cr.ac.una.service.AssignmentConfigurationService;
+import cr.ac.una.server.AssignmentConfigurationHandler;
+import cr.ac.una.repository.JdbcAssignmentConfigurationRepository;
 import cr.ac.una.service.PeopleAdministrationService;
 import cr.ac.una.repository.JdbcPeopleAdministrationRepository;
 import cr.ac.una.server.PeopleAdministrationHandler;
@@ -81,7 +84,9 @@ public class App {
                             new JdbcWindowAvailabilityRepository(connectionFactory)
                     ),
                     new TicketRecallService(new JdbcTicketRecallRepository(connectionFactory)),
-                    peopleAdministration
+                    peopleAdministration,
+                    new AssignmentConfigurationHandler(new AssignmentConfigurationService(
+                            new JdbcAssignmentConfigurationRepository(connectionFactory)))
             );
 
             TurnServer server = new TurnServer(5000, requestHandler, displayEvents);

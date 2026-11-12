@@ -57,6 +57,7 @@ public class TurnRequestHandler {
     private final WindowAvailabilityService windowAvailabilityService;
     private final TicketRecallService recallService;
     private final PeopleAdministrationHandler peopleAdministration;
+    private final AssignmentConfigurationHandler assignmentConfiguration;
 
     public TurnRequestHandler(
             ServiceRepository serviceRepository,
@@ -87,6 +88,26 @@ public class TurnRequestHandler {
             WindowAvailabilityService windowAvailabilityService,
             TicketRecallService recallService,
             PeopleAdministrationHandler peopleAdministration
+    ) {
+        this(serviceRepository, ticketService, attentionService, activeTicketRepository, lifecycleService,
+                displayRepository, displayEvents, reportService, authService, windowAvailabilityService,
+                recallService, peopleAdministration, null);
+    }
+
+    public TurnRequestHandler(
+            ServiceRepository serviceRepository,
+            TicketService ticketService,
+            TicketAttentionService attentionService,
+            ActiveTicketRepository activeTicketRepository,
+            TicketLifecycleService lifecycleService,
+            DisplayRepository displayRepository,
+            DisplayEventHub displayEvents,
+            ReportService reportService,
+            AuthService authService,
+            WindowAvailabilityService windowAvailabilityService,
+            TicketRecallService recallService,
+            PeopleAdministrationHandler peopleAdministration,
+            AssignmentConfigurationHandler assignmentConfiguration
     ) {
         this.serviceRepository = Objects.requireNonNull(
                 serviceRepository, "El repositorio de servicios es obligatorio."
@@ -120,6 +141,7 @@ public class TurnRequestHandler {
         );
         this.recallService = Objects.requireNonNull(recallService, "El servicio de rellamado es obligatorio.");
         this.peopleAdministration = peopleAdministration;
+        this.assignmentConfiguration = assignmentConfiguration;
     }
 
     /**
@@ -145,6 +167,11 @@ public class TurnRequestHandler {
                     throw new IllegalArgumentException("La solicitud autenticada no es válida.");
                 }
 
+                if (envelope[2].startsWith("ADMIN_ROUTING_")) {
+                    var actor = authService.administrationActor(envelope[1]);
+                    if (assignmentConfiguration == null) throw new IllegalStateException("La configuración de atención no está disponible.");
+                    return assignmentConfiguration.handle(envelope[2], actor);
+                }
                 if (envelope[2].startsWith("ADMIN_PEOPLE_")) {
                     var actor = authService.administrationActor(envelope[1]);
                     if (peopleAdministration == null) throw new IllegalStateException("La administración de personas no está configurada.");
@@ -181,7 +208,7 @@ public class TurnRequestHandler {
     // user es null cuando la solicitud no trae sesión. Los comandos públicos
     // lo ignoran; los protegidos lo exigen y comprueban sus permisos.
     private String dispatch(String request, AuthenticatedUser user) {
-        if (request.startsWith("ADMIN_PEOPLE_")) authService.requireRole(user, UserRole.ADMIN);
+        if (request.startsWith("ADMIN_PEOPLE_") || request.startsWith("ADMIN_ROUTING_")) authService.requireRole(user, UserRole.ADMIN);
         if ("LIST_SERVICES".equals(request)) {
             return listServices();
         }

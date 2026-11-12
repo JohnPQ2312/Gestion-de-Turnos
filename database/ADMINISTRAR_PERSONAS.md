@@ -12,7 +12,7 @@ Esta versión usa las tablas actuales `operator`, `operator_credential` y `app_u
 
 - **Nuevo funcionario:** completar nombre, nombre de acceso, perfil y contraseña inicial. Se crea activo, sin asignaciones ni servicios habilitados automáticamente. La cuenta y su credencial se guardan en una misma transacción.
 - **Editar:** seleccionar una fila, cambiar los datos y guardar. El identificador se conserva. El formulario muestra si tiene una asignación abierta y si dispone de credencial.
-- **Baja/reactivación:** editar la casilla Activo. No se borra la fila ni el historial. Para cambiar el estado o perfil debe cerrarse primero cualquier asignación abierta; el cierre se incorporará en el bloque de asignaciones. Mientras tanto la operación se rechaza con su motivo.
+- **Baja/reactivación:** editar la casilla Activo. No se borra la fila ni el historial. Para cambiar el estado o perfil debe cerrarse primero cualquier asignación abierta; el cierre se realiza desde [Asignaciones](CONFIGURAR_ATENCION.md), finalizando antes cualquier turno activo y reanudando la ventanilla si estaba pausada.
 - **Restablecer contraseña:** seleccionar la fila, ingresar la nueva contraseña y utilizar el botón específico. Guardar cambios no modifica silenciosamente una contraseña ingresada.
 
 La contraseña admite de 8 a 128 caracteres según el componente de hash existente. Las nuevas cuentas y cambios de perfil admiten ADMIN u OPERADOR. SUPERVISOR permanece en el esquema por compatibilidad, sin añadirle acceso ni nuevas funciones.
@@ -39,7 +39,7 @@ Las operaciones JDBC son transaccionales y los accesos de red se ejecutan en seg
 
 La revocación actúa sobre este proceso de CoreServer. No se implementó una coordinación distribuida de sesiones entre varios servidores centrales. Las comprobaciones de cambios concurrentes cubren los recorridos del sistema; SQL externo no participa automáticamente en sus protocolos ni avisos.
 
-El futuro bloque de apertura/cierre de asignaciones debe coordinar sus bloqueos con estas bajas y cambios de perfil. No invertir el orden asignación/operador del llamado ni omitir la comprobación del estado dentro de la transacción.
+El bloque de [habilitaciones y asignaciones](CONFIGURAR_ATENCION.md) coordina la apertura/cierre con estas bajas y cambios de perfil. No invertir el orden asignación/operador del llamado ni omitir la comprobación del estado dentro de la transacción.
 
 ## Contratos de red
 

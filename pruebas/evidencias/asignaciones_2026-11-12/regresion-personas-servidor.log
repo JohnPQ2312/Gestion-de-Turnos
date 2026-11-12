@@ -1,0 +1,55 @@
+CoreServer escuchando en el puerto 33319
+[tiempo] LIST_SERVICES | procesamiento 37 ms | apertura de conexiones 4 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 33 ms | OK;SERVICES
+[tiempo] AUTH:ADMIN_PEOPLE_LIST_OPERATORS | procesamiento 6 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;ADMIN_PEOPLE_OPERATORS
+PASS | Listados con identificadores, estados, credencial y asignación, sin hashes
+PASS | Alta de funcionario y credencial atómica; login real
+PASS | Datos inválidos, rol no habilitado y contraseñas cortas no escriben
+PASS | Duplicado SQL revierte sin crear credenciales huérfanas
+PASS | Fallo SQL tras insertar funcionario revierte también el alta
+PASS | Edición de datos revoca sesión anterior y nuevo login conserva identidad
+PASS | Cambio de rol/estado con asignación abierta rechazado
+PASS | Baja y reactivación sin asignación conservan registro e historial
+PASS | Último ADMIN activo con credencial no puede desactivarse ni degradarse
+PASS | Dos degradaciones simultáneas mantienen un ADMIN utilizable
+PASS | Reset de contraseña invalida clave y sesiones anteriores
+PASS | Invalidación conserva sesiones que ya usan los datos actuales
+PASS | Una revocación administrativa retrasada no elimina sesiones de una versión posterior
+PASS | Identidad ADMIN capturada antes de un reset ya no puede escribir
+PASS | Usuarios de turnos: alta, edición, baja y reactivación sin borrar
+PASS | Usuario con turno pendiente no se desactiva; conserva relación histórica
+PASS | Duplicados de app_user simultáneos dejan una sola alta
+[tiempo] ADMIN_PEOPLE_LIST_OPERATORS | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:ADMIN_PEOPLE_LIST_OPERATORS | procesamiento 2 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | DENIED
+[tiempo] ADMIN_PEOPLE_LIST_USERS | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:ADMIN_PEOPLE_LIST_USERS | procesamiento 2 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | DENIED
+[tiempo] ADMIN_PEOPLE_CREATE_USER | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:ADMIN_PEOPLE_CREATE_USER | procesamiento 2 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | DENIED
+[tiempo] ADMIN_PEOPLE_UPDATE_USER | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:ADMIN_PEOPLE_UPDATE_USER | procesamiento 2 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | DENIED
+[tiempo] ADMIN_PEOPLE_CREATE_OPERATOR | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:ADMIN_PEOPLE_CREATE_OPERATOR | procesamiento 2 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | DENIED
+[tiempo] ADMIN_PEOPLE_UPDATE_OPERATOR | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:ADMIN_PEOPLE_UPDATE_OPERATOR | procesamiento 2 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] ADMIN_PEOPLE_RESET_PASSWORD | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+[tiempo] AUTH:ADMIN_PEOPLE_RESET_PASSWORD | procesamiento 2 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | DENIED
+PASS | Sin sesión y OPERADOR reciben DENIED en todos los comandos
+[tiempo] AUTH:ADMIN_PEOPLE_CREATE_USER | procesamiento 2 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | DENIED
+PASS | Administración revalida rol sin esperar el plazo de caché
+[tiempo] LOGIN | procesamiento 137 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 135 ms | OK;LOGIN
+[tiempo] AUTH:ADMIN_PEOPLE_CREATE_OPERATOR | procesamiento 143 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 139 ms | OK;ADMIN_PEOPLE_OPERATOR_CREATED
+[tiempo] AUTH:ADMIN_PEOPLE_LIST_OPERATORS | procesamiento 5 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;ADMIN_PEOPLE_OPERATORS
+[tiempo] AUTH:ADMIN_PEOPLE_UPDATE_OPERATOR | procesamiento 8 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | OK;ADMIN_PEOPLE_OPERATOR_UPDATED
+[tiempo] AUTH:ADMIN_PEOPLE_RESET_PASSWORD | procesamiento 150 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 146 ms | OK;ADMIN_PEOPLE_PASSWORD_RESET
+[tiempo] AUTH:ADMIN_PEOPLE_CREATE_USER | procesamiento 8 ms | apertura de conexiones 4 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 4 ms | OK;ADMIN_PEOPLE_USER_CREATED
+[tiempo] AUTH:ADMIN_PEOPLE_UPDATE_USER | procesamiento 9 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 6 ms | OK;ADMIN_PEOPLE_USER_UPDATED
+[tiempo] AUTH:ADMIN_PEOPLE_LIST_USERS | procesamiento 5 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 2 ms | OK;ADMIN_PEOPLE_USERS
+PASS | Cliente real: textos codificados, listados y todas las confirmaciones
+[tiempo] AUTH:ADMIN_PEOPLE_UPDATE_USER | procesamiento 2 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | ERROR
+[tiempo] AUTH:ADMIN_PEOPLE_UPDATE_USER | procesamiento 6 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 3 ms | ERROR
+[tiempo] AUTH:ADMIN_PEOPLE_UPDATE_USER | procesamiento 2 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | ERROR
+[tiempo] AUTH:ADMIN_PEOPLE_RESET_PASSWORD | procesamiento 2 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | ERROR
+[tiempo] AUTH:ADMIN_PEOPLE_CREATE_USER | procesamiento 2 ms | apertura de conexiones 1 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 1 ms | ERROR
+[tiempo] AUTH:ADMIN_PEOPLE_UPDATE_OPERATOR | procesamiento 6 ms | apertura de conexiones 3 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 3 ms | ERROR
+PASS | Formato inválido, identificadores y estado inválidos no escriben
+PASS | Concurrencia de bajas y llamado no deja operador inactivo con turno
+RESULTADO | 22 casos aprobados, 0 fallidos

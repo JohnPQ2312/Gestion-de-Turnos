@@ -1,0 +1,34 @@
+CoreServer escuchando en el puerto 33320
+[tiempo] LIST_SERVICES | procesamiento 32 ms | apertura de conexiones 4 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 28 ms | OK;SERVICES
+[tiempo] LOGIN | procesamiento 135 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 133 ms | OK;LOGIN
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 40 ms | apertura de conexiones 16 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 24 ms | OK;ADMIN_ROUTING_SNAPSHOT
+PASS | FXML/CSS real y selección explícita al tamaño mínimo
+PASS | Listado de servicios muestra habilitados y no habilitados
+PASS | Cancelar una habilitación no modifica datos
+[tiempo] AUTH:ADMIN_ROUTING_OPERATOR_SERVICE | procesamiento 14 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 9 ms | OK;ADMIN_ROUTING_OPERATOR_SERVICE
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 13 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 8 ms | OK;ADMIN_ROUTING_SNAPSHOT
+[tiempo] AUTH:ADMIN_ROUTING_OPERATOR_SERVICE | procesamiento 17 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 12 ms | OK;ADMIN_ROUTING_OPERATOR_SERVICE
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 12 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 7 ms | OK;ADMIN_ROUTING_SNAPSHOT
+PASS | Habilitación y retirada de funcionario se confirman y refrescan
+[tiempo] AUTH:ADMIN_ROUTING_WINDOW_SERVICE | procesamiento 14 ms | apertura de conexiones 6 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 8 ms | OK;ADMIN_ROUTING_WINDOW_SERVICE
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 12 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 7 ms | OK;ADMIN_ROUTING_SNAPSHOT
+PASS | Habilitación de ventanilla respeta su tipo de destinatario
+[tiempo] AUTH:ADMIN_ROUTING_OPEN_ASSIGNMENT | procesamiento 24 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 19 ms | OK;ADMIN_ROUTING_ASSIGNMENT_OPENED
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 11 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 6 ms | OK;ADMIN_ROUTING_SNAPSHOT
+[tiempo] AUTH:ADMIN_ROUTING_OPEN_ASSIGNMENT | procesamiento 11 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 6 ms | ERROR
+PASS | Abrir asignación válida muestra la nueva fila y no duplica con otro clic
+[tiempo] AUTH:ADMIN_ROUTING_CLOSE_ASSIGNMENT | procesamiento 14 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 9 ms | OK;ADMIN_ROUTING_ASSIGNMENT_CLOSED
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 11 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 6 ms | OK;ADMIN_ROUTING_SNAPSHOT
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 11 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 6 ms | OK;ADMIN_ROUTING_SNAPSHOT
+PASS | Cerrar conserva historial y deshabilita volver a cerrar esa fila
+[tiempo] AUTH:ADMIN_ROUTING_CLOSE_ASSIGNMENT | procesamiento 10 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 5 ms | ERROR
+PASS | Cierre con turno activo informa rechazo sin cerrar la asignación
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 14 ms | apertura de conexiones 7 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 7 ms | OK;ADMIN_ROUTING_SNAPSHOT
+[tiempo] AUTH:ADMIN_ROUTING_OPEN_ASSIGNMENT | procesamiento 13 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 8 ms | OK;ADMIN_ROUTING_ASSIGNMENT_OPENED
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 11 ms | apertura de conexiones 5 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 6 ms | OK;ADMIN_ROUTING_SNAPSHOT
+PASS | Respuesta perdida no reenvía apertura y exige actualizar para recuperar historial
+PASS | Cabecera ADMIN incluye Personas, Consultas y Asignaciones dentro del ancho mínimo
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 13 ms | apertura de conexiones 6 ms (exitosas 2, fallidas 0) | resto: consultas, bloqueos y lógica 7 ms | OK;ADMIN_ROUTING_SNAPSHOT
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 5 ms | apertura de conexiones 2 ms (exitosas 1, fallidas 0) | resto: consultas, bloqueos y lógica 3 ms | DENIED
+PASS | Pérdida de permiso administrativo notifica regreso al acceso
+RESULTADO | 11 casos aprobados, 0 fallidos

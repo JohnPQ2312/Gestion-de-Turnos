@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cr.ac.una.operatorsystem.controller.AssignmentsController" styleClass="operator-screen" stylesheets="@operator.css">
+ <top><VBox spacing="10" styleClass="screen-header">
+  <HBox alignment="CENTER_LEFT" spacing="16">
+   <Label text="Configuración de atención" styleClass="screen-title" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+   <Button fx:id="reloadButton" text="Actualizar" onAction="#reload" minHeight="44" minWidth="-Infinity" styleClass="secondary-button"/>
+  </HBox>
+  <Label text="Configure los servicios permitidos y la ocupación de ventanillas sin perder el historial de atención." wrapText="true" minHeight="-Infinity" styleClass="secondary-text"/>
+ </VBox></top>
+ <center><BorderPane fx:id="content"><center><TabPane tabClosingPolicy="UNAVAILABLE">
+  <tabs>
+   <Tab text="Servicios habilitados"><VBox spacing="16">
+    <padding><Insets top="20" right="24" bottom="20" left="24"/></padding>
+    <FlowPane hgap="16" vgap="10">
+     <VBox spacing="6"><Label text="Configurar servicios de" styleClass="field-label"/><ComboBox fx:id="ownerType" accessibleText="Tipo de configuración" prefWidth="180" minHeight="40"/></VBox>
+     <VBox spacing="6"><Label text="Funcionario o ventanilla" styleClass="field-label"/><ComboBox fx:id="ownerCombo" accessibleText="Funcionario o ventanilla a configurar" promptText="Seleccione un registro" prefWidth="550" minHeight="40"/></VBox>
+    </FlowPane>
+    <Label text="La atención requiere un servicio habilitado tanto para el funcionario como para la ventanilla. Retirar una habilitación puede rechazarse si hay turnos pendientes o se pierde la última compatibilidad." wrapText="true" minHeight="-Infinity" styleClass="secondary-text"/>
+    <TableView fx:id="servicesTable" accessibleText="Servicios y habilitaciones del registro seleccionado" VBox.vgrow="ALWAYS"><placeholder><Label text="Seleccione un funcionario o una ventanilla."/></placeholder></TableView>
+    <FlowPane hgap="12" vgap="10">
+     <Button fx:id="enableButton" text="Habilitar servicio" onAction="#enableService" minHeight="44" styleClass="primary-button"/>
+     <Button fx:id="removeButton" text="Retirar habilitación" onAction="#removeService" minHeight="44" styleClass="secondary-button"/>
+    </FlowPane>
+   </VBox></Tab>
+   <Tab text="Asignaciones e historial"><VBox spacing="14">
+    <padding><Insets top="20" right="24" bottom="20" left="24"/></padding>
+    <FlowPane hgap="16" vgap="10" alignment="BOTTOM_LEFT">
+     <VBox spacing="6"><Label text="Funcionario" styleClass="field-label"/><ComboBox fx:id="operatorCombo" accessibleText="Funcionario para abrir asignación" promptText="Seleccione un funcionario" prefWidth="390" minHeight="40"/></VBox>
+     <VBox spacing="6"><Label text="Ventanilla" styleClass="field-label"/><ComboBox fx:id="windowCombo" accessibleText="Ventanilla para abrir asignación" promptText="Seleccione una ventanilla" prefWidth="320" minHeight="40"/></VBox>
+     <Button fx:id="openButton" text="Abrir asignación" onAction="#openAssignment" minHeight="44" styleClass="primary-button"/>
+    </FlowPane>
+    <Label text="Solo se abre una asignación por funcionario y ventanilla, con acceso habilitado y al menos un servicio activo compartido. Una nueva ocupación crea una fila nueva." wrapText="true" minHeight="-Infinity" styleClass="secondary-text"/>
+    <TableView fx:id="assignmentsTable" accessibleText="Historial de asignaciones" VBox.vgrow="ALWAYS"><placeholder><Label text="No hay asignaciones registradas."/></placeholder></TableView>
+    <Label fx:id="selectedAssignmentLabel" wrapText="true" minHeight="-Infinity" styleClass="secondary-text"/>
+    <Button fx:id="closeButton" text="Cerrar asignación seleccionada" onAction="#closeAssignment" minHeight="44" styleClass="secondary-button"/>
+   </VBox></Tab>
+  </tabs>
+ </TabPane></center></BorderPane></center>
+ <bottom><VBox styleClass="action-bar"><Label fx:id="noticeLabel" text="Pendiente de consulta." wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="summary-label"/></VBox></bottom>
+</BorderPane>

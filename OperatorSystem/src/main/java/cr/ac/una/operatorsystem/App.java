@@ -2,6 +2,8 @@ package cr.ac.una.operatorsystem;
 
 import cr.ac.una.operatorsystem.client.AuthServerClient;
 import cr.ac.una.operatorsystem.client.PeopleServerClient;
+import cr.ac.una.operatorsystem.client.AssignmentServerClient;
+import cr.ac.una.operatorsystem.controller.AssignmentsController;
 import cr.ac.una.operatorsystem.controller.PeopleController;
 import cr.ac.una.operatorsystem.client.OperatorServerClient;
 import cr.ac.una.operatorsystem.client.ReportServerClient;
@@ -35,6 +37,8 @@ public class App extends Application {
     private UserSession session;
     private LoginController loginController;
     private OperatorController controller;
+    private Stage assignmentsStage;
+    private AssignmentsController assignmentsController;
     private Stage peopleStage;
     private PeopleController peopleController;
     private Stage reportsStage;
@@ -99,6 +103,8 @@ public class App extends Application {
                 controller.configureReports(() -> openReports(reportClient));
                 PeopleServerClient peopleClient = new PeopleServerClient(HOST, PORT, session);
                 controller.configurePeople(() -> openPeople(peopleClient));
+                AssignmentServerClient assignmentClient = new AssignmentServerClient(HOST, PORT, session);
+                controller.configureAssignments(() -> openAssignments(assignmentClient));
             } else {
                 controller.hideReports();
             }
@@ -141,6 +147,14 @@ public class App extends Application {
         if (controller != null) {
             controller.close();
             controller = null;
+        }
+        if (assignmentsController != null) {
+            assignmentsController.close();
+            assignmentsController = null;
+        }
+        if (assignmentsStage != null) {
+            assignmentsStage.close();
+            assignmentsStage = null;
         }
         if (peopleController != null) {
             peopleController.close();
@@ -224,6 +238,30 @@ public class App extends Application {
             peopleStage.show();
         } catch (IOException exception) {
             showOpenError("No se pudo abrir la administración de personas.", exception);
+        }
+    }
+
+    private void openAssignments(AssignmentServerClient client) {
+        if (assignmentsStage != null) { assignmentsStage.show(); assignmentsStage.toFront(); return; }
+        try {
+            FXMLLoader loader = new FXMLLoader(App.class.getResource("/cr/ac/una/operatorsystem/views/assignments.fxml"));
+            Parent root = loader.load();
+            assignmentsController = loader.getController();
+            assignmentsStage = new Stage();
+            assignmentsStage.initOwner(stage);
+            assignmentsStage.setTitle("Configuración de atención");
+            assignmentsStage.setScene(new Scene(root, 1180, 780));
+            assignmentsStage.setMinWidth(980);
+            assignmentsStage.setMinHeight(650);
+            assignmentsStage.setOnHidden(event -> {
+                if (assignmentsController != null) assignmentsController.close();
+                assignmentsController = null;
+                assignmentsStage = null;
+            });
+            assignmentsController.configure(client, this::sessionEnded);
+            assignmentsStage.show();
+        } catch (IOException exception) {
+            showOpenError("No se pudo abrir la configuración de atención.", exception);
         }
     }
 

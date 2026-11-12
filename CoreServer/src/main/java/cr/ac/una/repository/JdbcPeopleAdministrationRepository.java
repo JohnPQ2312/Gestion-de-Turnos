@@ -1,11 +1,8 @@
 package cr.ac.una.repository;
 
 import cr.ac.una.config.DatabaseConnectionFactory;
-import cr.ac.una.exception.AccessDeniedException;
-import cr.ac.una.exception.AccessDeniedException.Reason;
 import cr.ac.una.exception.DataAccessException;
 import cr.ac.una.model.*;
-import cr.ac.una.security.PasswordHasher;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +23,7 @@ public class JdbcPeopleAdministrationRepository implements PeopleAdministrationR
     @Override
     public List<ManagedOperator> listOperators(AdministrationActor actor) {
         try (Connection c = factory.openConnection()) {
-            requireActor(c, actor, false);
+            JdbcAdministrationAccess.require(c, actor, false);
             String sql = """
                     SELECT o.operator_id, o.operator_name, o.operator_username,
                            o.operator_role, o.operator_state,
@@ -108,7 +105,7 @@ public class JdbcPeopleAdministrationRepository implements PeopleAdministrationR
     @Override
     public List<ManagedAppUser> listUsers(AdministrationActor actor) {
         try (Connection c = factory.openConnection()) {
-            requireActor(c, actor, false);
+            JdbcAdministrationAccess.require(c, actor, false);
             try (PreparedStatement s = c.prepareStatement("SELECT user_id,username,user_state FROM app_user ORDER BY user_id");
                     ResultSet r = s.executeQuery()) {
                 List<ManagedAppUser> rows = new ArrayList<>();
@@ -188,15 +185,6 @@ public class JdbcPeopleAdministrationRepository implements PeopleAdministrationR
         }
     }
 
-    private static void requireActor(Connection c, AdministrationActor actor, boolean lock) throws SQLException {
-        Objects.requireNonNull(actor, "La identidad administrativa es obligatoria.");
-        OperatorAccount current = account(c, actor.operatorId(), lock);
-        if (!current.active() || current.role() != UserRole.ADMIN || !current.hasCredential()
-                || !PasswordHasher.fingerprint(current.passwordHash()).equals(actor.credentialFingerprint())) {
-            throw new AccessDeniedException(Reason.FORBIDDEN, "La cuenta administrativa cambió. Inicie sesión de nuevo.");
-        }
-    }
-
     private static boolean hasOpenAssignment(Connection c, int id) throws SQLException {
         // No se toma el bloqueo inverso operador -> asignación usado por el llamado.
         // El bloque de apertura/cierre deberá coordinarse con estos cambios.
@@ -245,7 +233,7 @@ public class JdbcPeopleAdministrationRepository implements PeopleAdministrationR
                         ResultSet r = s.executeQuery()) {
                     while (r.next()) { r.getInt(1); }
                 }
-                requireActor(c, actor, true);
+                JdbcAdministrationAccess.require(c, actor, true);
                 T result = action.execute(c);
                 c.commit();
                 return result;
