@@ -1,5 +1,6 @@
 package cr.ac.una.costumerturn.client;
 
+import cr.ac.una.costumerturn.network.NetworkSettings;
 import cr.ac.una.costumerturn.model.ServiceOption;
 import cr.ac.una.costumerturn.model.TicketConfirmation;
 import java.io.BufferedReader;
@@ -84,9 +85,7 @@ public class TurnServerClient {
     private String[] request(String message) throws IOException {
         String line;
 
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(host, port), 3000);
-            socket.setSoTimeout(5000);
+        try (Socket socket = NetworkSettings.open(host, port, 3000, 5000)) {
 
             try (
                     BufferedWriter output = new BufferedWriter(

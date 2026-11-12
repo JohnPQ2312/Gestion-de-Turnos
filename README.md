@@ -43,6 +43,9 @@ La vista **Asignaciones**, exclusiva de ADMIN, gestiona los servicios habilitado
 
 ## Configuración y ejecución
 
+Host, puerto, dirección de escucha y TLS se configuran según [RED_Y_TLS.md](RED_Y_TLS.md). Sin configuración se conserva el modo local; las conexiones entre equipos requieren TLS. Los cuatro proyectos incluyen network.properties.example, sin secretos.
+
+
 - Utilizar JDK 21 o superior y abrir cada carpeta de proyecto en NetBeans.
 - Los tres clientes utilizan JavaFX 13, con sus FXML ajustados a la misma versión. Java y JavaFX tienen versiones independientes.
 - Disponer de la estructura MySQL del proyecto y de los servicios y filas de `ticket_sequence` inicializados. La estructura está en `database/script borrador.sql`.
@@ -93,7 +96,7 @@ La prueba coordinada del 4 de noviembre de 2026 liberó dos solicitudes de llama
 
 ## Continuación
 
-Quedan pendientes la administración de servicios y ventanillas, la configuración de red y las pruebas entre computadoras. Los bloques se incorporan sin alterar el historial existente.
+Quedan pendientes la administración de servicios y ventanillas, las pruebas entre computadoras. Los bloques se incorporan sin alterar el historial existente.
 
 El acceso, los permisos, la pausa, el rellamado, las cinco consultas y la administración de personas y la gestión de habilitaciones/asignaciones ya están implementados. El esquema y los datos iniciales están incluidos; su aplicación a la base compartida debe coordinarse con el equipo.
 

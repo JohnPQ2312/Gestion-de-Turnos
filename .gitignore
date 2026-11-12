@@ -12,3 +12,8 @@ Thumbs.db
 /CoreServer/target/
 /OperatorSystem/target/
 /CoreServer/src/main/resources/db.properties
+# Configuración privada y claves TLS
+network.properties
+*.p12
+*.pfx
+*.jks

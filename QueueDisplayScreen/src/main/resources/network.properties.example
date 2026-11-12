@@ -1,0 +1,12 @@
+# Copiar como network.properties (archivo privado, excluido de Git).
+server.host=127.0.0.1
+server.bind=127.0.0.1
+server.port=5000
+tls.enabled=false
+# Para LAN: tls.enabled=true; indicar el nombre/IP que figura en el certificado.
+# Solo CoreServer necesita la clave privada:
+# tls.keyStore=/ruta/servidor.p12
+# tls.keyStorePassword=CONTRASENA_LOCAL
+# Los clientes necesitan el almacén de certificados confiables:
+# tls.trustStore=/ruta/confianza.p12
+# tls.trustStorePassword=CONTRASENA_LOCAL

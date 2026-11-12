@@ -1,5 +1,6 @@
 package cr.ac.una.operatorsystem.client;
 
+import cr.ac.una.operatorsystem.network.NetworkSettings;
 import cr.ac.una.operatorsystem.model.AssignmentConfiguration;
 import cr.ac.una.operatorsystem.model.AssignmentConfiguration.*;
 import cr.ac.una.operatorsystem.model.UserSession;
@@ -88,8 +89,7 @@ public class AssignmentServerClient implements AssignmentRequests {
     private static String encode(String value) { return URLEncoder.encode(value, StandardCharsets.UTF_8); }
     private String[] request(String command) throws IOException {
         String line;
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(host, port), 3000); socket.setSoTimeout(15000);
+        try (Socket socket = NetworkSettings.open(host, port, 3000, 15000)) {
             try (var out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
                     var in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
                 out.write("AUTH;" + session.token() + ";ADMIN_ROUTING_" + command); out.newLine(); out.flush(); line = in.readLine();

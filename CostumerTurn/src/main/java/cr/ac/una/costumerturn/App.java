@@ -1,5 +1,6 @@
 package cr.ac.una.costumerturn;
 
+import cr.ac.una.costumerturn.network.NetworkSettings;
 import cr.ac.una.costumerturn.client.TurnServerClient;
 import cr.ac.una.costumerturn.controller.TicketsGeneratorController;
 import java.io.IOException;
@@ -15,6 +16,14 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
+        NetworkSettings network;
+        try { network=NetworkSettings.load(); }
+        catch (IOException error) {
+            javafx.scene.control.Alert alert=new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR,
+                    "No se pudo cargar la configuración de red: " + error.getMessage());
+            alert.initOwner(stage); alert.setHeaderText("Configuración de red"); alert.showAndWait();
+            javafx.application.Platform.exit(); return;
+        }
         FXMLLoader loader = new FXMLLoader(
                 App.class.getResource("/cr/ac/una/costumerturn/views/ticketsGenerator.fxml")
         );
@@ -27,7 +36,7 @@ public class App extends Application {
         stage.setMinHeight(660);
         stage.show();
 
-        TurnServerClient client = new TurnServerClient("127.0.0.1", 5000);
+        TurnServerClient client = new TurnServerClient(network.host(), network.port());
         controller.configure(client::listServices, client::generateTicket);
     }
 

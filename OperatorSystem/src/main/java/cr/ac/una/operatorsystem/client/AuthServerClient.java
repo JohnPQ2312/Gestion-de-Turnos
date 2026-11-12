@@ -1,5 +1,6 @@
 package cr.ac.una.operatorsystem.client;
 
+import cr.ac.una.operatorsystem.network.NetworkSettings;
 import cr.ac.una.operatorsystem.model.UserSession;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -93,9 +94,7 @@ public class AuthServerClient {
         ) throws IOException {
             String line;
 
-            try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(host, port), connectTimeoutMs);
-                socket.setSoTimeout(readTimeoutMs);
+            try (Socket socket = NetworkSettings.open(host, port, connectTimeoutMs, readTimeoutMs)) {
 
                 try (
                         BufferedWriter output = new BufferedWriter(

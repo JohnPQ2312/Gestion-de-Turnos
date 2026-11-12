@@ -1,5 +1,6 @@
 package cr.ac.una.operatorsystem.client;
 
+import cr.ac.una.operatorsystem.network.NetworkSettings;
 import cr.ac.una.operatorsystem.model.ActiveTicket;
 import cr.ac.una.operatorsystem.model.CalledTicket;
 import cr.ac.una.operatorsystem.model.OperatorAssignment;
@@ -265,9 +266,7 @@ public class OperatorServerClient {
     private String[] request(String message) throws IOException {
         String line;
 
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(host, port), 3000);
-            socket.setSoTimeout(15000);
+        try (Socket socket = NetworkSettings.open(host, port, 3000, 15000)) {
 
             try (
                     BufferedWriter output = new BufferedWriter(

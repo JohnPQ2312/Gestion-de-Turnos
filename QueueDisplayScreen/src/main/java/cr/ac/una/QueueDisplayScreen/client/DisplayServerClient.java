@@ -1,5 +1,6 @@
 package cr.ac.una.QueueDisplayScreen.client;
 
+import cr.ac.una.QueueDisplayScreen.network.NetworkSettings;
 import cr.ac.una.QueueDisplayScreen.model.DisplaySnapshot;
 import cr.ac.una.QueueDisplayScreen.model.TicketRow;
 import cr.ac.una.QueueDisplayScreen.service.DisplayRefreshService.ChangeSubscription;
@@ -40,10 +41,8 @@ public class DisplayServerClient {
     }
 
     public ChangeSubscription subscribe() throws IOException {
-        Socket socket = new Socket();
+        Socket socket = NetworkSettings.open(host, port, 3000, 25000);
         try {
-            socket.connect(new InetSocketAddress(host, port), 3000);
-            socket.setSoTimeout(25000);
             BufferedReader input = new BufferedReader(
                     new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
             );
@@ -98,9 +97,7 @@ public class DisplayServerClient {
     }
 
     private String requestSnapshot() throws IOException {
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(host, port), 3000);
-            socket.setSoTimeout(15000);
+        try (Socket socket = NetworkSettings.open(host, port, 3000, 15000)) {
 
             try (
                     BufferedWriter output = new BufferedWriter(

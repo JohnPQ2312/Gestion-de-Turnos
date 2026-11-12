@@ -1,6 +1,7 @@
 package cr.ac.una.CoreServer;
 
 import cr.ac.una.config.DatabaseConnectionFactory;
+import cr.ac.una.config.NetworkSettings;
 import cr.ac.una.repository.JdbcAccountRepository;
 import cr.ac.una.repository.JdbcActiveTicketRepository;
 import cr.ac.una.repository.JdbcDisplayRepository;
@@ -89,7 +90,7 @@ public class App {
                             new JdbcAssignmentConfigurationRepository(connectionFactory)))
             );
 
-            TurnServer server = new TurnServer(5000, requestHandler, displayEvents);
+            TurnServer server = new TurnServer(NetworkSettings.load(), requestHandler, displayEvents);
             server.start();
 
         } catch (SQLException exception) {

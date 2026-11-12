@@ -1,6 +1,7 @@
 package cr.ac.una.server;
 
 import java.io.BufferedReader;
+import cr.ac.una.config.NetworkSettings;
 import cr.ac.una.config.ConnectionMetrics;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.concurrent.Executors;
 public class TurnServer {
 
     private final int port;
+    private NetworkSettings network;
     private final TurnRequestHandler requestHandler;
     private final DisplayEventHub displayEvents;
 
@@ -37,12 +39,14 @@ public class TurnServer {
         );
     }
 
+    public TurnServer(NetworkSettings network, TurnRequestHandler handler, DisplayEventHub events) throws IOException {
+        this(network.port(),handler,events); this.network=network;
+    }
+
     public void start() throws IOException {
-        // Las primeras pruebas utilizarán clientes locales.
+        // El constructor anterior conserva loopback; la aplicación utiliza la configuración de red.
         try (
-                ServerSocket serverSocket = new ServerSocket(
-                        port, 50, InetAddress.getLoopbackAddress()
-                ); ExecutorService clients
+                ServerSocket serverSocket = network==null ? new ServerSocket(port,50,InetAddress.getLoopbackAddress()) : network.listen(); ExecutorService clients
                 = Executors.newVirtualThreadPerTaskExecutor()) {
             System.out.println("CoreServer escuchando en el puerto " + port);
 

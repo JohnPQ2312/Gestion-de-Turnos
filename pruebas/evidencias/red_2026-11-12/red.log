@@ -1,0 +1,30 @@
+PASS | Valores locales predeterminados y puerto válido
+PASS | Archivo explícito ausente no se ignora
+PASS | Puertos, booleanos y valores vacíos inválidos se rechazan
+PASS | Los cuatro módulos bloquean destinos sin TLS fuera de loopback
+PASS | Escucha sin TLS no se abre en todas las interfaces
+PASS | Transporte local sin TLS conserva los sockets existentes
+CoreServer escuchando en el puerto 33321
+[tiempo] LIST_SERVICES | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | OK;SERVICES
+PASS | Generador real consulta catálogo sobre TLS
+[tiempo] GENERATE_TICKET | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | OK;TICKET
+PASS | Generador real emite y lee confirmación sobre TLS
+[tiempo] LOGIN | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | OK;LOGIN
+[tiempo] AUTH:LOGOUT | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | OK;LOGOUT
+PASS | Login y logout reales usan TLS
+[tiempo] AUTH:LIST_ASSIGNMENTS | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | OK;ASSIGNMENTS
+PASS | Atención real consulta asignaciones sobre TLS
+[tiempo] AUTH:REPORT_BY_SERVICE | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | OK;REPORT_BY_SERVICE
+PASS | Reportes reales usan TLS
+[tiempo] AUTH:ADMIN_PEOPLE_LIST_USERS | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | OK;ADMIN_PEOPLE_USERS
+PASS | Administración de Personas usa TLS
+[tiempo] AUTH:ADMIN_ROUTING_SNAPSHOT | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | OK;ADMIN_ROUTING_SNAPSHOT
+PASS | Administración de asignaciones usa TLS
+[tiempo] GET_DISPLAY_SNAPSHOT_V2 | procesamiento 0 ms | apertura de conexiones 0 ms (exitosas 0, fallidas 0) | resto: consultas, bloqueos y lógica 0 ms | OK;DISPLAY_SNAPSHOT_V2
+PASS | Pantalla pública consulta V2 sobre TLS
+PASS | Dos suscriptores TLS reciben el aviso y pueden reconectarse
+PASS | Certificado con nombre diferente se rechaza
+PASS | Certificado no confiable se rechaza
+PASS | Contraseña de almacén incorrecta falla sin degradarse a TCP
+PASS | TLS sin almacén configurado falla explícitamente
+RESULTADO | 19 casos aprobados, 0 fallidos

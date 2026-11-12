@@ -1,5 +1,6 @@
 package cr.ac.una.operatorsystem;
 
+import cr.ac.una.operatorsystem.network.NetworkSettings;
 import cr.ac.una.operatorsystem.client.AuthServerClient;
 import cr.ac.una.operatorsystem.client.PeopleServerClient;
 import cr.ac.una.operatorsystem.client.AssignmentServerClient;
@@ -26,12 +27,12 @@ import javafx.stage.Stage;
  */
 public class App extends Application {
 
-    private static final String HOST = "127.0.0.1";
-    private static final int PORT = 5000;
+    private String host;
+    private int port;
     // Plazo del aviso de cierre al salir de la aplicación.
     private static final int EXIT_LOGOUT_TIMEOUT_MS = 2000;
 
-    private final AuthServerClient authClient = new AuthServerClient(HOST, PORT);
+    private AuthServerClient authClient;
 
     private Stage stage;
     private UserSession session;
@@ -47,6 +48,17 @@ public class App extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         this.stage = stage;
+        NetworkSettings network;
+        try { network=NetworkSettings.load(); }
+        catch (IOException error) {
+            javafx.scene.control.Alert alert=new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR,
+                    "No se pudo cargar la configuración de red: " + error.getMessage());
+            alert.initOwner(stage); alert.setHeaderText("Configuración de red"); alert.showAndWait();
+            javafx.application.Platform.exit(); return;
+        }
+
+        host=network.host(); port=network.port();
+        authClient=new AuthServerClient(host,port);
         stage.setTitle("Atención de turnos");
         stage.setMinWidth(900);
         stage.setMinHeight(680);
@@ -83,7 +95,7 @@ public class App extends Application {
             controller = newController;
             setRoot(root);
 
-            OperatorServerClient client = new OperatorServerClient(HOST, PORT, session);
+            OperatorServerClient client = new OperatorServerClient(host, port, session);
             controller.configure(
                     client::listAssignments, client::callNext, client::getActiveTicket,
                     client::startAttention, client::finishAttention
@@ -99,11 +111,11 @@ public class App extends Application {
             );
 
             if (session.isAdmin()) {
-                ReportServerClient reportClient = new ReportServerClient(HOST, PORT, session);
+                ReportServerClient reportClient = new ReportServerClient(host, port, session);
                 controller.configureReports(() -> openReports(reportClient));
-                PeopleServerClient peopleClient = new PeopleServerClient(HOST, PORT, session);
+                PeopleServerClient peopleClient = new PeopleServerClient(host, port, session);
                 controller.configurePeople(() -> openPeople(peopleClient));
-                AssignmentServerClient assignmentClient = new AssignmentServerClient(HOST, PORT, session);
+                AssignmentServerClient assignmentClient = new AssignmentServerClient(host, port, session);
                 controller.configureAssignments(() -> openAssignments(assignmentClient));
             } else {
                 controller.hideReports();
