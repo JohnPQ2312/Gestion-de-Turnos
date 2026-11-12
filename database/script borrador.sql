@@ -67,8 +67,9 @@ CREATE TABLE `window` (
 
     PRIMARY KEY (window_id),
 
+    -- PAUSADA: no disponible temporalmente (migración 002).
     CONSTRAINT ck_window_state
-        CHECK (window_state IN ('ACTIVA', 'INACTIVA')),
+        CHECK (window_state IN ('ACTIVA', 'INACTIVA', 'PAUSADA')),
 
     CONSTRAINT ck_window_attention_mode
         CHECK (attention_mode IN ('MIXED', 'PRIORITY_ONLY'))

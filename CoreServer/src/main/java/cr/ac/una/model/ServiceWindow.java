@@ -40,7 +40,17 @@ public class ServiceWindow {
         return attentionMode;
     }
 
+    /** Disponible para llamar turnos. */
     public boolean isActive() {
         return state == WindowState.ACTIVA;
+    }
+
+    public boolean isPaused() {
+        return state == WindowState.PAUSADA;
+    }
+
+    /** En servicio: activa o en pausa temporal (no dada de baja). */
+    public boolean isOperational() {
+        return state == WindowState.ACTIVA || state == WindowState.PAUSADA;
     }
 }
