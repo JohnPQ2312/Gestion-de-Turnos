@@ -14,8 +14,13 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 
 /**
  * Vista de las cinco consultas de la sección 13.
@@ -34,6 +39,13 @@ public class ReportsController {
     }
 
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    // Medida aproximada del texto de la tabla (operator.css usa Segoe UI 16 px).
+    // Se mide en negrita para no quedarse corto con los encabezados.
+    private static final Font MEASURE_FONT = Font.font("Segoe UI", FontWeight.BOLD, 16);
+    private static final double CELL_PADDING = 32;
+    private static final double MIN_COLUMN_WIDTH = 70;
+    private static final double MAX_COLUMN_WIDTH = 420;
 
     @FXML
     private ComboBox<ReportType> reportCombo;
@@ -151,8 +163,11 @@ public class ReportsController {
 
         for (int index = 0; index < result.columns().size(); index++) {
             final int columnIndex = index;
-            TableColumn<List<String>, String> column = new TableColumn<>(result.columns().get(index));
+            String header = result.columns().get(index);
+            TableColumn<List<String>, String> column = new TableColumn<>(header);
             column.setCellValueFactory(cell -> new ReadOnlyStringWrapper(cell.getValue().get(columnIndex)));
+            column.setCellFactory(ignored -> new TooltipCell());
+            column.setPrefWidth(columnWidth(header, result.rows(), columnIndex));
             column.setSortable(false);
             resultsTable.getColumns().add(column);
         }
@@ -163,6 +178,37 @@ public class ReportsController {
         summaryLabel.setText(result.rows().isEmpty()
                 ? type.title() + ", " + range + ": sin resultados."
                 : type.title() + ", " + range + ". " + result.summary());
+    }
+
+    /**
+     * Ancho de una columna según su encabezado y su valor más largo. La
+     * tabla no reparte el ancho de la ventana entre las columnas: si no caben,
+     * muestra desplazamiento horizontal en lugar de recortar los textos.
+     */
+    private static double columnWidth(String header, List<List<String>> rows, int columnIndex) {
+        double width = textWidth(header);
+        for (List<String> row : rows) {
+            width = Math.max(width, textWidth(row.get(columnIndex)));
+        }
+        return Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, width + CELL_PADDING));
+    }
+
+    private static double textWidth(String value) {
+        Text text = new Text(value);
+        text.setFont(MEASURE_FONT);
+        return text.getLayoutBounds().getWidth();
+    }
+
+    /** Celda que muestra su texto completo al pasar el cursor, por si aún se recorta. */
+    private static final class TooltipCell extends TableCell<List<String>, String> {
+
+        @Override
+        protected void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+            boolean blank = empty || item == null || item.isEmpty();
+            setText(blank ? null : item);
+            setTooltip(blank ? null : new Tooltip(item));
+        }
     }
 
     private void clearResult() {

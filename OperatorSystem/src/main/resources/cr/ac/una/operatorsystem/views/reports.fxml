@@ -28,7 +28,6 @@
   <Label fx:id="errorLabel" visible="false" managed="false" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="notice-label"/>
   <TableView fx:id="resultsTable" VBox.vgrow="ALWAYS">
    <placeholder><Label text="Sin resultados para mostrar." styleClass="secondary-text"/></placeholder>
-   <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
   </TableView>
  </VBox></center>
  <bottom><HBox alignment="CENTER_LEFT" styleClass="action-bar">
