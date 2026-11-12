@@ -1,6 +1,10 @@
 package cr.ac.una.server;
 
+import cr.ac.una.exception.AccessDeniedException;
 import cr.ac.una.exception.DataAccessException;
+import cr.ac.una.model.AuthenticatedUser;
+import cr.ac.una.model.UserRole;
+import cr.ac.una.service.AuthService;
 import cr.ac.una.model.ActiveTicket;
 import cr.ac.una.model.AttendedTicket;
 import cr.ac.una.model.DurationReport;
@@ -45,6 +49,7 @@ public class TurnRequestHandler {
     private final DisplayRepository displayRepository;
     private final DisplayEventHub displayEvents;
     private final ReportService reportService;
+    private final AuthService authService;
 
     public TurnRequestHandler(
             ServiceRepository serviceRepository,
@@ -54,7 +59,8 @@ public class TurnRequestHandler {
             TicketLifecycleService lifecycleService,
             DisplayRepository displayRepository,
             DisplayEventHub displayEvents,
-            ReportService reportService
+            ReportService reportService,
+            AuthService authService
     ) {
         this.serviceRepository = Objects.requireNonNull(
                 serviceRepository, "El repositorio de servicios es obligatorio."
@@ -80,59 +86,48 @@ public class TurnRequestHandler {
         this.reportService = Objects.requireNonNull(
                 reportService, "El servicio de reportes es obligatorio."
         );
+        this.authService = Objects.requireNonNull(
+                authService, "El servicio de acceso es obligatorio."
+        );
     }
 
+    /**
+     * Formatos aceptados:
+     *   COMANDO;...               comandos públicos (catálogo, emisión, pantalla)
+     *   LOGIN;usuario;contraseña  textos codificados como el resto del protocolo
+     *   AUTH;token;COMANDO;...    comandos protegidos y LOGOUT
+     * Un rechazo de acceso responde DENIED;motivo;mensaje.
+     */
     public String handle(String request) {
         try {
             if (request == null || request.isBlank()) {
                 throw new IllegalArgumentException("La solicitud está vacía.");
             }
 
-            if ("LIST_SERVICES".equals(request)) {
-                return listServices();
+            if (request.startsWith("LOGIN;")) {
+                return login(request.split(";", -1));
             }
 
-            if ("LIST_ASSIGNMENTS".equals(request)) {
-                return listAssignments();
+            if (request.startsWith("AUTH;")) {
+                String[] envelope = request.split(";", 3);
+                if (envelope.length < 3 || envelope[2].isBlank()) {
+                    throw new IllegalArgumentException("La solicitud autenticada no es válida.");
+                }
+
+                AuthenticatedUser user = authService.authenticate(envelope[1]);
+
+                if ("LOGOUT".equals(envelope[2])) {
+                    authService.logout(envelope[1]);
+                    return "OK;LOGOUT";
+                }
+
+                return dispatch(envelope[2], user);
             }
 
-            if ("GET_DISPLAY_SNAPSHOT".equals(request)) {
-                return getDisplaySnapshot();
-            }
+            return dispatch(request, null);
 
-            String[] parts = request.split(";", -1);
-
-            if (parts.length == 3 && "GENERATE_TICKET".equals(parts[0])) {
-                return generateTicket(parts);
-            }
-
-            if (parts.length == 2 && "CALL_NEXT".equals(parts[0])) {
-                return callNext(parts[1]);
-            }
-
-            if (parts.length == 2 && "GET_ACTIVE_TICKET".equals(parts[0])) {
-                return getActiveTicket(parts[1]);
-            }
-
-            if (parts.length == 3 && "START_ATTENTION".equals(parts[0])) {
-                return startAttention(parts[1], parts[2]);
-            }
-
-            if (parts.length == 3 && "FINISH_ATTENTION".equals(parts[0])) {
-                return finishAttention(parts[1], parts[2]);
-            }
-
-            // Reportes de la sección 13: COMANDO;AAAA-MM-DD;AAAA-MM-DD.
-            // Solo leen datos y no publican avisos a las pantallas.
-            // Pendiente: restringirlos al perfil administrador cuando exista
-            // la autenticación.
-            if (parts.length == 3 && REPORT_COMMANDS.contains(parts[0])) {
-                return handleReport(parts[0], parsePeriod(parts[1], parts[2]));
-            }
-
-            throw new IllegalArgumentException(
-                    "El comando o su formato no es válido."
-            );
+        } catch (AccessDeniedException exception) {
+            return "DENIED;" + exception.getReason().name() + ";" + encode(exception.getMessage());
 
         } catch (IllegalArgumentException | IllegalStateException exception) {
             return "ERROR;" + encode(exception.getMessage());
@@ -145,6 +140,78 @@ public class TurnRequestHandler {
                     "No se pudo completar la operación con la base de datos."
             );
         }
+    }
+
+    // user es null cuando la solicitud no trae sesión. Los comandos públicos
+    // lo ignoran; los protegidos lo exigen y comprueban sus permisos.
+    private String dispatch(String request, AuthenticatedUser user) {
+        if ("LIST_SERVICES".equals(request)) {
+            return listServices();
+        }
+
+        if ("GET_DISPLAY_SNAPSHOT".equals(request)) {
+            return getDisplaySnapshot();
+        }
+
+        if ("LIST_ASSIGNMENTS".equals(request)) {
+            return listAssignments(authService.requireUser(user));
+        }
+
+        String[] parts = request.split(";", -1);
+
+        if (parts.length == 3 && "GENERATE_TICKET".equals(parts[0])) {
+            return generateTicket(parts);
+        }
+
+        if (parts.length == 2 && "CALL_NEXT".equals(parts[0])) {
+            authService.requireOwnAssignment(user, parseAssignmentId(parts[1]));
+            return callNext(parts[1]);
+        }
+
+        if (parts.length == 2 && "GET_ACTIVE_TICKET".equals(parts[0])) {
+            authService.requireOwnAssignment(user, parseAssignmentId(parts[1]));
+            return getActiveTicket(parts[1]);
+        }
+
+        if (parts.length == 3 && "START_ATTENTION".equals(parts[0])) {
+            authService.requireOwnAssignment(user, parseAssignmentId(parts[1]));
+            return startAttention(parts[1], parts[2]);
+        }
+
+        if (parts.length == 3 && "FINISH_ATTENTION".equals(parts[0])) {
+            authService.requireOwnAssignment(user, parseAssignmentId(parts[1]));
+            return finishAttention(parts[1], parts[2]);
+        }
+
+        // Reportes de la sección 13: COMANDO;AAAA-MM-DD;AAAA-MM-DD. Solo ADMIN.
+        // Solo leen datos y no publican avisos a las pantallas.
+        if (parts.length == 3 && REPORT_COMMANDS.contains(parts[0])) {
+            authService.requireRole(user, UserRole.ADMIN);
+            return handleReport(parts[0], parsePeriod(parts[1], parts[2]));
+        }
+
+        throw new IllegalArgumentException(
+                "El comando o su formato no es válido."
+        );
+    }
+
+    // OK;LOGIN;token;id funcionario;nombre;usuario;rol
+    private String login(String[] parts) {
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("La solicitud de inicio de sesión no es válida.");
+        }
+
+        AuthService.LoginResult result = authService.login(
+                URLDecoder.decode(parts[1], StandardCharsets.UTF_8),
+                URLDecoder.decode(parts[2], StandardCharsets.UTF_8)
+        );
+        AuthenticatedUser user = result.user();
+
+        return "OK;LOGIN;" + result.token()
+                + ";" + user.operatorId()
+                + ";" + encode(user.name())
+                + ";" + encode(user.username())
+                + ";" + user.role().name();
     }
 
     private String listServices() {
@@ -162,9 +229,12 @@ public class TurnRequestHandler {
         return response.toString();
     }
 
-    private String listAssignments() {
-        List<OperatorWindowAssignment> assignments
-                = attentionService.listActiveAssignments();
+    // Solo las asignaciones del funcionario autenticado.
+    private String listAssignments(AuthenticatedUser user) {
+        List<OperatorWindowAssignment> assignments = attentionService.listActiveAssignments()
+                .stream()
+                .filter(assignment -> assignment.getOperatorId() == user.operatorId())
+                .toList();
         StringBuilder response = new StringBuilder("OK;ASSIGNMENTS;");
         response.append(assignments.size());
 

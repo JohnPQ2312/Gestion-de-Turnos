@@ -1,6 +1,7 @@
 package cr.ac.una.CoreServer;
 
 import cr.ac.una.config.DatabaseConnectionFactory;
+import cr.ac.una.repository.JdbcAccountRepository;
 import cr.ac.una.repository.JdbcActiveTicketRepository;
 import cr.ac.una.repository.JdbcDisplayRepository;
 import cr.ac.una.repository.JdbcOperatorRepository;
@@ -16,11 +17,15 @@ import cr.ac.una.repository.TicketCreationRepository;
 import cr.ac.una.server.DisplayEventHub;
 import cr.ac.una.server.TurnRequestHandler;
 import cr.ac.una.server.TurnServer;
+import cr.ac.una.security.PasswordHasher;
+import cr.ac.una.security.SessionRegistry;
+import cr.ac.una.service.AuthService;
 import cr.ac.una.service.ReportService;
 import cr.ac.una.service.TicketAttentionService;
 import cr.ac.una.service.TicketLifecycleService;
 import cr.ac.una.service.TicketService;
 import java.io.IOException;
+import java.time.Clock;
 import java.sql.SQLException;
 
 public class App {
@@ -55,7 +60,13 @@ public class App {
                     serviceRepository, ticketService, attentionService,
                     new JdbcActiveTicketRepository(connectionFactory), lifecycleService,
                     new JdbcDisplayRepository(connectionFactory), displayEvents,
-                    new ReportService(new JdbcReportRepository(connectionFactory))
+                    new ReportService(new JdbcReportRepository(connectionFactory)),
+                    new AuthService(
+                            new JdbcAccountRepository(connectionFactory),
+                            new PasswordHasher(),
+                            new SessionRegistry(Clock.systemUTC()),
+                            new JdbcOperatorWindowAssignmentRepository(connectionFactory)
+                    )
             );
 
             TurnServer server = new TurnServer(5000, requestHandler, displayEvents);

@@ -123,8 +123,13 @@ public class TurnServer {
     }
     
     // Solo el nombre del comando: los parámetros pueden contener datos
-    // sensibles (por ejemplo, la contraseña cuando exista LOGIN).
+    // sensibles. En AUTH;token;COMANDO;... se registra AUTH:COMANDO, nunca
+    // el token; en LOGIN, nunca el usuario ni la contraseña.
     private static String commandName(String request) {
+        if (request.startsWith("AUTH;")) {
+            String[] parts = request.split(";", 4);
+            return parts.length >= 3 ? "AUTH:" + parts[2] : "AUTH";
+        }
         int separator = request.indexOf(';');
         return separator < 0 ? request : request.substring(0, separator);
     }
