@@ -151,9 +151,11 @@ CREATE TABLE ticket (
     visual_code VARCHAR(20) NOT NULL,
     ticket_state VARCHAR(20) NOT NULL DEFAULT 'EN_ESPERA',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    called_at TIMESTAMP NULL DEFAULT NULL,
-    started_at TIMESTAMP NULL DEFAULT NULL,
-    ended_at TIMESTAMP NULL DEFAULT NULL,
+    called_at TIMESTAMP(6) NULL DEFAULT NULL,
+    last_called_at TIMESTAMP(6) NULL DEFAULT NULL,
+    call_count INT UNSIGNED NOT NULL DEFAULT 0,
+    started_at TIMESTAMP(6) NULL DEFAULT NULL,
+    ended_at TIMESTAMP(6) NULL DEFAULT NULL,
     active_assignment_id BIGINT UNSIGNED GENERATED ALWAYS AS (
         CASE WHEN ticket_state IN ('LLAMADO', 'EN_ATENCION')
             THEN assignment_id ELSE NULL END
@@ -191,6 +193,12 @@ CREATE TABLE ticket (
         AND (started_at IS NULL OR started_at >= called_at)
         AND (ended_at IS NULL OR ended_at >= started_at)
     ),
+    CONSTRAINT ck_ticket_call_history CHECK (
+        (ticket_state = 'EN_ESPERA' AND last_called_at IS NULL AND call_count = 0)
+        OR (ticket_state <> 'EN_ESPERA' AND last_called_at IS NOT NULL
+            AND call_count >= 1 AND last_called_at >= called_at
+            AND (started_at IS NULL OR started_at >= last_called_at))
+    ),
     CONSTRAINT fk_ticket_service
         FOREIGN KEY (service_id)
         REFERENCES service (service_code),
@@ -207,3 +215,5 @@ CREATE TABLE ticket (
 CREATE INDEX idx_ticket_assignment
     ON ticket (service_id, ticket_state, created_at, ticket_id);
 CREATE INDEX idx_ticket_created_at ON ticket (created_at);
+
+CREATE INDEX idx_ticket_last_called ON ticket (last_called_at, ticket_id);

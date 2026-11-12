@@ -18,7 +18,7 @@ public class JdbcDisplayRepository implements DisplayRepository {
 
     private static final String SELECT_TICKETS = """
             SELECT t.ticket_id, t.visual_code, s.services_name,
-                   t.`priority`, t.ticket_state, a.window_id, t.called_at
+                   t.`priority`, t.ticket_state, a.window_id, t.called_at, t.last_called_at, t.call_count
             FROM ticket t
             JOIN service s ON s.service_code = t.service_id
             LEFT JOIN operator_window_assignment a
@@ -97,7 +97,7 @@ public class JdbcDisplayRepository implements DisplayRepository {
     ) throws SQLException {
         String sql = SELECT_TICKETS + """
                 WHERE t.ticket_state IN ('LLAMADO', 'EN_ATENCION', 'FINALIZADO')
-                ORDER BY t.called_at DESC, t.ticket_id DESC
+                ORDER BY t.last_called_at DESC, t.ticket_id DESC
                 LIMIT ?
                 """;
 
@@ -126,6 +126,7 @@ public class JdbcDisplayRepository implements DisplayRepository {
         int windowValue = result.getInt("window_id");
         Integer windowId = result.wasNull() ? null : windowValue;
         Timestamp calledAt = result.getTimestamp("called_at");
+        Timestamp lastCalledAt = result.getTimestamp("last_called_at");
 
         try {
             return new DisplayTicket(
@@ -135,7 +136,9 @@ public class JdbcDisplayRepository implements DisplayRepository {
                     result.getBoolean("priority"),
                     TicketState.valueOf(result.getString("ticket_state")),
                     windowId,
-                    calledAt == null ? null : calledAt.toLocalDateTime()
+                    calledAt == null ? null : calledAt.toLocalDateTime(),
+                    lastCalledAt == null ? null : lastCalledAt.toLocalDateTime(),
+                    result.getInt("call_count")
             );
         } catch (IllegalArgumentException | NullPointerException exception) {
             throw new SQLException(

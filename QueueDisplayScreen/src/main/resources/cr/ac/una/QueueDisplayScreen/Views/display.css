@@ -24,3 +24,7 @@
 .public-display .placeholder-text, .public-display .table-view .placeholder .label { -fx-text-fill: #4E626B; -fx-font-size: 16px; }
 .public-display .connection-label { -fx-padding: 12px 28px; -fx-background-color: #F8FAF9; -fx-text-fill: #006B60; -fx-font-size: 14px; }
 .public-display .connection-label:offline { -fx-background-color: #FFF4DF; -fx-text-fill: #7A4510; -fx-font-size: 16px; -fx-font-weight: bold; }
+
+.public-display .last-call { -fx-border-color: transparent; -fx-border-width: 3px; -fx-border-radius: 8px; }
+.public-display .last-call:recalled { -fx-border-color: #E5A33B; }
+.public-display .last-call .call-notice { -fx-text-fill: #FFE2A9; -fx-font-size: 20px; -fx-font-weight: bold; }

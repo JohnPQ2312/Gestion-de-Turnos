@@ -5,6 +5,8 @@ import cr.ac.una.exception.DataAccessException;
 import cr.ac.una.model.AuthenticatedUser;
 import cr.ac.una.model.UserRole;
 import cr.ac.una.service.AuthService;
+import cr.ac.una.service.TicketRecallService;
+import cr.ac.una.model.RecalledTicket;
 import cr.ac.una.model.ActiveTicket;
 import cr.ac.una.model.AttendedTicket;
 import cr.ac.una.model.DurationReport;
@@ -53,6 +55,7 @@ public class TurnRequestHandler {
     private final ReportService reportService;
     private final AuthService authService;
     private final WindowAvailabilityService windowAvailabilityService;
+    private final TicketRecallService recallService;
 
     public TurnRequestHandler(
             ServiceRepository serviceRepository,
@@ -64,7 +67,8 @@ public class TurnRequestHandler {
             DisplayEventHub displayEvents,
             ReportService reportService,
             AuthService authService,
-            WindowAvailabilityService windowAvailabilityService
+            WindowAvailabilityService windowAvailabilityService,
+            TicketRecallService recallService
     ) {
         this.serviceRepository = Objects.requireNonNull(
                 serviceRepository, "El repositorio de servicios es obligatorio."
@@ -96,6 +100,7 @@ public class TurnRequestHandler {
         this.windowAvailabilityService = Objects.requireNonNull(
                 windowAvailabilityService, "El servicio de disponibilidad es obligatorio."
         );
+        this.recallService = Objects.requireNonNull(recallService, "El servicio de rellamado es obligatorio.");
     }
 
     /**
@@ -157,7 +162,10 @@ public class TurnRequestHandler {
         }
 
         if ("GET_DISPLAY_SNAPSHOT".equals(request)) {
-            return getDisplaySnapshot();
+            return getDisplaySnapshot(false);
+        }
+        if ("GET_DISPLAY_SNAPSHOT_V2".equals(request)) {
+            return getDisplaySnapshot(true);
         }
 
         if ("LIST_ASSIGNMENTS".equals(request)) {
@@ -188,6 +196,17 @@ public class TurnRequestHandler {
         if (parts.length == 3 && "FINISH_ATTENTION".equals(parts[0])) {
             authService.requireOwnAssignment(user, parseAssignmentId(parts[1]));
             return finishAttention(parts[1], parts[2]);
+        }
+
+        if (parts.length == 3 && "RECALL_TICKET".equals(parts[0])) {
+            long assignmentId = parseAssignmentId(parts[1]);
+            authService.requireOwnAssignment(user, assignmentId);
+            RecalledTicket recalled = recallService.recall(
+                    assignmentId, parseTicketId(parts[2]), user.operatorId());
+            // El repositorio ya confirmó su transacción antes de publicar.
+            displayEvents.publishChange();
+            return "OK;RECALLED;" + recalled.assignmentId() + ";" + recalled.ticketId()
+                    + ";" + recalled.callCount() + ";" + encode(recalled.lastCalledAt().toString());
         }
 
         // Estado operativo de la ventanilla de una asignación propia.
@@ -374,24 +393,24 @@ public class TurnRequestHandler {
         return "OK;ATTENTION_FINISHED;" + assignmentId + ";" + ticketId;
     }
 
-    private String getDisplaySnapshot() {
+    private String getDisplaySnapshot(boolean withCallHistory) {
         DisplaySnapshot snapshot = displayRepository.findSnapshot(50, 5);
-        StringBuilder response = new StringBuilder("OK;DISPLAY_SNAPSHOT;");
+        StringBuilder response = new StringBuilder(withCallHistory ? "OK;DISPLAY_SNAPSHOT_V2;" : "OK;DISPLAY_SNAPSHOT;");
         response.append(snapshot.waitingTickets().size())
                 .append(";").append(snapshot.recentCalls().size());
 
         for (DisplayTicket ticket : snapshot.waitingTickets()) {
-            appendDisplayTicket(response, ticket);
+            appendDisplayTicket(response, ticket, withCallHistory);
         }
 
         for (DisplayTicket ticket : snapshot.recentCalls()) {
-            appendDisplayTicket(response, ticket);
+            appendDisplayTicket(response, ticket, withCallHistory);
         }
 
         return response.toString();
     }
 
-    private void appendDisplayTicket(StringBuilder response, DisplayTicket ticket) {
+    private void appendDisplayTicket(StringBuilder response, DisplayTicket ticket, boolean withCallHistory) {
         response.append(";").append(ticket.ticketId())
                 .append(";").append(encode(ticket.visualCode()))
                 .append(";").append(encode(ticket.serviceName()))
@@ -400,6 +419,11 @@ public class TurnRequestHandler {
                 .append(";").append(ticket.windowId() == null ? "" : ticket.windowId())
                 .append(";").append(ticket.calledAt() == null
                 ? "" : encode(ticket.calledAt().toString()));
+        if (withCallHistory) {
+            response.append(";").append(ticket.lastCalledAt() == null
+                    ? "" : encode(ticket.lastCalledAt().toString()))
+                    .append(";").append(ticket.callCount());
+        }
     }
 
     private String windowState(ServiceWindow window) {

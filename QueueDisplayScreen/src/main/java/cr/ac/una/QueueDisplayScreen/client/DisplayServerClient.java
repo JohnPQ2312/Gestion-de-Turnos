@@ -108,7 +108,7 @@ public class DisplayServerClient {
                     ); BufferedReader input = new BufferedReader(
                             new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
                     )) {
-                output.write("GET_DISPLAY_SNAPSHOT");
+                output.write("GET_DISPLAY_SNAPSHOT_V2");
                 output.newLine();
                 output.flush();
                 return input.readLine();
@@ -134,13 +134,13 @@ public class DisplayServerClient {
             throw new IOException(fields[1]);
         }
         if (fields.length < 4 || !"OK".equals(fields[0])
-                || !"DISPLAY_SNAPSHOT".equals(fields[1])) {
+                || !"DISPLAY_SNAPSHOT_V2".equals(fields[1])) {
             throw new IOException("La respuesta de la pantalla no es válida.");
         }
 
         int waitingCount = parseCount(fields[2]);
         int recentCallsCount = parseCount(fields[3]);
-        if (fields.length != 4 + 7 * (waitingCount + recentCallsCount)) {
+        if (fields.length != 4 + 9 * (waitingCount + recentCallsCount)) {
             throw new IOException("La información de la pantalla está incompleta.");
         }
 
@@ -149,7 +149,7 @@ public class DisplayServerClient {
                 fields, 4, waitingCount, true, ticketIds
         );
         List<TicketRow> recentCalls = readTickets(
-                fields, 4 + 7 * waitingCount, recentCallsCount, false, ticketIds
+                fields, 4 + 9 * waitingCount, recentCallsCount, false, ticketIds
         );
 
         return new DisplaySnapshot(waitingTickets, recentCalls);
@@ -174,7 +174,7 @@ public class DisplayServerClient {
         List<TicketRow> tickets = new ArrayList<>();
 
         for (int index = 0; index < count; index++) {
-            TicketRow ticket = readTicket(fields, offset + 7 * index);
+            TicketRow ticket = readTicket(fields, offset + 9 * index);
             if (waiting != "EN_ESPERA".equals(ticket.state())) {
                 throw new IOException("Un turno pertenece a una lista incorrecta.");
             }
@@ -206,7 +206,9 @@ public class DisplayServerClient {
                     Boolean.parseBoolean(priorityText),
                     fields[offset + 4],
                     windowId,
-                    calledAt
+                    calledAt,
+                    fields[offset + 7].isEmpty() ? null : LocalDateTime.parse(fields[offset + 7]),
+                    Integer.parseInt(fields[offset + 8])
             );
         } catch (IllegalArgumentException | DateTimeException exception) {
             throw new IOException("Un turno recibido contiene datos inválidos.", exception);

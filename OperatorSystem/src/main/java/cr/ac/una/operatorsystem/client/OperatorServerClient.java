@@ -164,6 +164,24 @@ public class OperatorServerClient {
         );
     }
 
+    public void recallTicket(long assignmentId, long ticketId) throws IOException {
+        if (assignmentId <= 0 || ticketId <= 0) {
+            throw new IllegalArgumentException("Los identificadores del rellamado deben ser positivos.");
+        }
+        String[] response = request("RECALL_TICKET;" + assignmentId + ";" + ticketId);
+        if (response.length != 6 || !"RECALLED".equals(response[1])
+                || positiveLong(response[2], "asignación") != assignmentId
+                || positiveLong(response[3], "turno") != ticketId
+                || positiveInt(response[4], "contador de llamados") < 2) {
+            throw new IOException("La confirmación no corresponde al rellamado solicitado.");
+        }
+        try {
+            java.time.LocalDateTime.parse(response[5]);
+        } catch (java.time.format.DateTimeParseException exception) {
+            throw new IOException("La fecha confirmada del rellamado no es válida.", exception);
+        }
+    }
+
     private void requestTransition(
             String command,
             String confirmationType,

@@ -1,5 +1,7 @@
 # Corrección de las herramientas de concurrencia
 
+> Seguimiento posterior: el rellamado ya se implementó y validó localmente. Ver [el informe del bloque](QA_rellamado_2026-11-12.md). Los resultados y pendientes de esta revisión anterior corresponden a la versión indicada en su encabezado.
+
 Fecha: 12 de noviembre de 2026. Seguimiento de la [revisión integral](QA_2026-11-12.md).
 
 ## Problema y corrección

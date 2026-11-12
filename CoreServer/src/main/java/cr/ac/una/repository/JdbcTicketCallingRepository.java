@@ -364,15 +364,18 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
     ) throws SQLException {
         String sql = """
                 UPDATE ticket
-                SET assignment_id = ?, ticket_state = 'LLAMADO', called_at = ?
+                SET assignment_id = ?, ticket_state = 'LLAMADO', called_at = ?, last_called_at = ?, call_count = 1
                 WHERE ticket_id = ? AND ticket_state = 'EN_ESPERA'
                 """;
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, ticket.getAssignmentId());
-            // TIMESTAMP guarda segundos: truncar evita que MySQL redondee al futuro.
-            statement.setTimestamp(2, Timestamp.valueOf(ticket.getCalledAt().truncatedTo(java.time.temporal.ChronoUnit.SECONDS)));
-            statement.setLong(3, ticketId);
+            // TIMESTAMP(6) guarda microsegundos; truncar evita redondear al futuro.
+            Timestamp calledAt = Timestamp.valueOf(ticket.getCalledAt()
+                    .truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+            statement.setTimestamp(2, calledAt);
+            statement.setTimestamp(3, calledAt);
+            statement.setLong(4, ticketId);
 
             if (statement.executeUpdate() != 1) {
                 throw new SQLException("No se actualizó el turno seleccionado para el llamado.");

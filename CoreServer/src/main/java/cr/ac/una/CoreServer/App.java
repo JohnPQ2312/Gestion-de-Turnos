@@ -25,6 +25,8 @@ import cr.ac.una.service.ReportService;
 import cr.ac.una.service.TicketAttentionService;
 import cr.ac.una.service.TicketLifecycleService;
 import cr.ac.una.service.TicketService;
+import cr.ac.una.service.TicketRecallService;
+import cr.ac.una.repository.JdbcTicketRecallRepository;
 import cr.ac.una.service.WindowAvailabilityService;
 import java.io.IOException;
 import java.time.Clock;
@@ -71,7 +73,8 @@ public class App {
                     ),
                     new WindowAvailabilityService(
                             new JdbcWindowAvailabilityRepository(connectionFactory)
-                    )
+                    ),
+                    new TicketRecallService(new JdbcTicketRecallRepository(connectionFactory))
             );
 
             TurnServer server = new TurnServer(5000, requestHandler, displayEvents);

@@ -57,7 +57,7 @@ public class OperatorController {
     }
 
     private enum AttentionOperation {
-        CALL, START, FINISH
+        CALL, START, FINISH, RECALL
     }
 
     private record FailedOperation(
@@ -71,6 +71,7 @@ public class OperatorController {
     private ActiveTicketRequest activeTicketRequest;
     private AttentionRequest startAttentionRequest;
     private AttentionRequest finishAttentionRequest;
+    private AttentionRequest recallRequest;
     private ActiveTicket currentTicket;
     private Task<?> currentTask;
     private boolean assignmentsLoaded;
@@ -106,6 +107,8 @@ public class OperatorController {
     @FXML private Button logoutButton;
     @FXML private Label sessionUserLabel;
     @FXML private Button pauseButton;
+    @FXML private Button recallButton;
+    @FXML private Label recallNoticeLabel;
     @FXML private Label windowStateLabel;
 
     private WindowStateRequest windowStateRequest;
@@ -168,6 +171,8 @@ public class OperatorController {
         });
 
         assignmentCombo.valueProperty().addListener((observable, previous, selected) -> {
+            recallNoticeLabel.setVisible(false);
+            recallNoticeLabel.setManaged(false);
             activeTicketKnown = false;
             currentTicket = null;
             windowState = null;
@@ -374,7 +379,7 @@ public class OperatorController {
                 active.isPresent()
                 && Objects.equals(active.get().ticketId(), failure.ticketId())
                 && "EN_ATENCION".equals(active.get().state());
-            case FINISH ->
+            case FINISH, RECALL ->
                 false;
         };
     }
@@ -387,6 +392,9 @@ public class OperatorController {
             case START ->
                 "No se recibió la confirmación del inicio de atención. "
                 + "Compruebe el estado actual antes de repetir la solicitud.";
+            case RECALL ->
+                "No se recibió la confirmación del rellamado. "
+                + "Compruebe la pantalla pública antes de volver a solicitarlo.";
             case FINISH ->
                 "No se recibió la confirmación de finalización. "
                 + "Compruebe el estado y el historial del turno antes de repetir la solicitud.";
@@ -517,14 +525,27 @@ public class OperatorController {
         changeAttention(AttentionOperation.FINISH);
     }
 
+    public void configureRecall(AttentionRequest recallRequest) {
+        this.recallRequest = Objects.requireNonNull(recallRequest, "La solicitud de rellamado es obligatoria.");
+        updateControls();
+    }
+
+    @FXML
+    private void recallTicket() {
+        changeAttention(AttentionOperation.RECALL);
+    }
+
     private void changeAttention(AttentionOperation operation) {
         boolean starting = operation == AttentionOperation.START;
-        AttentionRequest request = starting ? startAttentionRequest : finishAttentionRequest;
-        String expectedState = starting ? "LLAMADO" : "EN_ATENCION";
+        boolean recalling = operation == AttentionOperation.RECALL;
+        AttentionRequest request = recalling ? recallRequest
+                : starting ? startAttentionRequest : finishAttentionRequest;
+        String expectedState = starting || recalling ? "LLAMADO" : "EN_ATENCION";
 
         if (busy || closed || !assignmentsLoaded || !activeTicketKnown
                 || currentTicket == null || request == null
-                || !expectedState.equals(currentTicket.state())) {
+                || !expectedState.equals(currentTicket.state())
+                || (recalling && !"ACTIVA".equals(windowState))) {
             return;
         }
 
@@ -535,8 +556,12 @@ public class OperatorController {
 
         ActiveTicket target = currentTicket;
         activeTicketKnown = false;
-        Button operationButton = starting ? startAttentionButton : finishAttentionButton;
-        operationButton.setText(starting ? "Iniciando..." : "Finalizando...");
+        recallNoticeLabel.setVisible(false);
+        recallNoticeLabel.setManaged(false);
+        Button operationButton = recalling ? recallButton
+                : starting ? startAttentionButton : finishAttentionButton;
+        operationButton.setText(recalling ? "Volviendo a llamar..."
+                : starting ? "Iniciando..." : "Finalizando...");
 
         Task<Void> task = new Task<>() {
             @Override
@@ -551,7 +576,12 @@ public class OperatorController {
                 return;
             }
 
-            if (!starting) {
+            if (recalling) {
+                recallNoticeLabel.setText("Se confirmó el rellamado de " + target.visualCode() + ".");
+                recallNoticeLabel.setVisible(true);
+                recallNoticeLabel.setManaged(true);
+            }
+            if (!starting && !recalling) {
                 lastFinishedByAssignment.put(selected.assignmentId(), target.visualCode());
             }
             resetOperationButtons();
@@ -589,6 +619,7 @@ public class OperatorController {
         callNextButton.setText("Llamar siguiente");
         startAttentionButton.setText("Iniciar atención");
         finishAttentionButton.setText("Finalizar atención");
+        recallButton.setText("Volver a llamar");
     }
 
     private void showTicket(
@@ -682,6 +713,10 @@ public class OperatorController {
                 || currentTicket == null || !"LLAMADO".equals(currentTicket.state()));
         finishAttentionButton.setDisable(actionsBlocked || finishAttentionRequest == null
                 || currentTicket == null || !"EN_ATENCION".equals(currentTicket.state()));
+        recallButton.setDisable(actionsBlocked || recallRequest == null || currentTicket == null
+                || !"LLAMADO".equals(currentTicket.state()) || !"ACTIVA".equals(windowState));
+        recallButton.setVisible("LLAMADO".equals(displayedState));
+        recallButton.setManaged("LLAMADO".equals(displayedState));
         reloadAssignmentsButton.setDisable(closed || busy || assignmentsRequest == null);
         updatePauseControls(actionsBlocked);
         updatePresentation();

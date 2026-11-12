@@ -8,6 +8,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.function.Function;
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
+import javafx.scene.layout.HBox;
+import java.util.Map;
+import java.util.HashMap;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -29,6 +33,11 @@ public class DisplayScreenController {
     private Timeline clock;
     private LocalDateTime lastSuccessfulUpdate;
     private boolean closed;
+    private boolean snapshotReceived;
+    private Map<Long, Integer> knownCalls = Map.of();
+    private final PauseTransition recallHighlight = new PauseTransition(Duration.seconds(4));
+    @FXML private HBox lastCallPanel;
+    @FXML private Label callNoticeLabel;
 
     @FXML
     private Label clockLabel;
@@ -74,7 +83,7 @@ public class DisplayScreenController {
         setTextColumn(recentCodeColumn, TicketRow::visualCode);
         setTextColumn(recentServiceColumn, TicketRow::serviceName);
         setTextColumn(recentWindowColumn, ticket -> String.valueOf(ticket.windowId()));
-        setTextColumn(recentTimeColumn, ticket -> DATE_TIME.format(ticket.calledAt()));
+        setTextColumn(recentTimeColumn, ticket -> DATE_TIME.format(ticket.lastCalledAt()));
         setTextColumn(recentStateColumn, ticket -> stateName(ticket.state()));
         ticketsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         recentCallsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -128,6 +137,10 @@ public class DisplayScreenController {
         recentCallsTable.setPlaceholder(new Label("Todavía no hay llamados registrados."));
 
         if (snapshot.recentCalls().isEmpty()) {
+            recallHighlight.stop();
+            lastCallPanel.pseudoClassStateChanged(PseudoClass.getPseudoClass("recalled"), false);
+            callNoticeLabel.setVisible(false);
+            callNoticeLabel.setManaged(false);
             lastCalledLabel.setText("—");
             lastCalledLabel.setStyle("-fx-font-size: 72px;");
             lastWindowLabel.setText("—");
@@ -143,9 +156,37 @@ public class DisplayScreenController {
             lastWindowLabel.setText(String.valueOf(last.windowId()));
             lastStateLabel.setText(stateName(last.state()));
             lastCallDetailsLabel.setText(last.serviceName()
-                    + "\nLlamado: " + DATE_TIME.format(last.calledAt()));
+                    + (last.callCount() > 1 ? "\nPrimer llamado: " : "\nLlamado: ")
+                    + DATE_TIME.format(last.calledAt())
+                    + (last.callCount() > 1 ? "\nÚltimo llamado: "
+                            + DATE_TIME.format(last.lastCalledAt()) : ""));
+            boolean recalled = last.callCount() > 1;
+            callNoticeLabel.setText(recalled && "LLAMADO".equals(last.state())
+                    ? "Volvemos a llamar · Llamado " + last.callCount()
+                    : "Llamados: " + last.callCount());
+            callNoticeLabel.setVisible(recalled);
+            callNoticeLabel.setManaged(recalled);
+            Integer previous = knownCalls.get(last.ticketId());
+            boolean newRecall = snapshotReceived && recalled && "LLAMADO".equals(last.state())
+                    && (previous == null || last.callCount() > previous);
+            if (newRecall) {
+                recallHighlight.stop();
+                lastCallPanel.pseudoClassStateChanged(PseudoClass.getPseudoClass("recalled"), true);
+                recallHighlight.setOnFinished(event -> lastCallPanel.pseudoClassStateChanged(
+                        PseudoClass.getPseudoClass("recalled"), false));
+                recallHighlight.playFromStart();
+            } else if (!recalled || !"LLAMADO".equals(last.state())) {
+                recallHighlight.stop();
+                lastCallPanel.pseudoClassStateChanged(PseudoClass.getPseudoClass("recalled"), false);
+            }
         }
 
+        Map<Long, Integer> updatedCalls = new HashMap<>();
+        for (TicketRow row : snapshot.recentCalls()) {
+            updatedCalls.put(row.ticketId(), row.callCount());
+        }
+        knownCalls = Map.copyOf(updatedCalls);
+        snapshotReceived = true;
         lastSuccessfulUpdate = LocalDateTime.now();
         connectionLabel.setText("Conectado. Última actualización: "
                 + DATE_TIME.format(lastSuccessfulUpdate));
@@ -179,6 +220,7 @@ public class DisplayScreenController {
 
     public void close() {
         closed = true;
+        recallHighlight.stop();
         if (clock != null) {
             clock.stop();
         }

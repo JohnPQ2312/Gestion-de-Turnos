@@ -80,6 +80,7 @@ public class App extends Application {
                     client::listAssignments, client::callNext, client::getActiveTicket,
                     client::startAttention, client::finishAttention
             );
+            controller.configureRecall(client::recallTicket);
             controller.configurePause(
                     client::getWindowState, client::pauseWindow, client::resumeWindow
             );

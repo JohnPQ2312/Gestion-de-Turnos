@@ -9,8 +9,16 @@ public record TicketRow(
         boolean priority,
         String state,
         Integer windowId,
-        LocalDateTime calledAt
+        LocalDateTime calledAt,
+        LocalDateTime lastCalledAt,
+        int callCount
         ) {
+
+    public TicketRow(long ticketId, String visualCode, String serviceName,
+            boolean priority, String state, Integer windowId, LocalDateTime calledAt) {
+        this(ticketId, visualCode, serviceName, priority, state, windowId,
+                calledAt, calledAt, calledAt == null ? 0 : 1);
+    }
 
     public TicketRow {
         if (ticketId <= 0) {
@@ -36,13 +44,14 @@ public record TicketRow(
         }
 
         if ("EN_ESPERA".equals(state)) {
-            if (windowId != null || calledAt != null) {
+            if (windowId != null || calledAt != null || lastCalledAt != null || callCount != 0) {
                 throw new IllegalArgumentException(
                         "Un turno en espera no debe tener ventanilla ni fecha de llamado."
                 );
             }
         } else {
-            if (windowId == null || windowId <= 0 || calledAt == null) {
+            if (windowId == null || windowId <= 0 || calledAt == null
+                    || lastCalledAt == null || lastCalledAt.isBefore(calledAt) || callCount < 1) {
                 throw new IllegalArgumentException(
                         "El turno debe conservar su ventanilla y fecha de llamado."
                 );

@@ -11,9 +11,10 @@
  <center><ScrollPane fitToWidth="true" fitToHeight="true" styleClass="display-scroll">
   <VBox spacing="16">
    <padding><Insets top="12" right="28" bottom="20" left="28"/></padding>
-   <HBox spacing="24" alignment="CENTER_LEFT" styleClass="last-call">
+   <HBox fx:id="lastCallPanel" spacing="24" alignment="CENTER_LEFT" styleClass="last-call">
     <VBox spacing="2" minWidth="0" prefWidth="650" HBox.hgrow="ALWAYS">
      <Label text="Último llamado" styleClass="call-caption"/>
+     <Label fx:id="callNoticeLabel" visible="false" managed="false" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="call-notice"/>
      <Label fx:id="lastCalledLabel" text="—" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="call-code"/>
      <Label fx:id="lastCallDetailsLabel" text="Esperando información de llamados…" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="call-details"/>
     </VBox>
@@ -31,7 +32,7 @@
       <TableColumn fx:id="recentCodeColumn" text="Turno" prefWidth="125" minWidth="90" sortable="false" reorderable="false" styleClass="code-column"/>
       <TableColumn fx:id="recentServiceColumn" text="Servicio" prefWidth="360" minWidth="180" sortable="false" reorderable="false"/>
       <TableColumn fx:id="recentWindowColumn" text="Ventanilla" prefWidth="135" minWidth="110" sortable="false" reorderable="false" styleClass="window-column"/>
-      <TableColumn fx:id="recentTimeColumn" text="Llamado" prefWidth="235" minWidth="195" sortable="false" reorderable="false"/>
+      <TableColumn fx:id="recentTimeColumn" text="Último llamado" prefWidth="235" minWidth="195" sortable="false" reorderable="false"/>
       <TableColumn fx:id="recentStateColumn" text="Estado actual" prefWidth="165" minWidth="130" sortable="false" reorderable="false"/>
      </columns>
     </TableView>

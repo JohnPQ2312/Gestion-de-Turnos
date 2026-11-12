@@ -10,8 +10,16 @@ public record DisplayTicket(
         boolean priority,
         TicketState state,
         Integer windowId,
-        LocalDateTime calledAt
+        LocalDateTime calledAt,
+        LocalDateTime lastCalledAt,
+        int callCount
         ) {
+
+    public DisplayTicket(long ticketId, String visualCode, String serviceName,
+            boolean priority, TicketState state, Integer windowId, LocalDateTime calledAt) {
+        this(ticketId, visualCode, serviceName, priority, state, windowId,
+                calledAt, calledAt, calledAt == null ? 0 : 1);
+    }
 
     public DisplayTicket {
         if (ticketId <= 0) {
@@ -30,13 +38,14 @@ public record DisplayTicket(
         Objects.requireNonNull(state, "El estado del turno es obligatorio.");
 
         if (state == TicketState.EN_ESPERA) {
-            if (windowId != null || calledAt != null) {
+            if (windowId != null || calledAt != null || lastCalledAt != null || callCount != 0) {
                 throw new IllegalArgumentException(
                         "Un turno en espera no debe tener ventanilla ni fecha de llamado."
                 );
             }
         } else {
-            if (windowId == null || windowId <= 0 || calledAt == null) {
+            if (windowId == null || windowId <= 0 || calledAt == null
+                    || lastCalledAt == null || lastCalledAt.isBefore(calledAt) || callCount < 1) {
                 throw new IllegalArgumentException(
                         "Un turno llamado debe conservar su ventanilla y fecha de llamado."
                 );

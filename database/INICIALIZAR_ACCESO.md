@@ -7,6 +7,8 @@ OperatorSystem exige iniciar sesión. Ningún funcionario tiene contraseña por 
 - **Base existente** (por ejemplo, la del equipo): aplicar una vez `database/migraciones/001_credenciales_operador.sql` y después `002_estado_pausada_ventanilla.sql`. La primera crea `operator_credential`; la segunda permite `PAUSADA`. Conservan los registros existentes.
 - **Instalación nueva**: `database/script borrador.sql` ya incluye esa tabla. No aplicar además la migración.
 
+La versión con rellamado también requiere la [migración 003](migraciones/003_rellamado_ticket.sql) sobre una base anterior. Consultar [RELLAMADO.md](RELLAMADO.md) para aplicarla con CoreServer detenido. En una instalación nueva el DDL ya la incluye.
+
 ## 2. Crear la primera cuenta administrativa
 
 1. Debe existir un funcionario con `operator_role = 'ADMIN'` y `operator_state = 'ACTIVO'`. Si no existe, crearlo en `operator` con un nombre de usuario propio (sin contraseña; la tabla `operator` no la guarda).
@@ -57,7 +59,7 @@ Al cerrar la ventana con una sesión abierta, el aviso de `LOGOUT` se envía en 
 | `AUTH;<token>;LOGOUT` | `OK;LOGOUT` |
 | `AUTH;<token>;<comando protegido>` | La respuesta normal del comando |
 
-Comandos protegidos: `LIST_ASSIGNMENTS` (solo devuelve las asignaciones propias), `CALL_NEXT`, `GET_ACTIVE_TICKET`, `START_ATTENTION`, `FINISH_ATTENTION`, `GET_WINDOW_STATE`, `PAUSE_WINDOW`, `RESUME_WINDOW` (solo sobre asignación propia) y los cinco `REPORT_*` (solo ADMIN). Enviados sin `AUTH` se rechazan; no existe un modo anónimo.
+Comandos protegidos: `LIST_ASSIGNMENTS` (solo devuelve las asignaciones propias), `CALL_NEXT`, `GET_ACTIVE_TICKET`, `START_ATTENTION`, `FINISH_ATTENTION`, `RECALL_TICKET`, `GET_WINDOW_STATE`, `PAUSE_WINDOW`, `RESUME_WINDOW` (solo sobre asignación propia) y los cinco `REPORT_*` (solo ADMIN). Enviados sin `AUTH` se rechazan; no existe un modo anónimo.
 
 Pausa de la ventanilla (migración 002): `GET_WINDOW_STATE;<asignación>`, `PAUSE_WINDOW;<asignación>` y `RESUME_WINDOW;<asignación>` responden `OK;WINDOW_STATE;<ventanilla>;<ACTIVA|PAUSADA|INACTIVA>`. En `PAUSADA` se rechaza `CALL_NEXT`, pero el turno en curso puede iniciarse y finalizarse; la asignación sigue en `LIST_ASSIGNMENTS`. Reanudar solo pasa de `PAUSADA` a `ACTIVA`; una ventanilla `INACTIVA` (baja administrativa) no se pausa ni se reanuda.
 
@@ -66,3 +68,5 @@ Los rechazos de acceso responden `DENIED;<motivo>;<mensaje>`, distinto de `ERROR
 Las herramientas de `pruebas/` utilizan este contrato y solicitan la cuenta de cada funcionario participante. `TestAccess` asocia cada asignación con su sesión y envía LOGOUT al terminar. Ejecutarlas con `pruebas/Ejecutar.ps1`, según el [procedimiento](../pruebas/README.md). No requieren credenciales MySQL.
 
 Con la comunicación local (127.0.0.1) las credenciales no salen del equipo. Si se usa la red, el bloque de configuración de red debe agregar un transporte protegido antes de enviar contraseñas fuera del equipo.
+
+El rellamado usa `RECALL_TICKET;<asignación>;<ticket>` y la pantalla pública usa `GET_DISPLAY_SNAPSHOT_V2`. El detalle de esos contratos y su compatibilidad está en [RELLAMADO.md](RELLAMADO.md).
