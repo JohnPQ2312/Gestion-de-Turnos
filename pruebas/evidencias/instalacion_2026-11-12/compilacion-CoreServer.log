@@ -1,0 +1,20 @@
+Access is denied.
+[INFO] Scanning for projects...
+[INFO]
+[INFO] ------------------------< cr.ac.una:CoreServer >------------------------
+[INFO] Building CoreServer ALPHA
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- resources:3.4.0:resources (default-resources) @ CoreServer ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.8.0:compile (default-compile) @ CoreServer ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 87 source files to C:\Users\jp570\Documents\Codex\2026-09-17\progra-3-gestion-turnos\work\instalacion-20261112\proyecto\CoreServer\target\classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.837 s
+[INFO] Finished at: 2026-11-12T18:25:51-06:00
+[INFO] ------------------------------------------------------------------------

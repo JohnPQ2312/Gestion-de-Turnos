@@ -1,0 +1,5 @@
+PASS | Clientes sin CoreServer/JDBC local consultan catálogo y pantalla por TLS a otro proceso.
+PASS | Login y cinco consultas contra el proceso independiente de CoreServer.
+PASS | Administración de usuarios modifica y recupera datos del servidor independiente.
+PASS | Cierre, habilitación y nueva asignación conservan historial y exclusividad preferencial.
+RESULTADO | 4 escenarios aprobados, 0 fallidos

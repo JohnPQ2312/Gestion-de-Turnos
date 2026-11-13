@@ -43,6 +43,8 @@ La vista **Asignaciones**, exclusiva de ADMIN, gestiona los servicios habilitado
 
 ## Configuración y ejecución
 
+Para preparar una base vacía, las primeras credenciales y el recorrido inicial en NetBeans, seguir [INSTALACION.md](INSTALACION.md).
+
 Host, puerto, dirección de escucha y TLS se configuran según [RED_Y_TLS.md](RED_Y_TLS.md). Sin configuración se conserva el modo local; las conexiones entre equipos requieren TLS. Los cuatro proyectos incluyen network.properties.example, sin secretos.
 
 
@@ -60,15 +62,17 @@ db.clave=CONTRASEÑA_LOCAL
 ```
 
 - Iniciar primero `CoreServer` con su clase `cr.ac.una.CoreServer.App` y mantenerlo ejecutándose.
-- Ejecutar `CostumerTurn` con **Run Project**. Se conecta a `127.0.0.1:5000` y carga los servicios automáticamente.
+- Ejecutar `CostumerTurn` con **Run Project**. Sin configuración de red personalizada se conecta a `127.0.0.1:5000` y carga los servicios automáticamente.
 - Si falla la carga del catálogo, comprobar el servidor y su acceso a MySQL, y utilizar **Reconectar** en el generador.
-- Ejecutar `OperatorSystem` con **Run Project** e iniciar sesión con una cuenta habilitada; después seleccionar su asignación. Se conecta a `127.0.0.1:5000`, consulta su turno activo y habilita el llamado si está libre. **Actualizar asignaciones** vuelve a consultar la lista y el estado de la selección conservada.
+- Ejecutar `OperatorSystem` con **Run Project** e iniciar sesión con una cuenta habilitada; después seleccionar su asignación. Utiliza el servidor configurado (por defecto `127.0.0.1:5000`), consulta su turno activo y habilita el llamado si está libre. **Actualizar asignaciones** vuelve a consultar la lista y el estado de la selección conservada.
 - Para atender, utilizar **Llamar siguiente**, **Iniciar atención** y **Finalizar atención**, en ese orden. Al confirmar que la asignación quedó libre, se habilita un nuevo llamado.
 - El cliente del operador espera hasta 15 segundos por una respuesta. Una espera agotada no demuestra que el llamado haya fallado; la pantalla intenta consultar el estado guardado.
 - Los parámetros de zona horaria permiten convertir los `TIMESTAMP` entre la sesión MySQL y la zona de Java. La configuración es necesaria para comparar correctamente el inicio de las asignaciones.
-- Ejecutar `QueueDisplayScreen` con **Run Project**. Se suscribe a los avisos de `127.0.0.1:5000`, consulta los datos iniciales y muestra su estado de conexión. Si CoreServer se detiene, conserva los datos anteriores y vuelve a suscribirse y sincronizarse cuando está disponible; no requiere presionar botones. El canal de avisos espera hasta 25 segundos por un mensaje y las consultas de datos hasta 15 segundos por una respuesta.
+- Ejecutar `QueueDisplayScreen` con **Run Project**. Se suscribe a los avisos del servidor configurado (por defecto `127.0.0.1:5000`), consulta los datos iniciales y muestra su estado de conexión. Si CoreServer se detiene, conserva los datos anteriores y vuelve a suscribirse y sincronizarse cuando está disponible; no requiere presionar botones. El canal de avisos espera hasta 25 segundos por un mensaje y las consultas de datos hasta 15 segundos por una respuesta.
 
 ## Comprobaciones realizadas
+
+La [verificación de instalación limpia](pruebas/QA_instalacion_2026-11-12.md) comprobó el esquema, los datos iniciales, CredentialSetup, el recorrido de las aplicaciones por TLS y clientes en procesos separados contra MySQL local. No sustituye el ensayo entre computadoras.
 
 - Registro de un turno regular y consulta de su fila y consecutivo en MySQL.
 - Continuación de la numeración después de reiniciar `CoreServer`.

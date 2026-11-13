@@ -1,6 +1,6 @@
 # Inicializar el acceso al sistema
 
-OperatorSystem exige iniciar sesión. Ningún funcionario tiene contraseña por defecto: cada credencial se crea a propósito con la herramienta `CredentialSetup` de CoreServer.
+OperatorSystem exige iniciar sesión. Ningún funcionario tiene contraseña por defecto: la primera credencial administrativa se crea con `CredentialSetup` de CoreServer; después también se pueden gestionar las credenciales desde la vista Personas.
 
 ## 1. Estructura
 
@@ -11,13 +11,13 @@ La versión con rellamado también requiere la [migración 003](migraciones/003_
 
 ## 2. Crear la primera cuenta administrativa
 
-1. Debe existir un funcionario con `operator_role = 'ADMIN'` y `operator_state = 'ACTIVO'`. Si no existe, crearlo en `operator` con un nombre de usuario propio (sin contraseña; la tabla `operator` no la guarda).
+1. Debe existir un funcionario con `operator_role = 'ADMIN'` y `operator_state = 'ACTIVO'`. En una instalación nueva con `datos_prueba.sql` ya existe `admin` (ID 5), sin credencial: no hay que insertar otra cuenta. Si una base existente carece de administrador, coordinar primero su alta en `operator` con el responsable de esa base; la contraseña no se guarda en esa tabla.
 2. Con `CoreServer/src/main/resources/db.properties` configurado, ejecutar la clase `cr.ac.una.config.CredentialSetup`:
-   - NetBeans: abrir el archivo `CredentialSetup.java` → clic derecho → **Run File**. Escribir los datos en la ventana Output.
+   - NetBeans: compilar CoreServer después de configurar `db.properties`, abrir `CredentialSetup.java` → clic derecho → **Run File**. Escribir los datos en la ventana Output.
    - Consola con el JDK: la contraseña no se muestra mientras se escribe.
 3. Indicar el usuario y escribir dos veces la contraseña (8 a 128 caracteres).
 
-La contraseña nunca va como argumento del programa, ni en scripts SQL, ni en Git. Repetir el paso 2 para cada funcionario que deba entrar a OperatorSystem; también sirve para restablecer una contraseña.
+La contraseña nunca va como argumento del programa, ni en scripts SQL, ni en Git. Repetir el paso 2 para cada funcionario que deba entrar a OperatorSystem; también sirve para restablecer una contraseña. Después del primer ingreso como ADMIN, la vista [Personas](ADMINISTRAR_PERSONAS.md) permite gestionar las demás credenciales. En los datos iniciales, `amora` y `lvargas` tienen las asignaciones 1 y 2; tampoco reciben contraseñas predeterminadas.
 
 Si NetBeans no ofrece una consola interactiva, la herramienta avisa que la contraseña será visible mientras se escribe.
 
@@ -27,7 +27,7 @@ Si NetBeans no ofrece una consola interactiva, la herramienta avisa que la contr
 | --- | --- |
 | Sin sesión | Catálogo y emisión (CostumerTurn), pantalla pública (QueueDisplayScreen) |
 | OPERADOR | Ver y operar únicamente sus propias asignaciones abiertas |
-| ADMIN | Las cinco consultas. Atender solo si tiene una asignación propia |
+| ADMIN | Las cinco consultas, administración de personas, credenciales, habilitaciones y asignaciones. Atender solo si tiene una asignación propia |
 | SUPERVISOR | Sin acceso por ahora |
 
 Un funcionario `INACTIVO`, o sin credencial, no puede iniciar sesión.
@@ -45,7 +45,7 @@ Cada sesión guarda, solo en la memoria del servidor, una huella (SHA-256) del h
 - el funcionario quedó `INACTIVO`, pasó a un rol sin acceso o perdió su credencial;
 - la contraseña cambió (la huella ya no coincide). En ese caso se revocan las sesiones que usaron esa credencial anterior; se conservan las iniciadas con la nueva contraseña.
 
-Después de restablecer una contraseña con `CredentialSetup`, la contraseña anterior ya no permite entrar y la nueva sí. Un token anterior puede seguir autorizando hasta que corresponda su siguiente revalidación; la primera solicitud protegida después de ese plazo detecta el cambio y lo rechaza. La herramienta se ejecuta en otro proceso, por eso no puede cerrar las sesiones del servidor en el acto; la administración de usuarios (bloque 5) podrá revocarlas de inmediato con `AuthService.revokeSessions`.
+Después de restablecer una contraseña con `CredentialSetup`, la contraseña anterior ya no permite entrar y la nueva sí. Un token anterior puede seguir autorizando hasta que corresponda su siguiente revalidación; la primera solicitud protegida después de ese plazo detecta el cambio y lo rechaza. La herramienta se ejecuta en otro proceso, por eso no puede cerrar las sesiones del servidor en el acto. Los cambios realizados desde Personas notifican al mismo servidor mediante `AuthService.accountChanged`, que invalida de inmediato las sesiones con datos de cuenta o credenciales reemplazados. Las operaciones administrativas revalidan la cuenta en cada solicitud.
 
 ### Cierre al salir de OperatorSystem
 
@@ -59,7 +59,7 @@ Al cerrar la ventana con una sesión abierta, el aviso de `LOGOUT` se envía en 
 | `AUTH;<token>;LOGOUT` | `OK;LOGOUT` |
 | `AUTH;<token>;<comando protegido>` | La respuesta normal del comando |
 
-Comandos protegidos: `LIST_ASSIGNMENTS` (solo devuelve las asignaciones propias), `CALL_NEXT`, `GET_ACTIVE_TICKET`, `START_ATTENTION`, `FINISH_ATTENTION`, `RECALL_TICKET`, `GET_WINDOW_STATE`, `PAUSE_WINDOW`, `RESUME_WINDOW` (solo sobre asignación propia) y los cinco `REPORT_*` (solo ADMIN). Enviados sin `AUTH` se rechazan; no existe un modo anónimo.
+Comandos protegidos: `LIST_ASSIGNMENTS` (solo devuelve las asignaciones propias), `CALL_NEXT`, `GET_ACTIVE_TICKET`, `START_ATTENTION`, `FINISH_ATTENTION`, `RECALL_TICKET`, `GET_WINDOW_STATE`, `PAUSE_WINDOW`, `RESUME_WINDOW` (solo sobre asignación propia), los cinco `REPORT_*` y los comandos `ADMIN_PEOPLE_*` y `ADMIN_ROUTING_*` (solo ADMIN). Enviados sin `AUTH` se rechazan; no existe un modo anónimo para esas operaciones.
 
 Pausa de la ventanilla (migración 002): `GET_WINDOW_STATE;<asignación>`, `PAUSE_WINDOW;<asignación>` y `RESUME_WINDOW;<asignación>` responden `OK;WINDOW_STATE;<ventanilla>;<ACTIVA|PAUSADA|INACTIVA>`. En `PAUSADA` se rechaza `CALL_NEXT`, pero el turno en curso puede iniciarse y finalizarse; la asignación sigue en `LIST_ASSIGNMENTS`. Reanudar solo pasa de `PAUSADA` a `ACTIVA`; una ventanilla `INACTIVA` (baja administrativa) no se pausa ni se reanuda.
 
@@ -67,7 +67,7 @@ Los rechazos de acceso responden `DENIED;<motivo>;<mensaje>`, distinto de `ERROR
 
 Las herramientas de `pruebas/` utilizan este contrato y solicitan la cuenta de cada funcionario participante. `TestAccess` asocia cada asignación con su sesión y envía LOGOUT al terminar. Ejecutarlas con `pruebas/Ejecutar.ps1`, según el [procedimiento](../pruebas/README.md). No requieren credenciales MySQL.
 
-Con la comunicación local (127.0.0.1) las credenciales no salen del equipo. Si se usa la red, el bloque de configuración de red debe agregar un transporte protegido antes de enviar contraseñas fuera del equipo.
+El modo sin TLS está limitado a loopback. Para comunicar computadoras se exige TLS, con certificado del servidor y almacenes de confianza configurados según [RED_Y_TLS.md](../RED_Y_TLS.md). El transporte protegido ya está implementado; sigue pendiente el ensayo físico entre equipos.
 
 El rellamado usa `RECALL_TICKET;<asignación>;<ticket>` y la pantalla pública usa `GET_DISPLAY_SNAPSHOT_V2`. El detalle de esos contratos y su compatibilidad está en [RELLAMADO.md](RELLAMADO.md).
 
