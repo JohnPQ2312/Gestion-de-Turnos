@@ -2,7 +2,7 @@ package cr.ac.una.repository;
 
 import java.sql.*;
 
-// Serializa cambios de habilitaciones y asignaciones por base, incluso entre conexiones.
+// Serializa cambios de habilitaciones, asignaciones, servicios y ventanillas por base, incluso entre conexiones.
 // No sustituye los bloqueos de filas ni las restricciones SQL del llamado.
 final class RoutingConfigurationLock implements AutoCloseable {
     private final Connection connection;
@@ -12,7 +12,7 @@ final class RoutingConfigurationLock implements AutoCloseable {
         try (PreparedStatement s = connection.prepareStatement("SELECT GET_LOCK(CONCAT('turnos.routing.',MD5(DATABASE())),5)");
                 ResultSet r = s.executeQuery()) {
             if (!r.next() || r.getInt(1) != 1) {
-                throw new IllegalStateException("Hay otro cambio de habilitaciones o asignaciones en curso. Actualice antes de volver a intentarlo.");
+                throw new IllegalStateException("Hay otro cambio de configuración administrativa en curso. Actualice antes de volver a intentarlo.");
             }
         }
     }

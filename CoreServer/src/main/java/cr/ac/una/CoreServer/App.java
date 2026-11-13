@@ -28,6 +28,9 @@ import cr.ac.una.repository.JdbcAssignmentConfigurationRepository;
 import cr.ac.una.service.PeopleAdministrationService;
 import cr.ac.una.repository.JdbcPeopleAdministrationRepository;
 import cr.ac.una.server.PeopleAdministrationHandler;
+import cr.ac.una.server.CatalogAdministrationHandler;
+import cr.ac.una.service.CatalogAdministrationService;
+import cr.ac.una.repository.JdbcCatalogAdministrationRepository;
 import cr.ac.una.service.ReportService;
 import cr.ac.una.service.TicketAttentionService;
 import cr.ac.una.service.TicketLifecycleService;
@@ -87,7 +90,9 @@ public class App {
                     new TicketRecallService(new JdbcTicketRecallRepository(connectionFactory)),
                     peopleAdministration,
                     new AssignmentConfigurationHandler(new AssignmentConfigurationService(
-                            new JdbcAssignmentConfigurationRepository(connectionFactory)))
+                            new JdbcAssignmentConfigurationRepository(connectionFactory))),
+                    new CatalogAdministrationHandler(new CatalogAdministrationService(
+                            new JdbcCatalogAdministrationRepository(connectionFactory)))
             );
 
             TurnServer server = new TurnServer(NetworkSettings.load(), requestHandler, displayEvents);

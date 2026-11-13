@@ -5,6 +5,8 @@ import cr.ac.una.operatorsystem.client.AuthServerClient;
 import cr.ac.una.operatorsystem.client.PeopleServerClient;
 import cr.ac.una.operatorsystem.client.AssignmentServerClient;
 import cr.ac.una.operatorsystem.controller.AssignmentsController;
+import cr.ac.una.operatorsystem.client.CatalogServerClient;
+import cr.ac.una.operatorsystem.controller.CatalogController;
 import cr.ac.una.operatorsystem.controller.PeopleController;
 import cr.ac.una.operatorsystem.client.OperatorServerClient;
 import cr.ac.una.operatorsystem.client.ReportServerClient;
@@ -42,6 +44,8 @@ public class App extends Application {
     private AssignmentsController assignmentsController;
     private Stage peopleStage;
     private PeopleController peopleController;
+    private Stage catalogStage;
+    private CatalogController catalogController;
     private Stage reportsStage;
     private ReportsController reportsController;
 
@@ -117,6 +121,8 @@ public class App extends Application {
                 controller.configurePeople(() -> openPeople(peopleClient));
                 AssignmentServerClient assignmentClient = new AssignmentServerClient(host, port, session);
                 controller.configureAssignments(() -> openAssignments(assignmentClient));
+                CatalogServerClient catalogClient = new CatalogServerClient(host, port, session);
+                controller.configureCatalog(() -> openCatalog(catalogClient));
             } else {
                 controller.hideReports();
             }
@@ -167,6 +173,14 @@ public class App extends Application {
         if (assignmentsStage != null) {
             assignmentsStage.close();
             assignmentsStage = null;
+        }
+        if (catalogController != null) {
+            catalogController.close();
+            catalogController = null;
+        }
+        if (catalogStage != null) {
+            catalogStage.close();
+            catalogStage = null;
         }
         if (peopleController != null) {
             peopleController.close();
@@ -274,6 +288,30 @@ public class App extends Application {
             assignmentsStage.show();
         } catch (IOException exception) {
             showOpenError("No se pudo abrir la configuración de atención.", exception);
+        }
+    }
+
+    private void openCatalog(CatalogServerClient client) {
+        if (catalogStage != null) { catalogStage.show(); catalogStage.toFront(); return; }
+        try {
+            FXMLLoader loader = new FXMLLoader(App.class.getResource("/cr/ac/una/operatorsystem/views/catalog.fxml"));
+            Parent root = loader.load();
+            catalogController = loader.getController();
+            catalogStage = new Stage();
+            catalogStage.initOwner(stage);
+            catalogStage.setTitle("Servicios y ventanillas");
+            catalogStage.setScene(new Scene(root, 1180, 780));
+            catalogStage.setMinWidth(980);
+            catalogStage.setMinHeight(650);
+            catalogStage.setOnHidden(event -> {
+                if (catalogController != null) catalogController.close();
+                catalogController = null;
+                catalogStage = null;
+            });
+            catalogController.configure(client, this::sessionEnded);
+            catalogStage.show();
+        } catch (IOException exception) {
+            showOpenError("No se pudo abrir la administración de servicios y ventanillas.", exception);
         }
     }
 

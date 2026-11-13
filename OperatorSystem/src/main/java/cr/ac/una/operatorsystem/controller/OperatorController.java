@@ -108,6 +108,8 @@ public class OperatorController {
     private Runnable peopleOpener;
     @FXML private Button assignmentsButton;
     private Runnable assignmentsOpener;
+    @FXML private Button catalogButton;
+    private Runnable catalogOpener;
     @FXML private Button logoutButton;
     @FXML private Label sessionUserLabel;
     @FXML private Button pauseButton;
@@ -760,6 +762,19 @@ public class OperatorController {
     @FXML
     private void openAssignments() {
         if (!closed && assignmentsOpener != null) assignmentsOpener.run();
+    }
+
+    // Servicios y ventanillas: solo ADMIN. App decide cómo abrir la ventana.
+    public void configureCatalog(Runnable opener) {
+        catalogOpener = Objects.requireNonNull(opener);
+        catalogButton.setVisible(true);
+        catalogButton.setManaged(true);
+        catalogButton.setDisable(closed);
+    }
+
+    @FXML
+    private void openCatalog() {
+        if (!closed && catalogOpener != null) catalogOpener.run();
     }
 
     public void configurePeople(Runnable opener) {

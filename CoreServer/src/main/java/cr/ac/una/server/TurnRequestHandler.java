@@ -58,6 +58,7 @@ public class TurnRequestHandler {
     private final TicketRecallService recallService;
     private final PeopleAdministrationHandler peopleAdministration;
     private final AssignmentConfigurationHandler assignmentConfiguration;
+    private final CatalogAdministrationHandler catalogAdministration;
 
     public TurnRequestHandler(
             ServiceRepository serviceRepository,
@@ -109,6 +110,27 @@ public class TurnRequestHandler {
             PeopleAdministrationHandler peopleAdministration,
             AssignmentConfigurationHandler assignmentConfiguration
     ) {
+        this(serviceRepository, ticketService, attentionService, activeTicketRepository, lifecycleService,
+                displayRepository, displayEvents, reportService, authService, windowAvailabilityService,
+                recallService, peopleAdministration, assignmentConfiguration, null);
+    }
+
+    public TurnRequestHandler(
+            ServiceRepository serviceRepository,
+            TicketService ticketService,
+            TicketAttentionService attentionService,
+            ActiveTicketRepository activeTicketRepository,
+            TicketLifecycleService lifecycleService,
+            DisplayRepository displayRepository,
+            DisplayEventHub displayEvents,
+            ReportService reportService,
+            AuthService authService,
+            WindowAvailabilityService windowAvailabilityService,
+            TicketRecallService recallService,
+            PeopleAdministrationHandler peopleAdministration,
+            AssignmentConfigurationHandler assignmentConfiguration,
+            CatalogAdministrationHandler catalogAdministration
+    ) {
         this.serviceRepository = Objects.requireNonNull(
                 serviceRepository, "El repositorio de servicios es obligatorio."
         );
@@ -142,6 +164,7 @@ public class TurnRequestHandler {
         this.recallService = Objects.requireNonNull(recallService, "El servicio de rellamado es obligatorio.");
         this.peopleAdministration = peopleAdministration;
         this.assignmentConfiguration = assignmentConfiguration;
+        this.catalogAdministration = catalogAdministration;
     }
 
     /**
@@ -171,6 +194,14 @@ public class TurnRequestHandler {
                     var actor = authService.administrationActor(envelope[1]);
                     if (assignmentConfiguration == null) throw new IllegalStateException("La configuración de atención no está disponible.");
                     return assignmentConfiguration.handle(envelope[2], actor);
+                }
+                if (envelope[2].startsWith("ADMIN_SERVICE_") || envelope[2].startsWith("ADMIN_WINDOW_")) {
+                    var actor = authService.administrationActor(envelope[1]);
+                    if (catalogAdministration == null) throw new IllegalStateException("La administración de servicios y ventanillas no está configurada.");
+                    String response = catalogAdministration.handle(envelope[2], actor);
+                    // Las pantallas muestran el nombre del servicio: se refrescan tras confirmar un cambio.
+                    if (response.startsWith("OK;ADMIN_SERVICE_UPDATED;")) displayEvents.publishChange();
+                    return response;
                 }
                 if (envelope[2].startsWith("ADMIN_PEOPLE_")) {
                     var actor = authService.administrationActor(envelope[1]);
@@ -208,7 +239,8 @@ public class TurnRequestHandler {
     // user es null cuando la solicitud no trae sesión. Los comandos públicos
     // lo ignoran; los protegidos lo exigen y comprueban sus permisos.
     private String dispatch(String request, AuthenticatedUser user) {
-        if (request.startsWith("ADMIN_PEOPLE_") || request.startsWith("ADMIN_ROUTING_")) authService.requireRole(user, UserRole.ADMIN);
+        if (request.startsWith("ADMIN_PEOPLE_") || request.startsWith("ADMIN_ROUTING_")
+                || request.startsWith("ADMIN_SERVICE_") || request.startsWith("ADMIN_WINDOW_")) authService.requireRole(user, UserRole.ADMIN);
         if ("LIST_SERVICES".equals(request)) {
             return listServices();
         }
