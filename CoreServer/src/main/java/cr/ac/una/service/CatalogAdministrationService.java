@@ -1,0 +1,79 @@
+package cr.ac.una.service;
+
+import cr.ac.una.model.AdministrationActor;
+import cr.ac.una.model.ManagedService;
+import cr.ac.una.repository.CatalogAdministrationRepository;
+import java.util.List;
+import java.util.Objects;
+import java.util.regex.Pattern;
+
+// Valida las entradas del catálogo antes de llegar a la transacción.
+// Las reglas que dependen de datos guardados (turnos, asignaciones, duplicados) se comprueban en el repositorio.
+public class CatalogAdministrationService {
+
+    // Código estable: empieza con letra; letras, dígitos o guion bajo; VARCHAR(20).
+    private static final Pattern CODE = Pattern.compile("[A-Z][A-Z0-9_]{0,19}");
+    private static final String PREFIX_RULE
+            = "El prefijo debe tener de 1 a 5 letras mayúsculas sin tildes, sin dígitos ni espacios.";
+
+    private final CatalogAdministrationRepository repository;
+
+    public CatalogAdministrationService(CatalogAdministrationRepository repository) {
+        this.repository = Objects.requireNonNull(repository);
+    }
+
+    public List<ManagedService> services(AdministrationActor actor) {
+        return repository.listServices(actor);
+    }
+
+    public void createService(AdministrationActor actor, String code, String name, String prefix) {
+        String checked = storedPrefix(prefix);
+        if (!ManagedService.isValidNewPrefix(checked)) throw new IllegalArgumentException(PREFIX_RULE);
+        repository.createService(actor, code(code), name(name), checked);
+    }
+
+    // El formato estricto se aplica en el repositorio solo si el prefijo cambia,
+    // para no bloquear la edición del nombre de un servicio anterior a esta regla.
+    public void updateService(AdministrationActor actor, String code, String name, String prefix) {
+        repository.updateService(actor, storedCode(code), name(name), storedPrefix(prefix));
+    }
+
+    public void setServiceActive(AdministrationActor actor, String code, boolean active) {
+        repository.setServiceActive(actor, storedCode(code), active);
+    }
+
+    // Código de un servicio nuevo.
+    private static String code(String value) {
+        String result = value == null ? "" : value.trim();
+        if (!CODE.matcher(result).matches()) {
+            throw new IllegalArgumentException("El código del servicio es obligatorio: de 1 a 20 caracteres, "
+                    + "inicia con letra mayúscula y solo usa letras mayúsculas, dígitos o guion bajo.");
+        }
+        return result;
+    }
+
+    // Código de un servicio existente: identifica la fila; no se reinterpreta su formato.
+    private static String storedCode(String value) {
+        if (value == null || value.isBlank() || value.length() > 20 || value.codePoints().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("Seleccione un servicio válido.");
+        }
+        return value;
+    }
+
+    private static String name(String value) {
+        if (value == null || value.isBlank()) throw new IllegalArgumentException("El nombre del servicio es obligatorio.");
+        String result = value.trim();
+        if (result.codePointCount(0, result.length()) > 80 || result.codePoints().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("El nombre del servicio admite hasta 80 caracteres y no permite caracteres de control.");
+        }
+        return result;
+    }
+
+    private static String storedPrefix(String value) {
+        String result = value == null ? "" : value.trim();
+        if (result.isEmpty() || result.length() > 5 || result.codePoints().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException(PREFIX_RULE);
+        }
+        return result;
+    }
+}
