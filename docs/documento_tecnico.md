@@ -1,6 +1,6 @@
 # Sistema distribuido de Gestión de Turnos
 
-Documento técnico en elaboración. Este borrador desarrolla los apartados 3 a 7 de la estructura solicitada. Versión de referencia: `cc9405e`. La [lista de apartados y su estado](README.md) identifica el contenido restante.
+Documento técnico en elaboración. Este borrador desarrolla los apartados 3 a 11 de la estructura solicitada. Versión de referencia: `cc9405e`. La [lista de apartados y su estado](README.md) identifica el contenido restante.
 
 ## 3. Descripción del problema
 
@@ -178,3 +178,131 @@ El ticket guarda creación, primer llamado, último llamado, inicio y fin. Las c
 Para una instalación nueva se ejecutan el esquema y los [datos iniciales](../database/datos_prueba.sql). Para una base anterior se revisan las [migraciones](../database/migraciones), sin reinicializar datos ni contadores. El procedimiento reproducible está en [INSTALACION.md](../INSTALACION.md).
 
 Los dos diagramas se contrastaron con el corte `cc9405e`. Deben comprobarse otra vez al integrar los cambios de servicios y ventanillas; no representan por anticipado esa implementación.
+
+## 8. Descripción de los patrones utilizados
+
+### MVC: separar la presentación de sus datos y operaciones
+
+**Problema:** si una pantalla calcula consecutivos, ejecuta SQL y modifica controles, un cambio de almacenamiento o de regla obliga a modificar también la interfaz. Además, distintas estaciones podrían aplicar reglas diferentes.
+
+**Aplicación:** las vistas FXML y los estilos describen la presentación; los controladores JavaFX coordinan entradas y resultados; los modelos representan los datos. Por ejemplo, `ticketsGenerator.fxml`, `TicketsGeneratorController`, `ServiceOption` y `TicketConfirmation` forman parte de esa separación en CostumerTurn. Las reglas compartidas y los modelos del dominio, como `Ticket`, se encuentran en CoreServer. El cliente recibe datos por red; no comparte la misma instancia del modelo del servidor.
+
+**Beneficio:** se puede modificar la presentación sin trasladar SQL al controlador, y todos los clientes utilizan las reglas del servidor. Es una aplicación de MVC dentro de una arquitectura distribuida, no una afirmación de que las cuatro aplicaciones compartan un único objeto modelo.
+
+### Repository: separar el caso de uso del almacenamiento
+
+**Problema:** la generación necesita guardar un turno y reservar su número, pero no debería contener directamente la implementación SQL dentro de la pantalla o del servicio de entrada.
+
+**Aplicación:** `TicketService` recibe por constructor un `TicketCreationRepository`, cuyo contrato ofrece `createWithNextNumber`. El ensamblado de CoreServer entrega una instancia de `JdbcTicketCreationRepository`. Esa implementación contiene la transacción que consulta el servicio, bloquea el consecutivo, inserta el ticket y actualiza el número.
+
+**Beneficio:** el servicio depende de una operación del dominio y de un contrato, mientras la implementación JDBC concentra los detalles del almacenamiento. Existen contratos equivalentes para llamado, ciclo, rellamado, consultas y administración. Las implementaciones InMemory de apoyo no significan que todos los contratos dispongan de un sustituto intercambiable ya terminado.
+
+### Publicación/suscripción y el principio de Observer
+
+**Problema:** varias pantallas deben actualizarse cuando cambia la atención, sin que cada operación conozca qué ventanas están abiertas ni espere a que cada una dibuje los datos.
+
+**Aplicación:** `DisplayEventHub` registra suscripciones y publica un aviso después de confirmar un cambio. `TurnServer` transmite el aviso al suscriptor y `DisplayRefreshService` consulta una captura actualizada. Cada suscripción tiene una cola de capacidad uno: varios cambios próximos pueden agruparse, porque interesa recuperar el estado vigente y no reproducir cada aviso como una operación histórica.
+
+**Beneficio:** el productor del cambio no administra las interfaces de cada pantalla. Es publicación/suscripción con una finalidad relacionada con Observer; no se utiliza la clase `java.util.Observable` ni un callback remoto de objetos Java. MVC y Repository constituyen los dos patrones principales justificados aquí.
+
+## 9. Explicación del mecanismo de comunicación
+
+Las aplicaciones intercambian mensajes de texto UTF-8 sobre sockets TCP. `NetworkSettings` prepara el transporte y la configuración de cada proyecto. Las conexiones fuera de loopback exigen TLS, confianza en el certificado y coincidencia de su nombre o IP. La configuración y los certificados se describen en [RED_Y_TLS.md](../RED_Y_TLS.md).
+
+### Solicitudes y respuestas
+
+El protocolo separa los campos mediante punto y coma. Los textos variables se codifican con `URLEncoder` y se recuperan con `URLDecoder` usando UTF-8, para que un separador o un acento no altere la estructura. Esta codificación no cifra el contenido: esa protección corresponde a TLS.
+
+Cada solicitud normal abre una conexión, envía una línea, recibe una respuesta y cierra el canal. El canal de suscripción pública es persistente y se describe aparte.
+
+| Forma de solicitud | Uso |
+| --- | --- |
+| `LIST_SERVICES` | Catálogo público. |
+| `GENERATE_TICKET;INFO;true` | Generación preferencial para el servicio de ejemplo INFO. |
+| `LOGIN;usuario;contraseña` | Inicio de sesión; los textos se envían codificados. |
+| `AUTH;<token>;CALL_NEXT;<asignacion>` | Operación protegida de atención sobre una asignación propia. |
+| `AUTH;<token>;RECALL_TICKET;<asignacion>;<ticket>` | Rellamado del ticket actual. |
+| `AUTH;<token>;REPORT_*;...` | Consultas disponibles para ADMIN. |
+| `AUTH;<token>;ADMIN_PEOPLE_*;...` o `ADMIN_ROUTING_*;...` | Administración de personas y configuración de atención. Ambas familias llevan el prefijo AUTH. |
+
+`TurnRequestHandler` interpreta los comandos, verifica permisos y deriva la operación al servicio correspondiente. Las respuestas `OK;...` describen resultados correctos; `ERROR;...` informa rechazos de formato, reglas o acceso a datos; `DENIED;motivo;mensaje` distingue los rechazos de autenticación o autorización. Un resultado válido también puede indicar que no hay turnos disponibles.
+
+Los identificadores enviados por el cliente no acreditan su propiedad. El servidor obtiene el funcionario de la sesión, comprueba su asignación y exige ADMIN donde corresponde. Los contratos detallados se mantienen en las guías de [acceso](../database/INICIALIZAR_ACCESO.md), [Personas](../database/ADMINISTRAR_PERSONAS.md), [Asignaciones](../database/CONFIGURAR_ATENCION.md) y [rellamado](../database/RELLAMADO.md).
+
+### Actualización de la pantalla pública
+
+La pantalla envía `SUBSCRIBE_DISPLAY`. El servidor confirma con `OK;SUBSCRIBED`, emite `EVENT;DISPLAY_CHANGED` cuando hay cambios y envía `OK;HEARTBEAT` después de diez segundos sin avisos. El latido no obliga a consultar los datos.
+
+`DisplayRefreshService` abre la suscripción antes de solicitar la captura inicial para conservar un aviso que llegue durante esa lectura. Después consulta `GET_DISPLAY_SNAPSHOT_V2` cuando recibe cambios. V2 incluye primer llamado, último llamado y contador; el comando anterior conserva su formato para las herramientas existentes.
+
+Si la conexión falla, la pantalla conserva los datos visibles, indica que están desactualizados e intenta volver a suscribirse después de dos segundos. Al recuperar el canal vuelve a consultar una captura completa. Los avisos viven en memoria y no son una bitácora durable; SQL ejecutado directamente en MySQL no publica notificaciones del servidor.
+
+### Confirmaciones perdidas
+
+Una espera agotada no demuestra que la transacción falló: pudo guardarse el cambio y perderse únicamente la respuesta. Los clientes no repiten automáticamente las escrituras. La pantalla del operador consulta el turno activo para recuperar contexto; una finalización incierta requiere comprobar el historial, porque una asignación libre no acredita por sí sola esa finalización concreta.
+
+En la generación tampoco existe una clave de idempotencia que reconozca una solicitud repetida. El aviso pide comprobar el resultado antes de solicitar otro turno. La consulta y la recuperación de conexión son distintas de reenviar una modificación.
+
+## 10. Explicación del uso de hilos
+
+El servidor y las interfaces deben poder esperar conexiones, respuestas y consultas sin detener a todos los demás usuarios. Se utilizan hilos virtuales para gran parte de ese trabajo de entrada/salida; la actualización de controles sigue perteneciendo al hilo de JavaFX.
+
+| Lugar del código | Trabajo | Motivo |
+| --- | --- | --- |
+| `TurnServer.start` | Acepta conexiones y entrega cada cliente a `Executors.newVirtualThreadPerTaskExecutor()`. | Una conexión o suscripción puede esperar sin mantener ocupado el ciclo que acepta otros clientes. |
+| `TicketsGeneratorController.startTask` | Ejecuta un `Task` mediante `Thread.ofVirtual()`. | El catálogo y la emisión no bloquean la interfaz mientras esperan al servidor. |
+| Controladores de acceso, atención, consultas, Personas y Asignaciones | Ejecutan sus tareas de red en hilos virtuales. | Mantienen la interfaz disponible y coordinan controles mientras una solicitud está en curso. |
+| `DisplayRefreshService` | Mantiene la escucha y consulta capturas en un ejecutor de hilos virtuales. | La espera del siguiente evento o de una reconexión no detiene el reloj ni el dibujo de la pantalla. |
+| `OperatorSystem.App.stop` | Inicia un hilo de plataforma no daemon para intentar LOGOUT con tiempos acotados. | Permite intentar el aviso de cierre sin hacer esperar al hilo de interfaz. No se promete revocación si el aviso falla. |
+
+En la pantalla pública, `Platform.runLater` traslada los resultados al hilo JavaFX. El reloj utiliza `Timeline`; no se crea un hilo de red adicional por cada segundo mostrado. Los manejadores de finalización de los `Task` coordinan la presentación de resultados y errores.
+
+Al cerrar una pantalla pública se detiene el reloj, se cancela su trabajo y se cierra la suscripción. `DisplayRefreshService.close` señala el cierre, interrumpe el ejecutor y cierra el canal activo. Los controladores cancelan su trabajo pendiente y evitan aplicar resultados a vistas ya cerradas.
+
+Se comparten entre solicitudes el manejador, los servicios, los repositorios, el registro de sesiones y el centro de avisos del servidor. Las transacciones utilizan conexiones JDBC propias de la operación; no se comparte una única `Connection` entre todos los hilos. `ConnectionMetrics` utiliza `ThreadLocal` para separar las mediciones de solicitudes simultáneas. El conjunto de suscripciones y sus colas emplean colecciones concurrentes.
+
+Los hilos permiten concurrencia, pero no resuelven automáticamente las carreras sobre turnos, consecutivos o asignaciones. Esa protección se explica en el apartado siguiente.
+
+## 11. Explicación del control de concurrencia
+
+La consistencia se protege mediante transacciones, bloqueos y restricciones de MySQL. Deshabilitar un botón reduce solicitudes accidentales en una ventana, pero no impide que otro proceso envíe la misma operación.
+
+### Reserva del consecutivo
+
+`JdbcTicketCreationRepository` inicia una transacción, lee el servicio activo con `FOR SHARE` y bloquea la fila correspondiente de `ticket_sequence` con `FOR UPDATE`. Después crea el ticket y actualiza el consecutivo. Confirma ambos cambios juntos; ante un fallo, ejecuta rollback. Las restricciones de código visual y de servicio/número constituyen una segunda defensa.
+
+Dos solicitudes para el mismo servicio no calculan el siguiente número desde copias independientes de un contador local: compiten por la fila protegida del servicio.
+
+### Dos llamados simultáneos
+
+`JdbcTicketCallingRepository` vuelve a comprobar la asignación dentro de su transacción. Bloquea la asignación, el funcionario y la ventanilla; comprueba sus estados y la compatibilidad de servicios; verifica que no exista una ocupación activa incompatible.
+
+La selección busca tickets `EN_ESPERA` de servicios elegibles, aplica la modalidad de la ventanilla y ordena por prioridad descendente, fecha de creación e identificador. Utiliza `LIMIT 1 FOR UPDATE` y actualiza el registro con una condición adicional que exige que siga en espera. No utiliza `SKIP LOCKED` ni un bloqueo global de toda la cola en memoria.
+
+Si dos ventanillas compiten por el mismo candidato, los bloqueos coordinan el acceso y la segunda operación no puede confirmar ese ticket como otro llamado válido después de que ya salió de espera. Puede recibir otro turno compatible o informar que no hay turnos; una contención o error de transacción se informa sin un reenvío automático de escritura.
+
+Los índices únicos de asignaciones abiertas y del turno activo complementan esta coordinación. Una misma asignación no puede conservar dos tickets llamados o en atención, y un funcionario o una ventanilla no pueden tener dos asignaciones abiertas.
+
+### Ciclo, rellamado y administración
+
+El inicio y la finalización bloquean la asignación y el ticket y comprueban identidad y estado antes de actualizar. El rellamado bloquea asignación, funcionario, ventanilla y ticket para conservar la ocupación, incrementar el contador y actualizar la última fecha de forma atómica. Una pausa o un inicio concurrente no se resuelven confiando únicamente en el estado que mostraba el botón.
+
+La administración de Personas vuelve a validar al administrador dentro de la transacción y serializa las escrituras mediante un orden común de bloqueo de cuentas ADMIN. Esto permite proteger el último administrador con acceso y coordinar las bajas con las asignaciones.
+
+Las modificaciones de habilitaciones y asignaciones utilizan además `RoutingConfigurationLock`: un bloqueo nombrado por base obtenido con `GET_LOCK`, con espera máxima de cinco segundos y liberación al salir. Serializa esos cambios administrativos entre sí; no reemplaza los bloqueos de filas ni obliga a que el llamado normal lo adquiera. Sus escrituras utilizan `READ_COMMITTED`; las capturas coherentes de la pantalla pública y de la configuración administrativa utilizan `REPEATABLE_READ`.
+
+No existe un único orden universal de todas las tablas para todas las operaciones. La apertura de una asignación aún no tiene una fila propia; la retirada de una habilitación evita adquirir después una asignación en orden inverso al llamado. Los cambios futuros deben mantener esos acuerdos. El detalle está en [CONFIGURAR_ATENCION.md](../database/CONFIGURAR_ATENCION.md).
+
+### Confirmación, eventos y evidencia
+
+Las operaciones publican el aviso público después de confirmar el cambio. Las colas de avisos usan `offer`, con capacidad uno por suscripción, para que una pantalla lenta no obligue a esperar a la operación de negocio. No hay una transacción distribuida entre MySQL y los sockets; el estado persistido es la referencia para recuperar los datos.
+
+La evidencia incluye emisiones y llamados concurrentes, solicitudes sobre una misma asignación, rollback y conflictos de pausa, rellamado y administración. Se conserva por versión en [QA integral](../pruebas/QA_2026-11-12.md), [rellamado](../pruebas/QA_rellamado_2026-11-12.md), [Personas](../pruebas/QA_personas_2026-11-12.md) y [Asignaciones](../pruebas/QA_asignaciones_2026-11-12.md). Las [herramientas concurrentes](../pruebas/README.md) documentan su preparación y alcance.
+
+Los casos de regresión repetidos no se suman como pruebas diferentes. Estos resultados no prueban carga prolongada, ausencia de todo interbloqueo ni la integración de código todavía no recibido. Falta contrastar la administración de servicios y ventanillas, completar el ensayo físico entre computadoras y medir el rendimiento remoto.
+
+### Ubicación del código explicado
+
+- [Controlador del generador](../CostumerTurn/src/main/java/cr/ac/una/costumerturn/controller/TicketsGeneratorController.java), [contrato de creación](../CoreServer/src/main/java/cr/ac/una/repository/TicketCreationRepository.java) y [repositorio JDBC](../CoreServer/src/main/java/cr/ac/una/repository/JdbcTicketCreationRepository.java).
+- [Servidor y ejecutor](../CoreServer/src/main/java/cr/ac/una/server/TurnServer.java), [centro de avisos](../CoreServer/src/main/java/cr/ac/una/server/DisplayEventHub.java) y [escucha pública](../QueueDisplayScreen/src/main/java/cr/ac/una/QueueDisplayScreen/service/DisplayRefreshService.java).
+- [Llamado](../CoreServer/src/main/java/cr/ac/una/repository/JdbcTicketCallingRepository.java), [ciclo](../CoreServer/src/main/java/cr/ac/una/repository/JdbcTicketLifecycleRepository.java), [rellamado](../CoreServer/src/main/java/cr/ac/una/repository/JdbcTicketRecallRepository.java) y [bloqueo administrativo](../CoreServer/src/main/java/cr/ac/una/repository/RoutingConfigurationLock.java).
