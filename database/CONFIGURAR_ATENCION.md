@@ -6,7 +6,7 @@ Iniciar CoreServer y OperatorSystem actualizados, entrar con una cuenta **ADMIN*
 
 El bloque utiliza `operator_service`, `window_service` y `operator_window_assignment` existentes. **No requiere tablas ni migraciones nuevas.** No repetir el esquema, las migraciones 001/002/003 ni los datos iniciales sobre la base compartida.
 
-La vista trabaja con servicios y ventanillas existentes, incluidos los inactivos, para preparar sus habilitaciones y consultar su historia. Su creación y edición todavía no están integradas.
+La vista trabaja con servicios y ventanillas existentes, incluidos los inactivos, para preparar sus habilitaciones y consultar su historia. Su creación y edición se realizan desde [Servicios y ventanillas](ADMINISTRAR_CATALOGO.md).
 
 ## Configurar servicios
 
@@ -42,13 +42,13 @@ La lista administrativa permite consultar abiertas y cerradas. Abrir o cerrar no
 
 Las solicitudes exigen ADMIN y revalidación de sesión. Se comparte la comprobación JDBC del actor con la administración de personas, sin exponer credenciales. Las escrituras vuelven a comprobar al actor dentro de su transacción; una comprobación de interfaz no basta.
 
-`RoutingConfigurationLock` obtiene un bloqueo nombrado de MySQL por base mediante GET_LOCK, con espera máxima de cinco segundos. Serializa entre sí las modificaciones de habilitaciones y asignaciones y se libera al salir, incluso después de un rollback. No crea una tabla ni reemplaza restricciones SQL. Si no puede obtenerlo, se informa que hay otro cambio en curso; no hay un bucle automático de reintentos.
+`RoutingConfigurationLock` obtiene un bloqueo nombrado de MySQL por base mediante GET_LOCK, con espera máxima de cinco segundos. Serializa entre sí las modificaciones de habilitaciones, asignaciones, servicios y ventanillas y se libera al salir, incluso después de un rollback. No crea una tabla ni reemplaza restricciones SQL. Si no puede obtenerlo, se informa que hay otro cambio en curso; no hay un bucle automático de reintentos.
 
 El llamado normal no toma ese bloqueo administrativo: sigue usando sus filas y transacciones. El cierre bloquea asignación, funcionario y ventanilla, compatible con el orden del llamado. La apertura todavía no tiene fila propia: bloquea funcionario y ventanilla y comprueba la ocupación; los índices únicos existentes constituyen otra defensa frente a duplicados.
 
 Las habilitaciones bloquean al destinatario y después el servicio, sin adquirir a continuación el bloqueo de la asignación. Así evitan el orden inverso al llamado. Se usa READ_COMMITTED en las escrituras para que las comprobaciones posteriores a una espera no lean una captura antigua. La compatibilidad toma FOR SHARE para mantener el servicio válido hasta confirmar. La captura administrativa completa usa una transacción de lectura REPEATABLE_READ.
 
-Cualquier implementación futura de servicios y ventanillas que retire rutas, dé de baja registros o cambie modalidades debe coordinar sus validaciones y bloqueos con estos recorridos. No invertir el orden de filas ni asumir que una comprobación fuera de la transacción evita una carrera. El bloqueo nombrado es común por base y puede reutilizarse al concretar esas modificaciones; no tomarlo después de bloquear filas que otro recorrido espera con él adquirido.
+La administración del catálogo toma el mismo bloqueo nombrado antes de modificar un servicio o una ventanilla. Rechaza bajas con turnos pendientes, asignaciones que perderían su último servicio compartido y bajas de ventanillas con una asignación abierta. Los cambios de modalidad se rechazan mientras haya un turno activo. El [manual del catálogo](ADMINISTRAR_CATALOGO.md) detalla las reglas. Cualquier ampliación debe mantener el orden de bloqueos y repetir las comprobaciones dentro de la transacción.
 
 La serialización es conservadora y no constituye una medición de escalabilidad. Las modificaciones SQL externas no participan en este recorrido de aplicación. No se prometen cancelaciones de operaciones ya en curso al revocar una sesión.
 

@@ -37,13 +37,14 @@ La sección 23.C del enunciado solicita catorce apartados:
 | 13 | Distribución del trabajo realizado por cada integrante | Pendiente de completar con los aportes reales. |
 | 14 | Conclusiones | Pendiente del cierre de la integración. |
 
-Los apartados técnicos y los diagramas deben contrastarse después de integrar la administración de servicios y ventanillas. La presentación sigue pendiente. El ensayo entre computadoras y el rendimiento remoto se mantienen como comprobaciones pendientes; ejecutar varios procesos en una sola computadora no los sustituye.
+Los apartados técnicos incluyen la administración de servicios y ventanillas integrada. Los diagramas conservan las cuatro aplicaciones y el modelo de diez tablas, que este bloque no modifica. La presentación sigue pendiente. El ensayo entre computadoras y el rendimiento remoto se mantienen como comprobaciones pendientes; ejecutar varios procesos en una sola computadora no los sustituye.
 
 ## Guías de operación
 
 - [Acceso y sesiones](../database/INICIALIZAR_ACCESO.md).
 - [Personas y credenciales](../database/ADMINISTRAR_PERSONAS.md).
 - [Habilitaciones y asignaciones](../database/CONFIGURAR_ATENCION.md).
+- [Servicios y ventanillas](../database/ADMINISTRAR_CATALOGO.md).
 - [Rellamado](../database/RELLAMADO.md).
 
 Las configuraciones privadas, los almacenes TLS y las exportaciones con credenciales no forman parte del entregable. Para una instalación nueva se utilizan el esquema y los datos iniciales versionados.

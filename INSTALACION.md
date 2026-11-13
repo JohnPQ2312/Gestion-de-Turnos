@@ -73,9 +73,11 @@ Si se modifica `db.properties` o la configuración de red, recompilar el proyect
 - Con ambas asignaciones libres, llamar primero desde la ventanilla 1: debe tomar A002 preferencial. Después llamar desde la 2: debe tomar A001 regular.
 - En el turno llamado, usar **Volver a llamar**. Debe conservar el código y el primer llamado, aumentar su contador y actualizar la pantalla pública.
 - Usar **Iniciar atención** y después **Finalizar atención**. El historial debe conservarse y la asignación debe quedar libre.
-- Ingresar como `admin` para acceder a **Personas**, **Asignaciones** y las cinco consultas. Seleccionar un rango de fechas que incluya las atenciones realizadas. El administrador inicial no tiene asignación de atención.
+- Ingresar como `admin` para acceder a **Personas**, **Asignaciones**, **Servicios y ventanillas** y las cinco consultas. Seleccionar un rango de fechas que incluya las atenciones realizadas. El administrador inicial no tiene asignación de atención.
 
 Si el catálogo no carga, revisar la consola de CoreServer y su conexión a MySQL antes de usar **Reconectar**. Si falta acceso, comprobar que el funcionario esté activo y tenga una credencial creada. No repetir automáticamente una operación cuando se pierde su confirmación: consultar primero el estado guardado.
+
+La administración del catálogo utiliza las tablas existentes y no añade una migración. En **Servicios y ventanillas**, crear un servicio o una ventanilla no configura su atención: después deben habilitarse los servicios y abrirse una asignación desde **Asignaciones**. El [manual del catálogo](database/ADMINISTRAR_CATALOGO.md) explica sus restricciones.
 
 ## Verificación y alcance
 

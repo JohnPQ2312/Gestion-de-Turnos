@@ -19,7 +19,7 @@ El ciclo es `EN_ESPERA`, `LLAMADO`, `EN_ATENCION` y `FINALIZADO`. Finalizar libe
 
 La pantalla pública recibe avisos por una suscripción al servidor y consulta una captura actualizada después de cada cambio confirmado. Muestra hasta 50 turnos en espera y cinco llamados recientes. Si pierde la conexión, conserva los datos, avisa que están desactualizados y vuelve a sincronizarse al reconectar. Las modificaciones directas en MySQL no emiten esos avisos.
 
-El perfil ADMIN dispone de cinco consultas: atenciones entre fechas, cantidades por funcionario y servicio, tiempos de espera y tiempos de atención. También gestiona funcionarios, credenciales, usuarios relacionados con tickets, habilitaciones de servicios e historial de asignaciones. Los usuarios de `app_user` son registros opcionales de personas atendidas; no son las cuentas de acceso del personal.
+El perfil ADMIN dispone de cinco consultas: atenciones entre fechas, cantidades por funcionario y servicio, tiempos de espera y tiempos de atención. También gestiona funcionarios, credenciales, usuarios relacionados con tickets, habilitaciones de servicios e historial de asignaciones. La vista Servicios y ventanillas permite crear y editar el catálogo, dar de baja registros y reactivarlos sin borrar su historial. Los usuarios de `app_user` son registros opcionales de personas atendidas; no son las cuentas de acceso del personal.
 
 ## Instalación y uso
 
@@ -41,6 +41,7 @@ Las operaciones de red se ejecutan en segundo plano. Si una escritura pierde su 
 - [Acceso y sesiones](database/INICIALIZAR_ACCESO.md).
 - [Administración de personas](database/ADMINISTRAR_PERSONAS.md).
 - [Habilitaciones y asignaciones](database/CONFIGURAR_ATENCION.md).
+- [Administración de servicios y ventanillas](database/ADMINISTRAR_CATALOGO.md).
 - [Rellamado y migración](database/RELLAMADO.md).
 - [Herramientas de concurrencia y alcance de las comprobaciones](pruebas/README.md).
 
@@ -48,4 +49,4 @@ Se comprobaron instalación, recorrido de atención, concurrencia, permisos, adm
 
 ## Alcance pendiente
 
-Faltan integrar y comprobar la administración de servicios y ventanillas, realizar el ensayo físico entre computadoras y medir el rendimiento con la base remota. También quedan la revisión de fechas históricas anteriores al ajuste horario y el cierre del documento técnico, la presentación y el paquete de entrega. Los diagramas deberán contrastarse con la integración final.
+Quedan pendientes el recorrido integrado de la administración de servicios y ventanillas sobre la base compartida, el ensayo físico entre computadoras y la medición del rendimiento remoto. La administración del catálogo ya está integrada y comprobada en local. También faltan la revisión de fechas históricas anteriores al ajuste horario y el cierre del documento técnico, la presentación y el paquete de entrega.

@@ -27,7 +27,7 @@ Si NetBeans no ofrece una consola interactiva, la herramienta avisa que la contr
 | --- | --- |
 | Sin sesión | Catálogo y emisión (CostumerTurn), pantalla pública (QueueDisplayScreen) |
 | OPERADOR | Ver y operar únicamente sus propias asignaciones abiertas |
-| ADMIN | Las cinco consultas, administración de personas, credenciales, habilitaciones y asignaciones. Atender solo si tiene una asignación propia |
+| ADMIN | Las cinco consultas, administración de personas, credenciales, servicios, ventanillas, habilitaciones y asignaciones. Atender solo si tiene una asignación propia |
 | SUPERVISOR | Sin acceso por ahora |
 
 Un funcionario `INACTIVO`, o sin credencial, no puede iniciar sesión.
@@ -59,7 +59,7 @@ Al cerrar la ventana con una sesión abierta, el aviso de `LOGOUT` se envía en 
 | `AUTH;<token>;LOGOUT` | `OK;LOGOUT` |
 | `AUTH;<token>;<comando protegido>` | La respuesta normal del comando |
 
-Comandos protegidos: `LIST_ASSIGNMENTS` (solo devuelve las asignaciones propias), `CALL_NEXT`, `GET_ACTIVE_TICKET`, `START_ATTENTION`, `FINISH_ATTENTION`, `RECALL_TICKET`, `GET_WINDOW_STATE`, `PAUSE_WINDOW`, `RESUME_WINDOW` (solo sobre asignación propia), los cinco `REPORT_*` y los comandos `ADMIN_PEOPLE_*` y `ADMIN_ROUTING_*` (solo ADMIN). Enviados sin `AUTH` se rechazan; no existe un modo anónimo para esas operaciones.
+Comandos protegidos: `LIST_ASSIGNMENTS` (solo devuelve las asignaciones propias), `CALL_NEXT`, `GET_ACTIVE_TICKET`, `START_ATTENTION`, `FINISH_ATTENTION`, `RECALL_TICKET`, `GET_WINDOW_STATE`, `PAUSE_WINDOW`, `RESUME_WINDOW` (solo sobre asignación propia), los cinco `REPORT_*` y los comandos `ADMIN_PEOPLE_*`, `ADMIN_ROUTING_*`, `ADMIN_SERVICE_*` y `ADMIN_WINDOW_*` (solo ADMIN). Enviados sin `AUTH` se rechazan; no existe un modo anónimo para esas operaciones.
 
 Pausa de la ventanilla (migración 002): `GET_WINDOW_STATE;<asignación>`, `PAUSE_WINDOW;<asignación>` y `RESUME_WINDOW;<asignación>` responden `OK;WINDOW_STATE;<ventanilla>;<ACTIVA|PAUSADA|INACTIVA>`. En `PAUSADA` se rechaza `CALL_NEXT`, pero el turno en curso puede iniciarse y finalizarse; la asignación sigue en `LIST_ASSIGNMENTS`. Reanudar solo pasa de `PAUSADA` a `ACTIVA`; una ventanilla `INACTIVA` (baja administrativa) no se pausa ni se reanuda.
 

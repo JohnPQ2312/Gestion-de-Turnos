@@ -20,7 +20,7 @@ Se desarrolló un sistema cliente-servidor en Java, organizado en cuatro proyect
 | --- | --- |
 | `CoreServer` | Recibe conexiones, procesa solicitudes, verifica permisos y reglas, ejecuta operaciones JDBC y avisa a las pantallas públicas cuando cambian los turnos. |
 | `CostumerTurn` | Muestra los servicios disponibles, permite elegir atención regular o preferencial y confirma el código del turno generado. |
-| `OperatorSystem` | Permite iniciar sesión, consultar asignaciones propias, llamar y rellamar, iniciar y finalizar atenciones, y pausar o reanudar la ventanilla. El perfil ADMIN dispone además de consultas y administración de personas y asignaciones. |
+| `OperatorSystem` | Permite iniciar sesión, consultar asignaciones propias, llamar y rellamar, iniciar y finalizar atenciones, y pausar o reanudar la ventanilla. El perfil ADMIN dispone además de consultas y administración de personas, servicios, ventanillas y asignaciones. |
 | `QueueDisplayScreen` | Muestra el último llamado y su ventanilla, llamados recientes, turnos en espera, reloj y estado de conexión. Se actualiza mediante avisos del servidor. |
 
 ### Recorrido de un turno
@@ -36,9 +36,9 @@ El rellamado conserva el mismo turno, su código y su primer llamado; actualiza 
 
 Las cinco consultas permiten revisar turnos atendidos entre fechas, cantidades por funcionario y por servicio, tiempos de espera y tiempos de atención. La espera se calcula desde la generación hasta el inicio de atención; la atención, desde el inicio hasta el fin.
 
-La administración actual gestiona funcionarios, credenciales y usuarios relacionados con turnos, además de habilitaciones de servicios y apertura/cierre de asignaciones. El registro `app_user` no es una cuenta de acceso del personal; emitir un turno no exige registrar previamente a la persona.
+La administración gestiona funcionarios, credenciales, usuarios relacionados con turnos, servicios y ventanillas. Las habilitaciones y la apertura o el cierre de asignaciones se configuran desde Asignaciones. El registro `app_user` no es una cuenta de acceso del personal; emitir un turno no exige registrar previamente a la persona.
 
-La administración completa de servicios y ventanillas está pendiente de integrar. La política de prioridad es estricta y no garantiza un tiempo máximo de espera para los regulares. La innovación propuesta es la atención preferencial con una ventanilla exclusiva y el apoyo de las mixtas. Las ideas de PDF, QR y transferencias quedan fuera de esta versión.
+La política de prioridad es estricta y no garantiza un tiempo máximo de espera para los regulares. La innovación propuesta es la atención preferencial con una ventanilla exclusiva y el apoyo de las mixtas. Las ideas de PDF, QR y transferencias quedan fuera de esta versión.
 
 ## 5. Arquitectura utilizada
 
@@ -54,7 +54,7 @@ Por ejemplo, `TicketsGeneratorController` recibe las funciones necesarias para c
 
 Los clientes de red traducen las operaciones de las pantallas al protocolo del servidor. `NetworkSettings` lee la dirección, el puerto y la configuración TLS dentro de cada aplicación. Sin configuración se permite la ejecución local en loopback; las conexiones fuera del equipo exigen TLS y validación del certificado del servidor.
 
-En CoreServer, `TurnServer` acepta las conexiones y entrega las solicitudes a `TurnRequestHandler`. Los manejadores específicos de Personas y Asignaciones separan sus comandos administrativos. La autorización se comprueba en el servidor; la visibilidad de un botón no constituye un permiso.
+En CoreServer, `TurnServer` acepta las conexiones y entrega las solicitudes a `TurnRequestHandler`. Los manejadores de Personas, Asignaciones y Catálogo separan sus comandos administrativos. La autorización se comprueba en el servidor; la visibilidad de un botón no constituye un permiso.
 
 La pantalla pública mantiene un canal de suscripción. `DisplayEventHub` distribuye avisos de cambios y `DisplayRefreshService` coordina la consulta de datos y la recuperación de la conexión. Los avisos no contienen una copia completa de la base: indican que debe consultarse su estado actualizado.
 
@@ -156,7 +156,7 @@ El ticket referencia esa asignación para obtener el funcionario y la ventanilla
 
 La asignación del ticket es opcional únicamente mientras está `EN_ESPERA`; los estados `LLAMADO`, `EN_ATENCION` y `FINALIZADO` la exigen mediante un CHECK. La relación con `app_user` es opcional en todos los estados. La emisión actual no completa automáticamente `user_id`.
 
-Un servicio puede tener como máximo una fila en `ticket_sequence`. La FK no obliga a crearla: la instalación inicial la prepara y la generación rechaza un servicio sin consecutivo. La futura administración de servicios debe conservar esta condición y no reiniciar números existentes.
+Un servicio puede tener como máximo una fila en `ticket_sequence`. La instalación inicial prepara sus consecutivos y el alta administrativa crea el servicio y su secuencia en una misma transacción. Reactivar conserva el número existente; si falta la fila, recupera el mayor consecutivo histórico o utiliza cero cuando no existen tickets. La generación rechaza un servicio sin consecutivo.
 
 ### Restricciones e integridad
 
@@ -177,7 +177,7 @@ El ticket guarda creación, primer llamado, último llamado, inicio y fin. Las c
 
 Para una instalación nueva se ejecutan el esquema y los [datos iniciales](../database/datos_prueba.sql). Para una base anterior se revisan las [migraciones](../database/migraciones), sin reinicializar datos ni contadores. El procedimiento reproducible está en [INSTALACION.md](../INSTALACION.md).
 
-Los dos diagramas se contrastaron con el corte `cc9405e`. Deben comprobarse otra vez al integrar los cambios de servicios y ventanillas; no representan por anticipado esa implementación.
+Los diagramas preparados con el corte `cc9405e` conservan su estructura tras incorporar el catálogo administrativo: las operaciones nuevas utilizan los mismos cuatro proyectos y las tablas existentes. La administración de servicios y ventanillas no añade entidades ni claves foráneas.
 
 ## 8. Descripción de los patrones utilizados
 
@@ -224,10 +224,11 @@ Cada solicitud normal abre una conexión, envía una línea, recibe una respuest
 | `AUTH;<token>;RECALL_TICKET;<asignacion>;<ticket>` | Rellamado del ticket actual. |
 | `AUTH;<token>;REPORT_*;...` | Consultas disponibles para ADMIN. |
 | `AUTH;<token>;ADMIN_PEOPLE_*;...` o `ADMIN_ROUTING_*;...` | Administración de personas y configuración de atención. Ambas familias llevan el prefijo AUTH. |
+| `AUTH;<token>;ADMIN_SERVICE_*;...` o `ADMIN_WINDOW_*;...` | Administración de servicios y ventanillas, disponible para ADMIN. |
 
 `TurnRequestHandler` interpreta los comandos, verifica permisos y deriva la operación al servicio correspondiente. Las respuestas `OK;...` describen resultados correctos; `ERROR;...` informa rechazos de formato, reglas o acceso a datos; `DENIED;motivo;mensaje` distingue los rechazos de autenticación o autorización. Un resultado válido también puede indicar que no hay turnos disponibles.
 
-Los identificadores enviados por el cliente no acreditan su propiedad. El servidor obtiene el funcionario de la sesión, comprueba su asignación y exige ADMIN donde corresponde. Los contratos detallados se mantienen en las guías de [acceso](../database/INICIALIZAR_ACCESO.md), [Personas](../database/ADMINISTRAR_PERSONAS.md), [Asignaciones](../database/CONFIGURAR_ATENCION.md) y [rellamado](../database/RELLAMADO.md).
+Los identificadores enviados por el cliente no acreditan su propiedad. El servidor obtiene el funcionario de la sesión, comprueba su asignación y exige ADMIN donde corresponde. Los contratos detallados se mantienen en las guías de [acceso](../database/INICIALIZAR_ACCESO.md), [Personas](../database/ADMINISTRAR_PERSONAS.md), [Asignaciones](../database/CONFIGURAR_ATENCION.md), [rellamado](../database/RELLAMADO.md) y [catálogo administrativo](../database/ADMINISTRAR_CATALOGO.md).
 
 ### Actualización de la pantalla pública
 
@@ -251,7 +252,7 @@ El servidor y las interfaces deben poder esperar conexiones, respuestas y consul
 | --- | --- | --- |
 | `TurnServer.start` | Acepta conexiones y entrega cada cliente a `Executors.newVirtualThreadPerTaskExecutor()`. | Una conexión o suscripción puede esperar sin mantener ocupado el ciclo que acepta otros clientes. |
 | `TicketsGeneratorController.startTask` | Ejecuta un `Task` mediante `Thread.ofVirtual()`. | El catálogo y la emisión no bloquean la interfaz mientras esperan al servidor. |
-| Controladores de acceso, atención, consultas, Personas y Asignaciones | Ejecutan sus tareas de red en hilos virtuales. | Mantienen la interfaz disponible y coordinan controles mientras una solicitud está en curso. |
+| Controladores de acceso, atención, consultas, Personas, Asignaciones y Catálogo | Ejecutan sus tareas de red en hilos virtuales. | Mantienen la interfaz disponible y coordinan controles mientras una solicitud está en curso. |
 | `DisplayRefreshService` | Mantiene la escucha y consulta capturas en un ejecutor de hilos virtuales. | La espera del siguiente evento o de una reconexión no detiene el reloj ni el dibujo de la pantalla. |
 | `OperatorSystem.App.stop` | Inicia un hilo de plataforma no daemon para intentar LOGOUT con tiempos acotados. | Permite intentar el aviso de cierre sin hacer esperar al hilo de interfaz. No se promete revocación si el aviso falla. |
 
@@ -289,9 +290,11 @@ El inicio y la finalización bloquean la asignación y el ticket y comprueban id
 
 La administración de Personas vuelve a validar al administrador dentro de la transacción y serializa las escrituras mediante un orden común de bloqueo de cuentas ADMIN. Esto permite proteger el último administrador con acceso y coordinar las bajas con las asignaciones.
 
-Las modificaciones de habilitaciones y asignaciones utilizan además `RoutingConfigurationLock`: un bloqueo nombrado por base obtenido con `GET_LOCK`, con espera máxima de cinco segundos y liberación al salir. Serializa esos cambios administrativos entre sí; no reemplaza los bloqueos de filas ni obliga a que el llamado normal lo adquiera. Sus escrituras utilizan `READ_COMMITTED`; las capturas coherentes de la pantalla pública y de la configuración administrativa utilizan `REPEATABLE_READ`.
+Las modificaciones de habilitaciones, asignaciones, servicios y ventanillas utilizan además `RoutingConfigurationLock`: un bloqueo nombrado por base obtenido con `GET_LOCK`, con espera máxima de cinco segundos y liberación al salir. Serializa esos cambios administrativos entre sí; no reemplaza los bloqueos de filas ni obliga a que el llamado normal lo adquiera. Sus escrituras utilizan `READ_COMMITTED`; las capturas coherentes de la pantalla pública y de la configuración administrativa utilizan `REPEATABLE_READ`.
 
 No existe un único orden universal de todas las tablas para todas las operaciones. La apertura de una asignación aún no tiene una fila propia; la retirada de una habilitación evita adquirir después una asignación en orden inverso al llamado. Los cambios futuros deben mantener esos acuerdos. El detalle está en [CONFIGURAR_ATENCION.md](../database/CONFIGURAR_ATENCION.md).
+
+La administración del catálogo bloquea el servicio o la ventanilla antes de comprobar sus dependencias. El alta del servicio guarda también el consecutivo; el prefijo queda protegido después de emitir. Las bajas se rechazan con turnos pendientes, una asignación sin otro servicio compartido o una ventanilla todavía asignada. La modalidad no cambia mientras haya un turno activo. Al renombrar un servicio confirmado se publica un aviso para refrescar su nombre en las pantallas.
 
 ### Confirmación, eventos y evidencia
 
@@ -299,7 +302,7 @@ Las operaciones publican el aviso público después de confirmar el cambio. Las 
 
 Se comprobaron emisiones y llamados concurrentes, solicitudes sobre una misma asignación, rollback y conflictos de pausa, rellamado y administración. Los [procedimientos de pruebas](../pruebas/README.md#comprobaciones-y-límites) distinguen las comprobaciones locales de las realizadas sobre la base compartida y explican cómo ejecutar las tres herramientas de concurrencia.
 
-Los casos de regresión repetidos no se suman como pruebas diferentes. Quedan fuera del alcance de esas pruebas la carga prolongada, la ausencia de todo interbloqueo y el código pendiente de integrar. Falta contrastar la administración de servicios y ventanillas, completar el ensayo físico entre computadoras y medir el rendimiento remoto.
+Los casos de regresión repetidos no se suman como pruebas diferentes. Las pruebas del catálogo incluyen JDBC y protocolo sobre MySQL local, vistas con respuestas controladas y regresión de Asignaciones. Siguen pendientes el recorrido integrado del catálogo sobre la base compartida, el ensayo físico entre computadoras y la medición del rendimiento remoto. Los resultados no acreditan carga prolongada ni ausencia de cualquier interbloqueo.
 
 ### Ubicación del código explicado
 
@@ -355,9 +358,9 @@ El siguiente procedimiento utiliza la base nueva del seed, sin otras emisiones n
 | 4 | Iniciar ambas atenciones y finalizarlas desde sus respectivas ventanas. | Cada turno sigue su propio ciclo, se conserva el historial y ambas asignaciones quedan libres. |
 | 5 | Llamar B001 desde la ventanilla 1 y C001 desde la 2; iniciar y finalizar sus atenciones. | Se atienden servicios diferentes, compatibles con el funcionario y la ventanilla correspondientes. |
 | 6 | Ingresar como ADMIN y abrir Consultas con fechas que incluyan el recorrido. | Se recuperan los turnos atendidos, cantidades por funcionario/servicio y duraciones. |
-| 7 | Abrir Personas y Asignaciones como ADMIN. | Se pueden consultar los registros, habilitaciones e historial; los operadores no disponen de esos controles administrativos. |
+| 7 | Abrir Personas, Asignaciones y Servicios y ventanillas como ADMIN. | Se consultan personas, catálogo, habilitaciones e historial. OPERADOR no dispone de esos controles administrativos. |
 
-La instalación y el recorrido de atención se comprobaron en MySQL local mediante TLS, incluidas ejecuciones en procesos separados. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) precisa sus límites. Los pasos anteriores son un procedimiento de demostración, sin una nueva ejecución asociada a esta revisión documental. La administración de servicios y ventanillas se añadirá después de integrar y verificar su implementación.
+La instalación y el recorrido de atención se comprobaron en MySQL local mediante TLS, incluidas ejecuciones en procesos separados. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) precisa sus límites. Los pasos anteriores son un procedimiento de demostración, sin una nueva ejecución asociada a esta revisión documental. Para demostrar el catálogo, abrir Servicios y ventanillas como ADMIN, crear un servicio y una ventanilla con identificadores disponibles y comprobar su aparición en los listados. Después configurar las habilitaciones y la asignación desde Asignaciones antes de emitir y llamar turnos del nuevo servicio. Este recorrido debe coordinarse si se utiliza la base compartida.
 
 Para una prueba coordinada de concurrencia, dejar libres las asignaciones 1 y 2 y preparar dos preferenciales de Información general. Ejecutar la herramienta siguiendo [pruebas/README.md](../pruebas/README.md), con una cuenta propia por funcionario. El procedimiento también contiene los casos de la misma asignación y de un único turno elegible. Usar la configuración local admitida por las herramientas; esa ejecución no sustituye el ensayo entre computadoras ni comprueba por sí sola el transporte TLS del despliegue.
 
@@ -375,4 +378,4 @@ Para una prueba coordinada de concurrencia, dejar libres las asignaciones 1 y 2 
 
 Al terminar, cerrar las aplicaciones cliente y detener CoreServer. Cerrar sesión revoca el token cuando el servidor confirma; si falla el aviso de salida, la sesión vence según su política. Cerrar una ventana no finaliza por sí solo un ticket activo ni elimina su historial: completar la atención antes del cierre cuando corresponda.
 
-Los procedimientos describen el funcionamiento actual. El cierre del entregable requiere volver a contrastarlos tras la integración de servicios y ventanillas y registrar el ensayo de despliegue pendiente.
+El cierre del entregable requiere registrar el recorrido integrado del catálogo sobre la base compartida y el ensayo de despliegue entre computadoras, además de completar los aportes y las conclusiones.
