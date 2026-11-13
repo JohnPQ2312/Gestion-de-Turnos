@@ -2,11 +2,9 @@ package cr.ac.una.model;
 
 import java.util.Objects;
 
-/**
- * Datos de acceso de un funcionario tal como están en la base.
- * passwordHash es null cuando el funcionario todavía no tiene credencial.
- * Nunca se envía al cliente.
- */
+// Conserva los datos de acceso leídos de MySQL, incluido el hash de contraseña.
+// passwordHash puede ser null si aún no existe credencial; la cuenta completa queda en
+// CoreServer.
 public record OperatorAccount(
         int operatorId,
         String username,

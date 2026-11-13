@@ -9,12 +9,8 @@ import cr.ac.una.repository.ReportRepository;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Coordina las cinco consultas obligatorias (sección 13 del enunciado).
- *
- * El repositorio obtiene los datos; este servicio valida el período y
- * calcula el resumen de las duraciones.
- */
+// Coordina las cinco consultas del historial y calcula los resúmenes de duración.
+// Comprueba que el período exista antes de consultar el repositorio.
 public class ReportService {
 
     private final ReportRepository reportRepository;

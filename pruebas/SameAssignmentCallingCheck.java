@@ -5,17 +5,11 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 
-/**
- * Envía dos CALL_NEXT simultáneos sobre UNA MISMA asignación.
- *
- * Resultado esperado: un único llamado exitoso y un rechazo por ocupación.
- * Después comprueba el estado guardado: un solo turno activo en la asignación
- * y los demás turnos que estaban en espera siguen en espera.
- *
- * No reintenta ninguna escritura. Uso:
- *   ver pruebas/README.md (Ejecutar.ps1 SameAssignmentCallingCheck)
- * Por defecto utiliza el operador 1 en la ventanilla 1.
- */
+// Envía dos llamados coordinados sobre la misma asignación, por defecto operador 1 y ventanilla
+// 1.
+// Espera un llamado exitoso y un rechazo por ocupación, y comprueba el turno activo y la espera
+// restante.
+// No reintenta escrituras; ver pruebas/README.md y Ejecutar.ps1 SameAssignmentCallingCheck.
 public class SameAssignmentCallingCheck {
     private static final String HOST = "127.0.0.1";
     private static final int PORT = Integer.getInteger("turnos.pruebas.puerto", 5000);

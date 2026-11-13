@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 
+// Mantiene colas separadas para turnos regulares y preferenciales dentro del proceso.
+// Los métodos sincronizados protegen la numeración y el llamado entre hilos de esa instancia.
 public class InMemoryTicketRepository implements TicketRepository {
 
     private final Queue<Ticket> regularQueue = new ArrayDeque<>();
@@ -23,6 +25,7 @@ public class InMemoryTicketRepository implements TicketRepository {
     private final Map<String, Integer> lastNumbersByService
             = new HashMap<>();
 
+    // Genera y guarda el turno bajo el mismo monitor que protege su contador por servicio.
     @Override
     public synchronized Ticket createWithNextNumber(
             Service service,
@@ -49,6 +52,8 @@ public class InMemoryTicketRepository implements TicketRepository {
         return ticket;
     }
 
+    // Descarta una asignación ocupada y busca primero un preferencial compatible.
+    // Si no lo encuentra, prueba la cola regular según la modalidad de la ventanilla.
     @Override
     public synchronized Optional<Ticket> callNext(
             OperatorWindowAssignment assignment,
@@ -95,6 +100,7 @@ public class InMemoryTicketRepository implements TicketRepository {
         return next;
     }
 
+    // Recorre la cola sin retirar los turnos incompatibles con esta ventanilla.
     private Optional<Ticket> findFirstEligible(
             Queue<Ticket> tickets,
             Set<String> eligibleServiceCodes,

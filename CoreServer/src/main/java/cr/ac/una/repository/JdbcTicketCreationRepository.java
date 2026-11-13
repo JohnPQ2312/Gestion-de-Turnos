@@ -11,6 +11,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Objects;
 
+// Guarda el turno y actualiza su consecutivo en una sola transacción.
+// El bloqueo del contador evita que dos emisiones del mismo servicio usen el mismo número.
 public class JdbcTicketCreationRepository implements TicketCreationRepository {
 
     private final DatabaseConnectionFactory connectionFactory;
@@ -24,6 +26,7 @@ public class JdbcTicketCreationRepository implements TicketCreationRepository {
         );
     }
 
+    // Confirma el ticket y su contador juntos; ante un fallo revierte ambos cambios.
     @Override
     public Ticket createWithNextNumber(Service service, boolean priority) {
         Objects.requireNonNull(service, "El servicio es obligatorio.");
@@ -63,6 +66,8 @@ public class JdbcTicketCreationRepository implements TicketCreationRepository {
         }
     }
 
+    // Mantiene una lectura compartida del servicio para coordinar emisión y cambios del
+    // catálogo.
     private Service findActiveService(
             Connection connection,
             String serviceCode
@@ -93,6 +98,7 @@ public class JdbcTicketCreationRepository implements TicketCreationRepository {
         }
     }
 
+    // Bloquea la fila del consecutivo hasta confirmar o revertir la emisión.
     private int readNextNumber(
             Connection connection,
             String serviceCode

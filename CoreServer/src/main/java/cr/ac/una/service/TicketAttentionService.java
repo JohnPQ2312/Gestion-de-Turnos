@@ -15,6 +15,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+// Comprueba la asignación y obtiene los servicios que comparten funcionario y ventanilla.
+// El repositorio decide el siguiente turno compatible y confirma su llamado.
 public class TicketAttentionService {
 
     private final TicketCallingRepository ticketRepository;
@@ -43,6 +45,7 @@ public class TicketAttentionService {
         );
     }
 
+    // Incluye asignaciones abiertas e iniciadas con funcionario activo y ventanilla operativa.
     public List<OperatorWindowAssignment> listActiveAssignments() {
         List<OperatorWindowAssignment> activeAssignments = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
@@ -70,6 +73,8 @@ public class TicketAttentionService {
         return List.copyOf(activeAssignments);
     }
 
+    // Cruza las habilitaciones del funcionario y la ventanilla antes de solicitar un turno
+    // compatible.
     public Optional<Ticket> callNext(long assignmentId) {
         if (assignmentId <= 0) {
             throw new IllegalArgumentException(

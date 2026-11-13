@@ -2,9 +2,9 @@ package cr.ac.una.model;
 
 import java.util.regex.Pattern;
 
-// Fila del catálogo administrativo de servicios.
-// issuedTickets es el último consecutivo; pendingTickets cuenta en espera, llamados y en atención.
-// openRoutes cuenta asignaciones abiertas cuyo funcionario y ventanilla tienen habilitado el servicio.
+// Describe un servicio y sus dependencias para administrarlo.
+// issuedTickets guarda el último consecutivo; pendingTickets cuenta espera, llamado y atención.
+// openRoutes cuenta asignaciones abiertas con ese servicio habilitado en ambos participantes.
 public record ManagedService(String code, String name, String prefix, boolean active,
         long issuedTickets, long pendingTickets, long openRoutes, boolean prefixLocked) {
 

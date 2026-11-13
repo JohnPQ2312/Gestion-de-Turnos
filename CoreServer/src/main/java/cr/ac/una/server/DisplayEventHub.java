@@ -6,6 +6,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+// Distribuye avisos de cambio a las pantallas suscritas sin enviar el estado completo del
+// sistema.
 public class DisplayEventHub {
 
     private final Set<Subscription> subscriptions = ConcurrentHashMap.newKeySet();
@@ -16,6 +18,7 @@ public class DisplayEventHub {
         return subscription;
     }
 
+    // Notifica a cada suscriptor sin esperar a que la pantalla consuma el aviso.
     public void publishChange() {
         for (Subscription subscription : subscriptions) {
             subscription.signalChange();
@@ -30,12 +33,15 @@ public class DisplayEventHub {
         private Subscription() {
         }
 
+        // Una cola de capacidad uno agrupa cambios próximos; la pantalla consultará el estado
+        // vigente.
         private void signalChange() {
             if (!closed) {
                 changes.offer(Boolean.TRUE);
             }
         }
 
+        // Espera un cambio hasta diez segundos; sin aviso permite enviar un latido al cliente.
         public boolean awaitChange() throws InterruptedException {
             if (closed) {
                 return false;

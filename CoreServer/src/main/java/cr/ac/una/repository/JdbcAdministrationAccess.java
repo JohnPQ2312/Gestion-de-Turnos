@@ -7,9 +7,12 @@ import cr.ac.una.security.PasswordHasher;
 import java.sql.*;
 import java.util.Objects;
 
+// Revalida en la conexión actual el estado, rol y credencial del administrador.
+// La identidad recibida debe coincidir con la cuenta que sigue vigente en MySQL.
 final class JdbcAdministrationAccess {
     private JdbcAdministrationAccess() { }
 
+    // Comprueba que el administrador siga activo y conserve el rol y la credencial de la sesión.
     static void require(Connection c, AdministrationActor actor, boolean lock) throws SQLException {
         Objects.requireNonNull(actor, "La identidad administrativa es obligatoria.");
         String sql = """

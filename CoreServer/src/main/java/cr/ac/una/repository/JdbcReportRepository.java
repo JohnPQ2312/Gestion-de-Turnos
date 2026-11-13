@@ -16,15 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Consultas de reportes en MySQL.
- *
- * El período se filtra como [inicio, fin) sobre la columna que define cada
- * consulta. Las duraciones se calculan en MySQL con TIMESTAMPDIFF, que opera
- * sobre los instantes guardados y no depende de la zona horaria del cliente.
- * Ningún reporte se agrupa por el funcionario que hoy ocupa la ventanilla:
- * el responsable sale de la asignación guardada en cada turno.
- */
+// Obtiene los reportes de MySQL usando intervalos de inicio incluido y fin excluido.
+// Las duraciones se calculan con TIMESTAMPDIFF sobre las fechas guardadas.
+// El responsable se obtiene de la asignación histórica del ticket.
 public class JdbcReportRepository implements ReportRepository {
 
     private static final String ATTENDED = """

@@ -2,7 +2,7 @@ package cr.ac.una.model;
 
 import java.time.LocalDateTime;
 
-/** Consulta 1: un turno finalizado, con quién y dónde lo atendió. */
+// Representa un turno finalizado en el reporte de atenciones, con su funcionario y ventanilla.
 public record AttendedTicket(
         String visualCode,
         String serviceName,

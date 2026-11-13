@@ -1,7 +1,9 @@
-# Copiar como network.properties (archivo privado, excluido de Git).
+# Copiar como network.properties para configurar este equipo; el archivo privado queda fuera de Git.
+# host es el destino de los clientes; bind es la dirección donde escucha CoreServer.
 server.host=127.0.0.1
 server.bind=127.0.0.1
 server.port=5000
+# Sin TLS solo se permiten conexiones dentro de la misma computadora.
 tls.enabled=false
 # Para LAN: tls.enabled=true; indicar el nombre/IP que figura en el certificado.
 # Solo CoreServer necesita la clave privada:

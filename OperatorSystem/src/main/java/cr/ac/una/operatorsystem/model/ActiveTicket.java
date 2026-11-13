@@ -1,5 +1,7 @@
 package cr.ac.una.operatorsystem.model;
 
+// Conserva la identidad y el estado del turno activo recuperado del servidor para esta
+// asignación.
 public record ActiveTicket(
         long ticketId,
         String visualCode,

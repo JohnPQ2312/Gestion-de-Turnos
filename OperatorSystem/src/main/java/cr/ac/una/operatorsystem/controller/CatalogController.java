@@ -4,7 +4,8 @@ import cr.ac.una.operatorsystem.client.CatalogRequests;
 import java.util.function.Consumer;
 import javafx.fxml.FXML;
 
-// Contenedor de las pestañas Servicios y Ventanillas; cada pestaña tiene su propio controlador.
+// Agrupa Servicios y Ventanillas y configura sus controladores con las mismas solicitudes y
+// sesión.
 public class CatalogController {
     @FXML private ServicesController servicesController;
     @FXML private WindowsController windowsController;

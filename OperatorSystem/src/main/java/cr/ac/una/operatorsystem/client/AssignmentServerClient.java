@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
+// Envía comandos autenticados de habilitaciones y asignaciones y valida sus confirmaciones.
 public class AssignmentServerClient implements AssignmentRequests {
     private final String host;
     private final int port;

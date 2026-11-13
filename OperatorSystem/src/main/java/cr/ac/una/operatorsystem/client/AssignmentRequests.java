@@ -3,6 +3,7 @@ package cr.ac.una.operatorsystem.client;
 import cr.ac.una.operatorsystem.model.AssignmentConfiguration;
 import java.io.IOException;
 
+// Define las solicitudes que usa la vista de habilitaciones y asignaciones.
 public interface AssignmentRequests {
     AssignmentConfiguration snapshot() throws IOException;
     void operatorService(int id, String code, boolean enabled) throws IOException;

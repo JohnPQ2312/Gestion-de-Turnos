@@ -22,11 +22,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 
-/**
- * Flujo de OperatorSystem: pantalla de acceso, atención con la sesión
- * iniciada y regreso al acceso al cerrar sesión o cuando el servidor la da
- * por terminada. La sesión solo vive en memoria.
- */
+// Coordina el acceso, la atención y las ventanas administrativas de OperatorSystem.
+// Conserva la sesión en memoria y cierra sus vistas cuando el acceso termina.
 public class App extends Application {
 
     private String host;
@@ -132,7 +129,7 @@ public class App extends Application {
         }
     }
 
-    /** Cierre pedido por el usuario. */
+    // Cierre pedido por el usuario.
     private void logout() {
         UserSession closing = session;
         closeSessionViews();
@@ -151,7 +148,7 @@ public class App extends Application {
         }
     }
 
-    /** El servidor rechazó la sesión: vencida, cerrada o cuenta inactiva. */
+    // El servidor rechazó la sesión: vencida, cerrada o cuenta inactiva.
     private void sessionEnded(String message) {
         if (session == null) {
             return;
@@ -207,10 +204,8 @@ public class App extends Application {
         }
     }
 
-    /**
-     * Abre la vista de consultas en una ventana aparte, o la trae al frente
-     * si ya estaba abierta. La pantalla de atención no se modifica.
-     */
+    // Abre la vista de consultas en una ventana aparte, o la trae al frente
+    // si ya estaba abierta. La pantalla de atención no se modifica.
     private void openReports(ReportServerClient reportClient) {
         if (reportsStage != null) {
             reportsStage.show();
@@ -331,13 +326,11 @@ public class App extends Application {
         alert.showAndWait();
     }
 
-    /**
-     * Al salir, el aviso de cierre se envía en otro hilo y el hilo de JavaFX
-     * no espera la red. Ese hilo no es daemon: el proceso lo espera como
-     * máximo unos EXIT_LOGOUT_TIMEOUT_MS (conexión y lectura). Si el servidor
-     * no responde a tiempo, la sesión no se da por revocada: vence en
-     * CoreServer por inactividad (30 min) o al reiniciarlo.
-     */
+    // Al salir, el aviso de cierre se envía en otro hilo y el hilo de JavaFX
+    // no espera la red. Ese hilo no es daemon: el proceso lo espera como
+    // máximo unos EXIT_LOGOUT_TIMEOUT_MS (conexión y lectura). Si el servidor
+    // no responde a tiempo, la sesión no se da por revocada: vence en
+    // CoreServer por inactividad (30 min) o al reiniciarlo.
     @Override
     public void stop() {
         UserSession closing = session;

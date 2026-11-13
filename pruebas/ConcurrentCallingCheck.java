@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 
+// Coordina llamados desde dos asignaciones distintas y comprueba que reciban turnos diferentes.
+// Las solicitudes modifican el estado real atendido por CoreServer y no se reintentan.
+// El procedimiento de preparación está en pruebas/README.md.
 public class ConcurrentCallingCheck {
     private static final String HOST = "127.0.0.1";
     private static final int PORT = Integer.getInteger("turnos.pruebas.puerto", 5000);

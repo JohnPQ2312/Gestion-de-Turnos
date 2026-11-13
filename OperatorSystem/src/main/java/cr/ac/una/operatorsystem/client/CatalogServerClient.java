@@ -9,8 +9,8 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-// Cliente de los comandos ADMIN_SERVICE_ y ADMIN_WINDOW_. Usa NetworkSettings (TLS fuera de loopback).
-// Una confirmación que no coincide se informa como IOException: la escritura pudo guardarse y no se reenvía.
+// Envía ADMIN_SERVICE_ y ADMIN_WINDOW_ mediante el transporte configurado.
+// Una confirmación inválida se informa como fallo de comunicación; la escritura no se reenvía.
 public class CatalogServerClient implements CatalogRequests {
     private static final int SERVICE_FIELDS = 8;
     private static final int WINDOW_FIELDS = 7;

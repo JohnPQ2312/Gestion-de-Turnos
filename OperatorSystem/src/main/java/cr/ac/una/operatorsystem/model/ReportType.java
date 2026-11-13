@@ -1,9 +1,6 @@
 package cr.ac.una.operatorsystem.model;
 
-/**
- * Las cinco consultas de la sección 13 del enunciado, con el comando del
- * servidor y el criterio que se muestra al usuario.
- */
+// Relaciona cada consulta del enunciado con su comando y el criterio explicado en pantalla.
 public enum ReportType {
 
     ATTENDED(

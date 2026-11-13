@@ -1,6 +1,7 @@
 package cr.ac.una.operatorsystem.model;
 
-// Ventanilla del catálogo administrativo. openAssignmentId es 0 si no tiene una asignación abierta.
+// Conserva los datos de administración de una ventanilla recibidos de CoreServer.
+// openAssignmentId vale 0 cuando no tiene asignación abierta.
 public record ManagedWindow(int id, String state, String mode, long openAssignmentId,
         String operatorName, boolean hasActiveTicket, int enabledServices) {
 

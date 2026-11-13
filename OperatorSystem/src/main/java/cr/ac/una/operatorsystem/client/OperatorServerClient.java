@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+// Envía las acciones de atención con la sesión del funcionario y comprueba sus respuestas.
 public class OperatorServerClient {
 
     private final String host;

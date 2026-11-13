@@ -3,6 +3,8 @@ package cr.ac.una.repository;
 import cr.ac.una.model.*;
 import java.util.List;
 
+// Define altas y cambios de funcionarios, credenciales y usuarios relacionados con tickets.
+// Los cambios de cuenta devuelven sus dos versiones para actualizar las sesiones.
 public interface PeopleAdministrationRepository {
     List<ManagedOperator> listOperators(AdministrationActor actor);
     int createOperator(AdministrationActor actor, String name, String username, UserRole role, String passwordHash);

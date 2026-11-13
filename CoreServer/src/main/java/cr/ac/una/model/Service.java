@@ -1,5 +1,6 @@
 package cr.ac.una.model;
 
+// Conserva el código estable del servicio, su nombre y el prefijo usado en los códigos de turno.
 public class Service {
 
     private final String code;
@@ -12,6 +13,7 @@ public class Service {
         this.prefix = requireText(prefix, "Prefijo del servicio", 5);
     }
 
+    // Comprueba obligatoriedad y longitud por puntos de código, como los campos de MySQL.
     private static String requireText(
             String value,
             String fieldName,

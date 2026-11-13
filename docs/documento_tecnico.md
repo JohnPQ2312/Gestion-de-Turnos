@@ -1,6 +1,6 @@
 # Sistema distribuido de Gestión de Turnos
 
-Descripción técnica de los apartados 3 a 12 del [enunciado](enunciado/Proyecto_Programacion_III.pdf). El [documento editable en Word](Documento_tecnico_Gestion_de_Turnos_APA7_borrador.docx) incorpora también la portada y los integrantes; el [índice documental](README.md) indica los apartados pendientes.
+Descripción técnica de los apartados 3 a 12 del [enunciado](enunciado/Proyecto_Programacion_III.pdf). El [documento editable en Word](documento_tecnico.docx) incorpora también la portada y los integrantes; el [índice documental](README.md) indica los apartados pendientes.
 
 ## 3. Descripción del problema
 
@@ -85,7 +85,7 @@ La implementación utiliza MySQL 8, conforme a la autorización de uso comunicad
 - [Ensamblado de CoreServer](../CoreServer/src/main/java/cr/ac/una/CoreServer/App.java) y [arranque del generador](../CostumerTurn/src/main/java/cr/ac/una/costumerturn/App.java).
 - [Servidor](../CoreServer/src/main/java/cr/ac/una/server/TurnServer.java), [manejador de solicitudes](../CoreServer/src/main/java/cr/ac/una/server/TurnRequestHandler.java) y [centro de avisos](../CoreServer/src/main/java/cr/ac/una/server/DisplayEventHub.java).
 - [Servicio de generación](../CoreServer/src/main/java/cr/ac/una/service/TicketService.java), [contrato de creación](../CoreServer/src/main/java/cr/ac/una/repository/TicketCreationRepository.java) e [implementación JDBC](../CoreServer/src/main/java/cr/ac/una/repository/JdbcTicketCreationRepository.java).
-- [Guía de instalación](../INSTALACION.md), [configuración de red](../RED_Y_TLS.md) y [esquema](../database/script%20borrador.sql).
+- [Guía de instalación](../INSTALACION.md), [configuración de red](../RED_Y_TLS.md) y [esquema](../database/esquema.sql).
 
 ## 6. Diagrama general de componentes
 
@@ -105,7 +105,7 @@ El diagrama representa componentes lógicos, no la distribución física entre c
 
 ## 7. Diseño de la base de datos
 
-El sistema utiliza MySQL 8 con tablas InnoDB. El [script de creación](../database/script%20borrador.sql) define los tipos, nulabilidad, valores predeterminados, claves e índices completos. El diagrama corresponde al esquema actual de diez tablas.
+El sistema utiliza MySQL 8 con tablas InnoDB. El [script de creación](../database/esquema.sql) define los tipos, nulabilidad, valores predeterminados, claves e índices completos. El diagrama corresponde al esquema actual de diez tablas.
 
 ![Tablas, claves y relaciones del sistema](diagramas/base_datos.svg)
 
@@ -317,7 +317,7 @@ Las cuatro aplicaciones se ejecutan desde NetBeans. La preparación del entorno 
 ### Preparación del entorno
 
 1. Disponer de JDK 21 o superior, NetBeans con soporte Maven y MySQL 8. Abrir por separado los proyectos CoreServer, CostumerTurn, OperatorSystem y QueueDisplayScreen. Maven necesita acceso a sus dependencias si aún no están en la caché. Los tres clientes incorporan JavaFX 13 mediante sus dependencias.
-2. Para una instalación nueva, crear y seleccionar una base vacía, ejecutar [el esquema](../database/script%20borrador.sql) y después [los datos iniciales](../database/datos_prueba.sql). No ejecutar además las migraciones sobre ese esquema nuevo. Para una base existente, revisar su versión y aplicar solo las migraciones que correspondan, conservando los datos.
+2. Para una instalación nueva, crear y seleccionar una base vacía, ejecutar [el esquema](../database/esquema.sql) y después [los datos iniciales](../database/datos_prueba.sql). No ejecutar además las migraciones sobre ese esquema nuevo. Para una base existente, revisar su versión y aplicar solo las migraciones que correspondan, conservando los datos.
 3. Crear `CoreServer/src/main/resources/db.properties` con la URL JDBC, el usuario y la contraseña del entorno. Conservar `connectionTimeZone=SERVER&preserveInstants=true` en la URL. Los clientes no necesitan este archivo ni credenciales MySQL.
 4. Compilar CoreServer y ejecutar `cr.ac.una.config.CredentialSetup` mediante **Run File** para preparar las contraseñas de `admin`, `amora` y `lvargas` en la base nueva. Esos usuarios vienen en los datos iniciales, sin contraseña. El procedimiento está en [la guía de acceso](../database/INICIALIZAR_ACCESO.md).
 5. Compilar los cuatro proyectos. La configuración privada, las contraseñas y los almacenes TLS no se incluyen en Git ni en las capturas de la demostración.
@@ -378,4 +378,4 @@ Para una prueba coordinada de concurrencia, dejar libres las asignaciones 1 y 2 
 
 Al terminar, cerrar las aplicaciones cliente y detener CoreServer. Cerrar sesión revoca el token cuando el servidor confirma; si falla el aviso de salida, la sesión vence según su política. Cerrar una ventana no finaliza por sí solo un ticket activo ni elimina su historial: completar la atención antes del cierre cuando corresponda.
 
-El cierre del entregable requiere registrar el recorrido integrado del catálogo sobre la base compartida y el ensayo de despliegue entre computadoras, además de completar los aportes y las conclusiones.
+El cierre del entregable requiere registrar el recorrido integrado del catálogo sobre la base compartida y el ensayo de despliegue entre computadoras. La distribución del trabajo y las conclusiones se incluyen en el documento Word.

@@ -8,11 +8,13 @@ import java.security.*;
 import java.util.*;
 import javax.net.ssl.*;
 
-// Transporte común: mantener esta implementación equivalente en los cuatro proyectos.
+// Carga la configuración de sockets y prepara conexiones locales o protegidas con TLS.
+// Los cuatro proyectos conservan el mismo transporte porque se compilan por separado.
 public final class NetworkSettings {
     private final Properties properties;
     private final Path directory;
     private NetworkSettings(Properties properties, Path directory) { this.properties=properties; this.directory=directory; }
+    // Usa turnos.config si se indicó; en otro caso busca network.properties en los recursos.
     public static NetworkSettings load() throws IOException {
         Properties p=new Properties();
         String external=System.getProperty("turnos.config");
@@ -46,6 +48,7 @@ public final class NetworkSettings {
     private static void requireLoopback(String host) throws IOException {
         for(InetAddress address:InetAddress.getAllByName(host))if(!address.isLoopbackAddress())throw new IOException("Las conexiones fuera del equipo requieren tls.enabled=true.");
     }
+    // Exige TLS fuera de loopback y verifica la identidad del servidor durante el handshake.
     public static Socket open(String host,int port,int connectTimeout,int readTimeout) throws IOException {
         NetworkSettings settings=load();
         if(!settings.tls())requireLoopback(host);
@@ -59,6 +62,7 @@ public final class NetworkSettings {
             return socket;
         } catch(IOException|RuntimeException error) { try{socket.close();}catch(IOException close){error.addSuppressed(close);}throw error; }
     }
+    // Vincula el servidor a la dirección configurada; sin TLS solo admite una dirección local.
     public ServerSocket listen() throws IOException {
         String address=bind();if(!tls())requireLoopback(address);
         ServerSocket socket=tls()?context(true).getServerSocketFactory().createServerSocket():new ServerSocket();
@@ -67,6 +71,8 @@ public final class NetworkSettings {
             return socket;
         }catch(IOException|RuntimeException error){try{socket.close();}catch(IOException close){error.addSuppressed(close);}throw error;}
     }
+    // Prepara la clave del servidor o los certificados de confianza del cliente según su
+    // función.
     private SSLContext context(boolean server) throws IOException {
         try {
             SSLContext context=SSLContext.getInstance("TLS");
@@ -84,6 +90,8 @@ public final class NetworkSettings {
             return context;
         }catch(GeneralSecurityException error){throw new IOException("No se pudo preparar TLS. Revise almacén, contraseña y certificados.",error);}
     }
+    // Resuelve el almacén PKCS12 desde la carpeta de configuración, no desde la ubicación del
+    // código.
     private KeyStore store(String key,char[] password) throws IOException,GeneralSecurityException {
         KeyStore store=KeyStore.getInstance("PKCS12");
         try(InputStream in=Files.newInputStream(directory.resolve(value(key,"")))){store.load(in,password);}return store;

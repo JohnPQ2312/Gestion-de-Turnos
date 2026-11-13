@@ -3,6 +3,8 @@ package cr.ac.una.repository;
 import java.util.Map;
 import java.util.Set;
 
+// Ofrece funcionarios y habilitaciones estáticos para trabajar sin MySQL.
+// Los datos de esta implementación se limitan a la memoria del proceso.
 public class InMemoryOperatorRepository implements OperatorRepository {
 
     private final Set<Integer> activeOperatorIds = Set.of(1, 2);

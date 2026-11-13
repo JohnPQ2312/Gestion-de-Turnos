@@ -6,6 +6,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+// Comprueba la conexión MySQL y muestra el motor, la base y las tablas disponibles.
+// Esta herramienta consulta la estructura; no crea ni modifica registros.
 public class DatabaseConnectionCheck {
 
     public static void main(String[] args) {

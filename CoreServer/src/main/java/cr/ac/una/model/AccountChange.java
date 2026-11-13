@@ -1,6 +1,7 @@
 package cr.ac.una.model;
 
-// Solo vive en CoreServer: identifica la versión reemplazada, no sale por sockets.
+// Conserva la cuenta anterior y la nueva para revocar las sesiones de la versión reemplazada.
+// Estos datos permanecen en CoreServer.
 public record AccountChange(OperatorAccount before, OperatorAccount after) {
     @Override
     public String toString() {

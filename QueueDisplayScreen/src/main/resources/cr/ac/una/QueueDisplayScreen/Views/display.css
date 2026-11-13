@@ -1,3 +1,5 @@
+/* Estilos de la pantalla pública; los estados offline y recalled destacan desconexión y rellamados. */
+
 .public-display { -fx-font-family: "Segoe UI"; -fx-font-size: 17px; -fx-background-color: #FFFFFF; }
 .public-display .label { -fx-text-fill: #122D39; }
 .public-display .display-header { -fx-padding: 20px 28px; -fx-background-color: #FFFFFF; }

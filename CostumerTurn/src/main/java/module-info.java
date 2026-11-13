@@ -1,3 +1,4 @@
+// Declara JavaFX y permite que FXMLLoader acceda al controlador del generador.
 module cr.ac.una.costumerturn {
     requires javafx.controls;
     requires javafx.fxml;

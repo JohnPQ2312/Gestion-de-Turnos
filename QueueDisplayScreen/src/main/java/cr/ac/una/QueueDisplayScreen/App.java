@@ -10,6 +10,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+// Carga la pantalla pública y conecta las consultas y suscripciones con CoreServer.
+// Al cerrar la aplicación se detiene el reloj y el trabajo de actualización del controlador.
 public class App extends Application {
 
     private DisplayScreenController controller;

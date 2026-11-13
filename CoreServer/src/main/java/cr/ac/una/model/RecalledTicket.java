@@ -3,7 +3,8 @@ package cr.ac.una.model;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-// Confirmación de un rellamado ya guardado, con su revisión persistente.
+// Confirma un rellamado guardado con su contador y fecha, conservando el mismo ticket y
+// asignación.
 public record RecalledTicket(
         long assignmentId, long ticketId, int callCount, LocalDateTime lastCalledAt
 ) {

@@ -12,8 +12,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 
-// Vista de administración de servicios (bloque 1). Las reglas definitivas las aplica CoreServer;
-// aquí solo se adelantan validaciones de formato para dar mensajes inmediatos.
+// Administra el formulario de servicios y anticipa errores de formato al guardar.
+// CoreServer comprueba los duplicados, el prefijo y las dependencias del servicio.
 public class ServicesController {
     private static final Pattern CODE = Pattern.compile("[A-Z][A-Z0-9_]{0,19}");
     private static final Pattern PREFIX = Pattern.compile("[A-Z]{1,5}");

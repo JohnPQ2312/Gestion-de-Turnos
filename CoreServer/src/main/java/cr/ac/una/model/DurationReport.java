@@ -3,7 +3,7 @@ package cr.ac.una.model;
 import java.util.List;
 import java.util.Objects;
 
-/** Resultado de las consultas 4 y 5: el detalle por turno y su resumen. */
+// Reúne el detalle por turno y el promedio, mínimo y máximo de sus duraciones en segundos.
 public record DurationReport(
         List<TicketDuration> tickets,
         long averageSeconds,
@@ -17,7 +17,7 @@ public record DurationReport(
         ));
     }
 
-    /** Calcula el resumen; con una lista vacía, los tres valores son 0. */
+    // Calcula el resumen; con una lista vacía, los tres valores son 0.
     public static DurationReport of(List<TicketDuration> tickets) {
         if (tickets.isEmpty()) {
             return new DurationReport(tickets, 0, 0, 0);

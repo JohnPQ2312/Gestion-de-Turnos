@@ -10,11 +10,14 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+// Guarda habilitaciones y asignaciones con comprobaciones de compatibilidad y ocupación.
+// Las escrituras se coordinan mediante RoutingConfigurationLock y bloqueos de filas.
 public class JdbcAssignmentConfigurationRepository implements AssignmentConfigurationRepository {
     private final DatabaseConnectionFactory factory;
 
     public JdbcAssignmentConfigurationRepository(DatabaseConnectionFactory factory) { this.factory = Objects.requireNonNull(factory); }
 
+    // Consulta catálogos, relaciones e historial dentro de una misma transacción de lectura.
     @Override
     public AssignmentConfiguration snapshot(AdministrationActor actor) {
         try (Connection c = factory.openConnection()) {
@@ -53,6 +56,8 @@ public class JdbcAssignmentConfigurationRepository implements AssignmentConfigur
         setService(actor, id, code, enabled, false);
     }
 
+    // Modifica la habilitación y comprueba que las asignaciones abiertas sigan teniendo un
+    // servicio común.
     private void setService(AdministrationActor actor, int id, String code, boolean enabled, boolean operator) {
         write(c -> {
             if (operator) lockOperator(c, id, false); else lockWindow(c, id, false);
@@ -95,6 +100,7 @@ public class JdbcAssignmentConfigurationRepository implements AssignmentConfigur
         });
     }
 
+    // Exige recursos libres, acceso del funcionario y al menos un servicio activo compartido.
     @Override
     public long openAssignment(AdministrationActor actor, int operatorId, int windowId) {
         return write(c -> {
@@ -119,6 +125,8 @@ public class JdbcAssignmentConfigurationRepository implements AssignmentConfigur
         });
     }
 
+    // Conserva la fila histórica con su fecha de fin; rechaza turnos activos y ventanillas
+    // pausadas.
     @Override
     public void closeAssignment(AdministrationActor actor, long id) {
         write(c -> {
@@ -199,6 +207,7 @@ public class JdbcAssignmentConfigurationRepository implements AssignmentConfigur
             try (ResultSet r = s.executeQuery()) { return r.next(); }
         }
     }
+    // Toma el bloqueo de configuración y confirma la operación completa o revierte sus cambios.
     @FunctionalInterface private interface Write<T> { T run(Connection c) throws SQLException; }
     private <T> T write(Write<T> action) {
         try (Connection c = factory.openConnection(); RoutingConfigurationLock guard = new RoutingConfigurationLock(c)) {

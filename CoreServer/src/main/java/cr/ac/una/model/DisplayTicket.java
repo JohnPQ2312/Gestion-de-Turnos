@@ -3,6 +3,8 @@ package cr.ac.una.model;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+// Contiene los datos públicos de un turno, incluido el primer y último llamado y su contador.
+// Valida que el estado coincida con las fechas y la ventanilla recibidas.
 public record DisplayTicket(
         long ticketId,
         String visualCode,

@@ -5,6 +5,7 @@ import cr.ac.una.model.Ticket;
 import cr.ac.una.repository.TicketCreationRepository;
 import java.util.Objects;
 
+// Valida el servicio solicitado y delega la creación y numeración del turno al repositorio.
 public class TicketService {
 
     private final TicketCreationRepository ticketRepository;

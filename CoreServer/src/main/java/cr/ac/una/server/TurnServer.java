@@ -15,6 +15,9 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+// Acepta conexiones de clientes y atiende cada una en un hilo virtual.
+// Las solicitudes normales usan una línea; las suscripciones públicas conservan el canal
+// abierto.
 public class TurnServer {
 
     private final int port;
@@ -43,6 +46,7 @@ public class TurnServer {
         this(network.port(),handler,events); this.network=network;
     }
 
+    // Acepta clientes y delega cada conexión al ejecutor de hilos virtuales.
     public void start() throws IOException {
         // El constructor anterior conserva loopback; la aplicación utiliza la configuración de red.
         try (
@@ -57,6 +61,8 @@ public class TurnServer {
         }
     }
 
+    // Lee una solicitud; las suscripciones continúan escuchando y las demás reciben una
+    // respuesta.
     private void handleClient(Socket client) {
         try (
                 client;
@@ -111,6 +117,7 @@ public class TurnServer {
         }
     }
 
+    // Mantiene el canal de avisos y envía un latido cuando no hay cambios.
     private void streamDisplayChanges(BufferedWriter output) throws IOException {
         try (DisplayEventHub.Subscription subscription = displayEvents.subscribe()) {
             sendLine(output, "OK;SUBSCRIBED");

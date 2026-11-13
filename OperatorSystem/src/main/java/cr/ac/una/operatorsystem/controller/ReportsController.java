@@ -24,14 +24,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
-/**
- * Vista de las cinco consultas de la sección 13.
- *
- * Recoge la consulta y el rango, pide los datos al servidor en un hilo
- * virtual y actualiza la tabla en el hilo de JavaFX (los manejadores de Task
- * se ejecutan en ese hilo). No contiene SQL ni reglas de cálculo: el servidor
- * calcula y el cliente solo da formato.
- */
+// Recoge el tipo de consulta y el período y pide el reporte en un hilo virtual.
+// Task entrega los resultados a JavaFX; la vista presenta los cálculos hechos por CoreServer.
 public class ReportsController {
 
     @FunctionalInterface
@@ -101,6 +95,7 @@ public class ReportsController {
         updateControls();
     }
 
+    // Valida la consulta y las fechas y ejecuta la solicitud fuera del hilo de JavaFX.
     @FXML
     private void runReport() {
         if (busy || closed || reportRequest == null) {
@@ -196,11 +191,9 @@ public class ReportsController {
                 : type.title() + ", " + range + ". " + result.summary());
     }
 
-    /**
-     * Ancho de una columna según su encabezado y su valor más largo. La
-     * tabla no reparte el ancho de la ventana entre las columnas: si no caben,
-     * muestra desplazamiento horizontal en lugar de recortar los textos.
-     */
+    // Ancho de una columna según su encabezado y su valor más largo. La
+    // tabla no reparte el ancho de la ventana entre las columnas: si no caben,
+    // muestra desplazamiento horizontal en lugar de recortar los textos.
     private static double columnWidth(String header, List<List<String>> rows, int columnIndex) {
         double width = textWidth(header);
         for (List<String> row : rows) {
@@ -215,7 +208,7 @@ public class ReportsController {
         return text.getLayoutBounds().getWidth();
     }
 
-    /** Celda que muestra su texto completo al pasar el cursor, por si aún se recorta. */
+    // Celda que muestra su texto completo al pasar el cursor, por si aún se recorta.
     private static final class TooltipCell extends TableCell<List<String>, String> {
 
         @Override

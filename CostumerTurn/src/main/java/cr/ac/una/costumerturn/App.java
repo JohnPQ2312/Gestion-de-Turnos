@@ -10,6 +10,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+// Carga el generador y conecta sus solicitudes con CoreServer.
+// El controlador recibe funciones de red y la aplicación cancela su trabajo al cerrar.
 public class App extends Application {
 
     private TicketsGeneratorController controller;

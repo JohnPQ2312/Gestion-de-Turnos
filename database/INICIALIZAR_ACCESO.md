@@ -5,7 +5,7 @@ OperatorSystem exige iniciar sesión. Ningún funcionario tiene contraseña por 
 ## 1. Estructura
 
 - **Base existente** (por ejemplo, la del equipo): aplicar una vez `database/migraciones/001_credenciales_operador.sql` y después `002_estado_pausada_ventanilla.sql`. La primera crea `operator_credential`; la segunda permite `PAUSADA`. Conservan los registros existentes.
-- **Instalación nueva**: `database/script borrador.sql` ya incluye esa tabla. No aplicar además la migración.
+- **Instalación nueva**: `database/esquema.sql` ya incluye esa tabla. No aplicar además la migración.
 
 La versión con rellamado también requiere la [migración 003](migraciones/003_rellamado_ticket.sql) sobre una base anterior. Consultar [RELLAMADO.md](RELLAMADO.md) para aplicarla con CoreServer detenido. En una instalación nueva el DDL ya la incluye.
 

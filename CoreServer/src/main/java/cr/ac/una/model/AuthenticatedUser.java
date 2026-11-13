@@ -2,7 +2,7 @@ package cr.ac.una.model;
 
 import java.util.Objects;
 
-/** Funcionario de una sesión válida, con el rol vigente según el servidor. */
+// Conserva la identidad y el rol que el servidor reconoce en una sesión válida.
 public record AuthenticatedUser(
         int operatorId,
         String username,

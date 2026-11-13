@@ -20,13 +20,13 @@ La migración se validó en MySQL 8.0.32 local, sobre bases desechables, y se ap
 4. Si ambas faltan, ejecutar una sola vez [003_rellamado_ticket.sql](migraciones/003_rellamado_ticket.sql), en su orden completo. Si alguna ya existe, revisar el estado de la migración antes de repetirla.
 5. Compilar los proyectos actualizados en NetBeans. Iniciar CoreServer y después los clientes. CoreServer, OperatorSystem y QueueDisplayScreen deben usar esta versión del bloque; CostumerTurn conserva su contrato de emisión.
 
-Sobre una base existente no ejecutar de nuevo `script borrador.sql` ni `datos_prueba.sql`. La migración 003 conserva los tickets: amplía la precisión de las fechas e inicializa los dos campos nuevos del historial.
+Sobre una base existente no ejecutar de nuevo `esquema.sql` ni `datos_prueba.sql`. La migración 003 conserva los tickets: amplía la precisión de las fechas e inicializa los dos campos nuevos del historial.
 
 La migración no es una transacción única: MySQL confirma las operaciones de estructura. Si falla un paso, revisar cuál se completó antes de continuar. El UPDATE de inicialización solo completa metadatos ausentes y no reinicia contadores que ya registran rellamados.
 
 ## Instalación nueva
 
-En una base vacía, ejecutar `script borrador.sql`, que ya incluye estos campos y restricciones. Los datos ficticios de `datos_prueba.sql` se usan únicamente en instalaciones nuevas de pruebas. No aplicar además la migración 003.
+En una base vacía, ejecutar `esquema.sql`, que ya incluye estos campos y restricciones. Los datos ficticios de `datos_prueba.sql` se usan únicamente en instalaciones nuevas de pruebas. No aplicar además la migración 003.
 
 ## Historial y nombres
 

@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+// Administra funcionarios, credenciales y usuarios mediante transacciones JDBC.
+// Protege al último ADMIN y devuelve los cambios de cuenta para revocar sesiones anteriores.
 public class JdbcPeopleAdministrationRepository implements PeopleAdministrationRepository {
     private static final String ACCOUNT_SQL = """
             SELECT o.operator_id, o.operator_name, o.operator_username,
@@ -187,7 +189,7 @@ public class JdbcPeopleAdministrationRepository implements PeopleAdministrationR
 
     private static boolean hasOpenAssignment(Connection c, int id) throws SQLException {
         // No se toma el bloqueo inverso operador -> asignación usado por el llamado.
-        // El bloque de apertura/cierre deberá coordinarse con estos cambios.
+        // La apertura y el cierre usan bloqueos de filas para comprobar la ocupación.
         try (PreparedStatement s = c.prepareStatement("SELECT assignment_id FROM operator_window_assignment WHERE operator_id=? AND ended_at IS NULL LIMIT 1")) {
             s.setInt(1, id);
             try (ResultSet r = s.executeQuery()) { return r.next(); }
@@ -223,6 +225,8 @@ public class JdbcPeopleAdministrationRepository implements PeopleAdministrationR
     @FunctionalInterface
     private interface Write<T> { T execute(Connection c) throws SQLException; }
 
+    // Coordina escrituras administrativas y protege al último administrador activo.
+    // Revalida al solicitante antes de confirmar el cambio.
     private <T> T write(AdministrationActor actor, Write<T> action) {
         try (Connection c = factory.openConnection()) {
             c.setAutoCommit(false);

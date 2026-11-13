@@ -21,7 +21,7 @@ USE gestion_turnos;
 
 Ejecutar, en este orden y dentro de esa base:
 
-1. [database/script borrador.sql](database/script%20borrador.sql).
+1. [database/esquema.sql](database/esquema.sql).
 2. [database/datos_prueba.sql](database/datos_prueba.sql).
 
 El esquema actual ya incorpora las migraciones de acceso, pausa y rellamado. No aplicarlas de nuevo en esta instalación.

@@ -22,6 +22,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.util.Duration;
 
+// Presenta la espera, los llamados recientes y el estado de conexión de la pantalla pública.
+// Aplica las capturas en JavaFX y destaca los rellamados nuevos respecto a la captura anterior.
 public class DisplayScreenController {
 
     private static final DateTimeFormatter DATE_TIME
@@ -98,6 +100,7 @@ public class DisplayScreenController {
         column.setCellValueFactory(data -> new ReadOnlyStringWrapper(value.apply(data.getValue())));
     }
 
+    // Las respuestas de red pasan por Platform.runLater antes de tocar controles JavaFX.
     public void configure(
             DisplayRefreshService.SnapshotRequest request,
             DisplayRefreshService.SubscriptionRequest subscriptions
@@ -130,6 +133,7 @@ public class DisplayScreenController {
         refreshService.start();
     }
 
+    // Reemplaza ambas tablas con la captura recibida y actualiza el último llamado.
     private void showSnapshot(DisplaySnapshot snapshot) {
         ticketsTable.getItems().setAll(snapshot.waitingTickets());
         recentCallsTable.getItems().setAll(snapshot.recentCalls());
@@ -167,6 +171,8 @@ public class DisplayScreenController {
             callNoticeLabel.setVisible(recalled);
             callNoticeLabel.setManaged(recalled);
             Integer previous = knownCalls.get(last.ticketId());
+            // La primera captura carga el historial sin anunciar un rellamado nuevo.
+            // Después se compara el contador persistido para destacar solo una revisión nueva.
             boolean newRecall = snapshotReceived && recalled && "LLAMADO".equals(last.state())
                     && (previous == null || last.callCount() > previous);
             if (newRecall) {
@@ -193,6 +199,7 @@ public class DisplayScreenController {
         connectionLabel.pseudoClassStateChanged(PseudoClass.getPseudoClass("offline"), false);
     }
 
+    // Conserva los últimos datos visibles e informa desde cuándo dejaron de actualizarse.
     private void showFailure(Exception error) {
         System.err.println("No se pudo actualizar la pantalla pública. Detalle: " + error);
         String message = lastSuccessfulUpdate == null

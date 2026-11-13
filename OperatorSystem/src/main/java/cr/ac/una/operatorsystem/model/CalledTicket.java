@@ -1,5 +1,5 @@
 package cr.ac.una.operatorsystem.model;
 
-// Datos del llamado que debe presentar la pantalla del operador.
+// Contiene el código, servicio, funcionario y ventanilla confirmados al llamar un turno.
 public record CalledTicket(String visualCode, String serviceName, int operatorId, int windowId) {
 }

@@ -4,6 +4,8 @@ import cr.ac.una.model.RecalledTicket;
 import cr.ac.una.repository.TicketRecallRepository;
 import java.util.Objects;
 
+// Valida los identificadores del funcionario, asignación y ticket antes de solicitar el
+// rellamado.
 public class TicketRecallService {
     private final TicketRecallRepository repository;
 

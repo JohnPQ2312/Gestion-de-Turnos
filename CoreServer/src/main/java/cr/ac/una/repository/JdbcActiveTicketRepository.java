@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.util.Objects;
 import java.util.Optional;
 
+// Recupera de MySQL el turno llamado o en atención de una asignación.
 public class JdbcActiveTicketRepository implements ActiveTicketRepository {
 
     private final DatabaseConnectionFactory connectionFactory;

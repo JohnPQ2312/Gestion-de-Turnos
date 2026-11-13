@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+// Consulta ventanillas y sus habilitaciones de servicio mediante JDBC.
 public class JdbcServiceWindowRepository implements ServiceWindowRepository {
 
     private final DatabaseConnectionFactory connectionFactory;

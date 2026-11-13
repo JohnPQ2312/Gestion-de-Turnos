@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-// Valida las entradas del catálogo antes de llegar a la transacción.
-// Las reglas que dependen de datos guardados (turnos, asignaciones, duplicados) se comprueban en el repositorio.
+// Valida el formato de servicios y ventanillas antes de entrar al repositorio.
+// Los duplicados y las dependencias se comprueban dentro de la transacción que los modifica.
 public class CatalogAdministrationService {
 
     // Código estable: empieza con letra; letras, dígitos o guion bajo; VARCHAR(20).

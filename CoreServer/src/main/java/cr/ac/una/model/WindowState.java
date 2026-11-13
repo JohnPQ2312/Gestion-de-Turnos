@@ -1,11 +1,7 @@
 package cr.ac.una.model;
 
-/**
- * ACTIVA: disponible para llamar turnos.
- * PAUSADA: no disponible temporalmente por decisión del operador; conserva su
- * asignación y permite completar el turno en curso.
- * INACTIVA: baja administrativa.
- */
+// ACTIVA permite llamar; PAUSADA detiene llamados nuevos y conserva la atención actual.
+// INACTIVA corresponde a la baja administrativa de la ventanilla.
 public enum WindowState {
     ACTIVA,
     INACTIVA,

@@ -9,8 +9,9 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 
-// Ejecuta solicitudes administrativas fuera del hilo JavaFX con el mismo criterio de Personas:
-// bloquea los controles, distingue DENIED, errores de negocio y fallas de red, y nunca reenvía una escritura.
+// Ejecuta solicitudes administrativas en un hilo virtual y actualiza controles mediante Task.
+// Distingue rechazos de acceso, reglas de negocio y fallos de red; las escrituras no se
+// reenvían.
 final class AdminTaskRunner {
     private final Node content;
     private final Button reloadButton;
@@ -33,6 +34,8 @@ final class AdminTaskRunner {
 
     boolean isIdle() { return !busy && !closed; }
 
+    // Task entrega éxito o fallo en JavaFX y mantiene los controles bloqueados durante la
+    // solicitud.
     <T> void run(Callable<T> action, Consumer<T> success, boolean write) {
         if (busy || closed) return;
         busy = true;

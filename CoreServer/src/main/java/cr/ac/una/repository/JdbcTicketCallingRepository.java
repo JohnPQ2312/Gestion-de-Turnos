@@ -19,6 +19,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 
+// Selecciona y asigna un turno dentro de una transacción con bloqueos de filas.
+// Comprueba nuevamente la asignación, los recursos y los servicios antes de confirmar el
+// llamado.
 public class JdbcTicketCallingRepository implements TicketCallingRepository {
 
     private final DatabaseConnectionFactory connectionFactory;
@@ -29,6 +32,8 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
         );
     }
 
+    // Bloquea asignación, funcionario y ventanilla antes de elegir el ticket.
+    // Las comprobaciones previas del servicio se repiten con los datos actuales de MySQL.
     @Override
     public Optional<Ticket> callNext(
             OperatorWindowAssignment assignment,
@@ -207,6 +212,8 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
         }
     }
 
+    // Conserva solo servicios activos habilitados en funcionario y ventanilla y solicitados por
+    // el servicio.
     private Map<String, Service> findEligibleServices(
             Connection connection,
             OperatorWindowAssignment assignment,
@@ -251,6 +258,7 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
         }
     }
 
+    // Impide otro turno activo en la asignación, el funcionario o la ventanilla.
     private void rejectOccupiedAssignment(
             Connection connection,
             OperatorWindowAssignment assignment
@@ -281,6 +289,9 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
         }
     }
 
+    // Prioriza preferenciales y desempata por creación e identificador.
+    // FOR UPDATE protege la selección hasta guardar el llamado; una ventanilla exclusiva filtra
+    // regulares.
     private Optional<Ticket> selectAndCall(
             Connection connection,
             OperatorWindowAssignment assignment,
@@ -357,6 +368,8 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
         return ticket;
     }
 
+    // Guarda la asignación y comienza el historial con primer y último llamado iguales y
+    // contador 1.
     private void updateCalledTicket(
             Connection connection,
             long ticketId,

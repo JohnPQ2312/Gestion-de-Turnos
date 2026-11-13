@@ -14,6 +14,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+// Guarda el inicio y fin de atención tras comprobar el turno y su asignación bajo bloqueo.
 public class JdbcTicketLifecycleRepository implements TicketLifecycleRepository {
 
     private final DatabaseConnectionFactory connectionFactory;
@@ -34,6 +35,8 @@ public class JdbcTicketLifecycleRepository implements TicketLifecycleRepository 
         changeState(assignmentId, ticketId, false);
     }
 
+    // Comprueba y bloquea la asignación y el ticket antes de aplicar la transición.
+    // El inicio y el fin se confirman en MySQL o se revierten ante un fallo.
     private void changeState(long assignmentId, long ticketId, boolean starting) {
         if (assignmentId <= 0 || ticketId <= 0) {
             throw new IllegalArgumentException(

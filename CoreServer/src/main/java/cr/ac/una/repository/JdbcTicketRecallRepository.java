@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
+// Actualiza el último llamado y su contador dentro de una transacción.
+// Conserva el primer llamado, el consecutivo y la asignación del ticket.
 public class JdbcTicketRecallRepository implements TicketRecallRepository {
     private final DatabaseConnectionFactory connectionFactory;
 
@@ -103,6 +105,8 @@ public class JdbcTicketRecallRepository implements TicketRecallRepository {
         }
     }
 
+    // Solo admite un ticket LLAMADO de esta asignación.
+    // Actualiza último llamado y contador sin cambiar el primer llamado ni generar otro turno.
     private RecalledTicket recallLockedTicket(Connection connection, long assignmentId, long ticketId)
             throws SQLException {
         String sql = """

@@ -1,5 +1,7 @@
 package cr.ac.una.model;
 
+// Reúne el turno llamado o en atención que pertenece a una asignación.
+// Los identificadores permiten comprobar que la respuesta corresponde al puesto consultado.
 public record ActiveTicket(
         long ticketId,
         String visualCode,

@@ -5,19 +5,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
-/**
- * Rango de fechas de un reporte, con ambos días incluidos.
- *
- * Las consultas usan [inicio del primer día, inicio del día siguiente al
- * último), de modo que el último día se incluye completo y ningún registro
- * queda fuera por la hora 00:00.
- *
- * No hay un límite de duración del rango. Solo se exige que ambas fechas
- * estén dentro de lo que admiten las columnas TIMESTAMP de MySQL (de
- * 1970-01-01 00:00:01 a 2038-01-19 03:14:07 UTC). Se deja un día de margen
- * en cada extremo para cualquier zona horaria, lo que además garantiza que
- * calcular el día siguiente a la fecha final nunca se desborde.
- */
+// Incluye los dos días elegidos para el reporte mediante un intervalo de inicio incluido y fin
+// excluido.
+// El fin corresponde al inicio del día siguiente, para incluir completo el último día.
+// Los límites dejan margen al rango TIMESTAMP de MySQL y al cálculo del día siguiente;
+// no se impone una duración máxima adicional al período.
 public record ReportPeriod(LocalDate from, LocalDate to) {
 
     public static final LocalDate MIN_DATE = LocalDate.of(1970, 1, 2);
@@ -43,6 +35,7 @@ public record ReportPeriod(LocalDate from, LocalDate to) {
         return from.atStartOfDay();
     }
 
+    // Usa el comienzo del día siguiente para incluir todas las horas de la fecha final.
     public LocalDateTime endExclusive() {
         return to.plusDays(1).atStartOfDay();
     }

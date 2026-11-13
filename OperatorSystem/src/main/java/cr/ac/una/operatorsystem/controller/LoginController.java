@@ -13,11 +13,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
-/**
- * Pantalla de acceso de OperatorSystem. Envía las credenciales a CoreServer
- * en un hilo virtual y entrega la sesión a App; no valida contraseñas ni
- * consulta la base.
- */
+// Envía las credenciales a CoreServer en un hilo virtual y entrega la sesión recibida a App.
+// El servidor verifica la contraseña y decide si concede el acceso.
 public class LoginController {
 
     @FunctionalInterface
@@ -57,7 +54,7 @@ public class LoginController {
         Platform.runLater(usernameField::requestFocus);
     }
 
-    /** Mensaje informativo, por ejemplo al volver por sesión vencida. */
+    // Mensaje informativo, por ejemplo al volver por sesión vencida.
     public void showNotice(String message) {
         if (message != null && !message.isBlank()) {
             noticeLabel.setText(message);

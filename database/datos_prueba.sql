@@ -1,12 +1,10 @@
--- =====================================================================
 -- Gestión de Turnos - Datos iniciales para pruebas
--- =====================================================================
--- Uso:
+-- Preparación de una base nueva:
 --   1. Crear una base VACÍA y seleccionarla (ver las dos líneas de abajo).
---   2. Ejecutar primero "script borrador.sql" (estructura de las tablas).
+--   2. Ejecutar primero "esquema.sql" (estructura de las tablas).
 --   3. Ejecutar este archivo.
 --
--- IMPORTANTE: no ejecutar sobre la base compartida del equipo que ya tiene
+-- Usar solo en una instalación nueva; no ejecutar sobre la base compartida que ya tiene
 -- datos (gamabasis_p3g9). Los identificadores fijos chocarían con los
 -- registros existentes. Este script es para instalaciones nuevas.
 --
@@ -15,7 +13,6 @@
 --
 -- CREATE DATABASE gestion_turnos CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 -- USE gestion_turnos;
--- =====================================================================
 
 -- Asegura que las tildes se guarden bien aunque el cliente use otra
 -- codificación por defecto (por ejemplo, latin1 en la consola).
@@ -23,9 +20,7 @@ SET NAMES utf8mb4;
 
 START TRANSACTION;
 
--- ---------------------------------------------------------------------
 -- Funcionarios
--- ---------------------------------------------------------------------
 INSERT INTO `operator` (operator_id, operator_name, operator_username, operator_role, operator_state) VALUES
     (1, 'Ana Mora Solís',      'amora',   'OPERADOR', 'ACTIVO'),
     (2, 'Luis Vargas Rojas',   'lvargas', 'OPERADOR', 'ACTIVO'),
@@ -37,10 +32,8 @@ INSERT INTO `operator` (operator_id, operator_name, operator_username, operator_
 -- sesión, crear cada credencial con cr.ac.una.config.CredentialSetup
 -- (ver database/INICIALIZAR_ACCESO.md).
 
--- ---------------------------------------------------------------------
 -- Servicios y su consecutivo (cada servicio necesita su fila en
 -- ticket_sequence; sin ella no se pueden generar turnos)
--- ---------------------------------------------------------------------
 INSERT INTO service (service_code, services_name, service_prefix, service_state) VALUES
     ('INFO', 'Información general', 'A', 'ACTIVO'),
     ('TRAM', 'Trámites',            'B', 'ACTIVO'),
@@ -51,12 +44,10 @@ INSERT INTO ticket_sequence (service_id, last_number) VALUES
     ('TRAM', 0),
     ('PAGO', 0);
 
--- ---------------------------------------------------------------------
 -- Ventanillas
 --   1 y 2: mixtas (regulares y preferenciales)
---   3: solo preferenciales (característica de innovación)
+--   3: solo admite turnos preferenciales
 --   4: inactiva, para probar el rechazo de ventanillas inactivas
--- ---------------------------------------------------------------------
 INSERT INTO `window` (window_id, window_state, attention_mode) VALUES
     (1, 'ACTIVA',   'MIXED'),
     (2, 'ACTIVA',   'MIXED'),
@@ -77,13 +68,11 @@ INSERT INTO operator_service (operator_id, service_code) VALUES
     (3, 'INFO'), (3, 'PAGO'),
     (4, 'PAGO');
 
--- ---------------------------------------------------------------------
 -- Asignaciones abiertas (operador en ventanilla)
 -- Se inician un minuto antes para evitar diferencias de reloj entre
 -- la computadora y el servidor MySQL.
 -- Operador 1 -> ventanilla 1 y operador 2 -> ventanilla 2 son las que
 -- usa pruebas/ConcurrentCallingCheck.java.
--- ---------------------------------------------------------------------
 INSERT INTO operator_window_assignment (assignment_id, operator_id, window_id, started_at) VALUES
     (1, 1, 1, CURRENT_TIMESTAMP - INTERVAL 1 MINUTE),
     (2, 2, 2, CURRENT_TIMESTAMP - INTERVAL 1 MINUTE),
@@ -91,9 +80,7 @@ INSERT INTO operator_window_assignment (assignment_id, operator_id, window_id, s
 
 COMMIT;
 
--- ---------------------------------------------------------------------
 -- Comprobaciones rápidas después de ejecutar
--- ---------------------------------------------------------------------
 -- SELECT * FROM service;                     -- 3 filas
 -- SELECT * FROM ticket_sequence;             -- 3 filas en 0
 -- SELECT * FROM operator_window_assignment;  -- 3 filas con ended_at NULL

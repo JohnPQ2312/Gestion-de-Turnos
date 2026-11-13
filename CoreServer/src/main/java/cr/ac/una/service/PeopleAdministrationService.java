@@ -6,6 +6,8 @@ import cr.ac.una.security.PasswordHasher;
 import java.util.List;
 import java.util.Objects;
 
+// Valida datos de personas y prepara hashes antes de guardar las credenciales.
+// Tras confirmar un cambio de cuenta, comunica sus dos versiones a la gestión de sesiones.
 public class PeopleAdministrationService {
     private final PeopleAdministrationRepository repository;
     private final PasswordHasher hasher;
@@ -48,6 +50,7 @@ public class PeopleAdministrationService {
         repository.updateUser(actor, id, username(username), active);
     }
 
+    // Valida y deriva la contraseña; al terminar borra la copia temporal de caracteres.
     private String hash(String password) {
         char[] secret = password == null ? null : password.toCharArray();
         try { return hasher.hash(secret); } finally { PasswordHasher.clear(secret); }

@@ -21,17 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Solicita a CoreServer las cinco consultas de la sección 13 y convierte sus
- * respuestas en tablas legibles. No accede a MySQL.
- *
- * Usa el mismo protocolo que OperatorServerClient: una conexión por
- * solicitud, una línea UTF-8 y campos separados por punto y coma con los
- * textos codificados.
- *
- * Cada solicitud va con la sesión (AUTH;token;comando). CoreServer solo
- * atiende las consultas a un perfil ADMIN.
- */
+// Solicita las cinco consultas a CoreServer con una sesión ADMIN y prepara filas legibles.
+// Cada solicitud usa una línea UTF-8 con campos separados por punto y coma y textos codificados.
 public class ReportServerClient {
 
     private static final DateTimeFormatter DATE_TIME

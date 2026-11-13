@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+// Consulta los servicios activos y convierte sus filas en objetos Service.
 public class JdbcServiceRepository implements ServiceRepository {
 
     private final DatabaseConnectionFactory connectionFactory;

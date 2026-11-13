@@ -8,10 +8,10 @@ import cr.ac.una.model.ManagedWindow;
 import java.sql.*;
 import java.util.*;
 
-// Administración de servicios y ventanillas.
-// Orden de bloqueos de las escrituras: bloqueo nombrado de configuración → fila del catálogo → lecturas de control.
-// Emisión (servicio → consecutivo) y llamado (asignación → funcionario → ventanilla → servicio → ticket)
-// esperan la fila bloqueada aquí; este recorrido no bloquea después ninguna fila que ellos tengan, así no se cruzan.
+// Administra servicios y ventanillas dentro de transacciones MySQL.
+// Las escrituras toman el bloqueo de configuración, la fila del catálogo y las lecturas de
+// control.
+// La emisión y el llamado también bloquean las filas de los recursos que utilizan.
 public class JdbcCatalogAdministrationRepository implements CatalogAdministrationRepository {
 
     private static final String PENDING_STATES = "('EN_ESPERA','LLAMADO','EN_ATENCION')";
@@ -21,7 +21,7 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
         this.factory = Objects.requireNonNull(factory, "La fábrica de conexiones es obligatoria.");
     }
 
-    // ---------------------------------------------------------------- servicios
+    // Operaciones del catálogo de servicios.
 
     @Override
     public List<ManagedService> listServices(AdministrationActor actor) {
@@ -43,6 +43,7 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
                 "ACTIVO".equals(r.getString(4)), r.getLong(5), r.getLong(6), r.getLong(7), r.getBoolean(8))));
     }
 
+    // Crea el servicio y su fila de consecutivo dentro de la misma transacción.
     @Override
     public void createService(AdministrationActor actor, String code, String name, String prefix) {
         write(actor, "Ya existe un servicio con ese código o prefijo.", c -> {
@@ -67,6 +68,7 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
         });
     }
 
+    // Conserva el código del servicio y rechaza cambios de prefijo cuando ya existen emisiones.
     @Override
     public void updateService(AdministrationActor actor, String code, String name, String prefix) {
         write(actor, "Ya existe un servicio con ese prefijo.", c -> {
@@ -97,6 +99,7 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
         });
     }
 
+    // Comprueba turnos pendientes y rutas compartidas antes de dar de baja el servicio.
     @Override
     public void setServiceActive(AdministrationActor actor, String code, boolean active) {
         write(actor, null, c -> {
@@ -169,7 +172,7 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
         }
     }
 
-    // Reactivar nunca reinicia la numeración. Si faltara la fila (datos anteriores), parte del mayor consecutivo usado.
+    // Al reactivar, conserva el contador o lo reconstruye desde el mayor consecutivo histórico.
     private static void ensureSequence(Connection c, String code) throws SQLException {
         if (exists(c, "SELECT 1 FROM ticket_sequence WHERE service_id = ? FOR UPDATE", code)) return;
         try (PreparedStatement s = c.prepareStatement("""
@@ -229,7 +232,7 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
         }
     }
 
-    // ---------------------------------------------------------------- ventanillas
+    // Operaciones del catálogo de ventanillas.
 
     @Override
     public List<ManagedWindow> listWindows(AdministrationActor actor) {
@@ -265,6 +268,7 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
         });
     }
 
+    // Rechaza el cambio de modalidad mientras la ventanilla tenga un turno activo.
     @Override
     public void updateWindowMode(AdministrationActor actor, int id, String mode) {
         write(actor, null, c -> {
@@ -285,6 +289,8 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
         });
     }
 
+    // Aplica la baja o reactivación y devuelve el estado guardado.
+    // La reactivación exige INACTIVA; una pausa se reanuda desde Atención.
     @Override
     public String setWindowActive(AdministrationActor actor, int id, boolean active) {
         return write(actor, null, c -> {
@@ -352,7 +358,7 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
         }
     }
 
-    // ---------------------------------------------------------------- soporte JDBC
+    // Transacciones y consultas compartidas por las operaciones del catálogo.
 
     @FunctionalInterface private interface Row<T> { T map(ResultSet r) throws SQLException; }
     @FunctionalInterface private interface Work<T> { T run(Connection c) throws SQLException; }
@@ -371,7 +377,8 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
         } catch (SQLException e) { throw failure(e); }
     }
 
-    // Las escrituras del catálogo se serializan con los cambios de habilitaciones y asignaciones.
+    // Comparte el bloqueo de configuración con habilitaciones y asignaciones.
+    // Revalida al ADMIN y confirma todas las comprobaciones y cambios en una transacción.
     private <T> T write(AdministrationActor actor, String duplicateMessage, Work<T> action) {
         try (Connection c = factory.openConnection(); RoutingConfigurationLock guard = new RoutingConfigurationLock(c)) {
             c.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);

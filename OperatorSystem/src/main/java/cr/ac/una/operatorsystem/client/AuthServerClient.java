@@ -14,7 +14,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-/** Inicio y cierre de sesión en CoreServer. No guarda nada en disco. */
+// Inicia y cierra sesiones por sockets; las credenciales y el token no se guardan en archivos.
 public class AuthServerClient {
 
     // Tiempos de las solicitudes normales, iguales a los demás clientes.
@@ -60,15 +60,13 @@ public class AuthServerClient {
         return new UserSession(response[2], operatorId, response[4], response[5], response[6]);
     }
 
-    /** Cierra la sesión en el servidor. Si ya había vencido, no es un error. */
+    // Cierra la sesión en el servidor. Si ya había vencido, no es un error.
     public void logout(UserSession session) throws IOException {
         logout(session, CONNECT_TIMEOUT_MS, READ_TIMEOUT_MS);
     }
 
-    /**
-     * Igual que logout, con tiempos propios. Al cerrar la aplicación se usa un
-     * plazo corto para no retener el proceso si el servidor no responde.
-     */
+    // Igual que logout, con tiempos propios. Al cerrar la aplicación se usa un
+    // plazo corto para no retener el proceso si el servidor no responde.
     public void logout(UserSession session, int connectTimeoutMs, int readTimeoutMs)
             throws IOException {
         Objects.requireNonNull(session, "La sesión es obligatoria.");
@@ -80,10 +78,8 @@ public class AuthServerClient {
         }
     }
 
-    /**
-     * Envío y lectura de una línea del protocolo, con el mismo formato que
-     * los demás clientes de OperatorSystem.
-     */
+    // Envío y lectura de una línea del protocolo, con el mismo formato que
+    // los demás clientes de OperatorSystem.
     static final class ServerProtocol {
 
         private ServerProtocol() {

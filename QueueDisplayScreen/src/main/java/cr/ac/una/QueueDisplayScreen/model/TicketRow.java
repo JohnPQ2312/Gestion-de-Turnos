@@ -2,6 +2,8 @@ package cr.ac.una.QueueDisplayScreen.model;
 
 import java.time.LocalDateTime;
 
+// Conserva una fila pública y valida que su estado coincida con la ventanilla y el historial de
+// llamados.
 public record TicketRow(
         long ticketId,
         String visualCode,

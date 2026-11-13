@@ -1,11 +1,7 @@
 package cr.ac.una.model;
 
-/**
- * Perfil guardado en operator.operator_role.
- *
- * SUPERVISOR existe en el DDL pero todavía no tiene permisos: no se le
- * conceden los de ADMIN por semejanza.
- */
+// Representa los perfiles guardados en operator.operator_role.
+// SUPERVISOR está definido en la base, pero la autorización actual no le concede acceso.
 public enum UserRole {
     ADMIN,
     OPERADOR,

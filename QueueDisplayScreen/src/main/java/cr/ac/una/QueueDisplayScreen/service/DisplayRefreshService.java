@@ -7,6 +7,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+// Escucha avisos de CoreServer y consulta una captura al conectar y después de cada cambio.
+// Si pierde el canal, informa el fallo y vuelve a conectarse mientras la pantalla siga abierta.
 public class DisplayRefreshService implements AutoCloseable {
 
     @FunctionalInterface
@@ -59,6 +61,8 @@ public class DisplayRefreshService implements AutoCloseable {
         worker.submit(this::listen);
     }
 
+    // Abre la suscripción antes de consultar la captura para cubrir cambios durante la conexión.
+    // Los latidos mantienen el canal; solo los avisos de cambio provocan otra consulta.
     private void listen() {
         while (!closed && !Thread.currentThread().isInterrupted()) {
             try (ChangeSubscription subscription = subscriptions.open()) {
@@ -102,6 +106,7 @@ public class DisplayRefreshService implements AutoCloseable {
         }
     }
 
+    // Interrumpe el trabajo y cierra el socket activo para desbloquear una lectura pendiente.
     @Override
     public synchronized void close() {
         closed = true;

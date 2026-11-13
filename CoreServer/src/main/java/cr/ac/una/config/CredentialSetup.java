@@ -13,16 +13,10 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
 
-/**
- * Herramienta local para crear o restablecer la contraseña de un funcionario
- * existente. Se usa para las primeras credenciales (por ejemplo, la del
- * administrador) mientras no exista la administración de usuarios.
- *
- * Pide el usuario y la contraseña por consola: la contraseña nunca se pasa
- * como argumento del proceso ni se guarda en scripts. Se ejecuta en la
- * computadora de CoreServer con su db.properties.
- * Ver database/INICIALIZAR_ACCESO.md.
- */
+// Crea o restablece la credencial de un funcionario existente desde la consola.
+// Sirve para preparar el primer acceso; las cuentas también se administran desde OperatorSystem.
+// Lee la contraseña al ejecutar, sin recibirla como argumento ni guardarla en scripts.
+// Se ejecuta junto a CoreServer con su db.properties; ver database/INICIALIZAR_ACCESO.md.
 public final class CredentialSetup {
 
     private CredentialSetup() {
@@ -77,7 +71,7 @@ public final class CredentialSetup {
         }
     }
 
-    /** Lee de la consola real si existe; si no (por ejemplo, NetBeans), de la entrada estándar. */
+    // Lee de la consola real si existe; si no (por ejemplo, NetBeans), de la entrada estándar.
     private interface Input {
 
         String readLine(String prompt) throws IOException;

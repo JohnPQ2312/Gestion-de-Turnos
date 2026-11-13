@@ -38,6 +38,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+// Interpreta una línea del protocolo, comprueba el acceso y delega la operación al servicio.
+// Publica avisos a las pantallas después de las modificaciones confirmadas.
 public class TurnRequestHandler {
 
     private static final Set<String> REPORT_COMMANDS = Set.of(
@@ -167,13 +169,8 @@ public class TurnRequestHandler {
         this.catalogAdministration = catalogAdministration;
     }
 
-    /**
-     * Formatos aceptados:
-     *   COMANDO;...               comandos públicos (catálogo, emisión, pantalla)
-     *   LOGIN;usuario;contraseña  textos codificados como el resto del protocolo
-     *   AUTH;token;COMANDO;...    comandos protegidos y LOGOUT
-     * Un rechazo de acceso responde DENIED;motivo;mensaje.
-     */
+    // Acepta comandos públicos, LOGIN y solicitudes AUTH con token.
+    // Convierte los rechazos de acceso en DENIED y los errores de operación en ERROR.
     public String handle(String request) {
         try {
             if (request == null || request.isBlank()) {
@@ -377,6 +374,7 @@ public class TurnRequestHandler {
         return response.toString();
     }
 
+    // Valida la selección y devuelve los datos del turno ya registrado por el servidor.
     private String generateTicket(String[] parts) {
         String serviceCode = URLDecoder.decode(parts[1], StandardCharsets.UTF_8);
 
@@ -477,6 +475,7 @@ public class TurnRequestHandler {
         return "OK;ATTENTION_FINISHED;" + assignmentId + ";" + ticketId;
     }
 
+    // Serializa espera y llamados recientes en una respuesta pública con límites de filas.
     private String getDisplaySnapshot(boolean withCallHistory) {
         DisplaySnapshot snapshot = displayRepository.findSnapshot(50, 5);
         StringBuilder response = new StringBuilder(withCallHistory ? "OK;DISPLAY_SNAPSHOT_V2;" : "OK;DISPLAY_SNAPSHOT;");

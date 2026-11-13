@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+// Recupera asignaciones y sus fechas desde MySQL, incluidas las ya cerradas.
 public class JdbcOperatorWindowAssignmentRepository
         implements OperatorWindowAssignmentRepository {
 

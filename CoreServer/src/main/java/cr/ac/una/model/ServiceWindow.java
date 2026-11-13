@@ -2,6 +2,8 @@ package cr.ac.una.model;
 
 import java.util.Objects;
 
+// Describe la modalidad de atención y el estado operativo de una ventanilla.
+// Una pausa conserva su asignación y permite completar el turno que ya está activo.
 public class ServiceWindow {
 
     private final int windowId;
@@ -40,7 +42,7 @@ public class ServiceWindow {
         return attentionMode;
     }
 
-    /** Disponible para llamar turnos. */
+    // Solo ACTIVA permite pedir un turno nuevo.
     public boolean isActive() {
         return state == WindowState.ACTIVA;
     }
@@ -49,7 +51,7 @@ public class ServiceWindow {
         return state == WindowState.PAUSADA;
     }
 
-    /** En servicio: activa o en pausa temporal (no dada de baja). */
+    // Incluye la pausa para mantener accesible el turno que ya estaba asignado.
     public boolean isOperational() {
         return state == WindowState.ACTIVA || state == WindowState.PAUSADA;
     }

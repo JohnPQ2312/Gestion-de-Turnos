@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+// Lee espera y llamados recientes desde una misma captura de MySQL.
+// Las dos listas comparten la transacción para presentar un estado coherente.
 public class JdbcDisplayRepository implements DisplayRepository {
 
     private static final String SELECT_TICKETS = """
@@ -33,6 +35,7 @@ public class JdbcDisplayRepository implements DisplayRepository {
         );
     }
 
+    // Lee ambas listas con REPEATABLE_READ para que compartan la misma captura de datos.
     @Override
     public DisplaySnapshot findSnapshot(int waitingLimit, int recentCallsLimit) {
         validateLimit(waitingLimit);
@@ -92,6 +95,8 @@ public class JdbcDisplayRepository implements DisplayRepository {
         return queryTickets(connection, sql, limit);
     }
 
+    // Ordena por el último llamado, de modo que un rellamado vuelva al inicio del historial
+    // público.
     private List<DisplayTicket> findRecentCalls(
             Connection connection, int limit
     ) throws SQLException {

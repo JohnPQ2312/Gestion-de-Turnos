@@ -10,8 +10,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 
-// Vista de administración de ventanillas (bloque 2). Las habilitaciones y asignaciones siguen en Asignaciones;
-// la pausa la maneja el operador desde Atención. Aquí se crean, se cambia la modalidad y se da de baja o se reactiva.
+// Administra altas, modalidad y estado administrativo de las ventanillas.
+// Las habilitaciones se configuran en Asignaciones y el operador controla la pausa desde
+// Atención.
 public class WindowsController {
 
     private record ModeOption(String value) {

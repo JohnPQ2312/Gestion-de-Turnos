@@ -1,3 +1,6 @@
+-- Crea la estructura completa en una base nueva previamente seleccionada.
+-- Incluye credenciales, pausa y rellamado; no aplicar además las migraciones sobre esta estructura.
+-- Identidad, rol y estado del funcionario; la contraseña se almacena por separado.
 CREATE TABLE `operator` (
     operator_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     operator_name VARCHAR(100) NOT NULL,
@@ -29,6 +32,7 @@ CREATE TABLE operator_credential (
         REFERENCES `operator` (operator_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Catálogo de servicios con código estable y prefijo único para identificar los turnos.
 CREATE TABLE service (
     service_code VARCHAR(20) NOT NULL,
     services_name VARCHAR(80) NOT NULL,
@@ -45,6 +49,7 @@ CREATE TABLE service (
         CHECK (CHAR_LENGTH(TRIM(service_prefix)) > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Relaciona cada funcionario con los servicios que está habilitado para atender.
 CREATE TABLE operator_service (
     operator_id INT UNSIGNED NOT NULL,
     service_code VARCHAR(20) NOT NULL,
@@ -60,6 +65,7 @@ CREATE TABLE operator_service (
         REFERENCES service (service_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Estado y modalidad de la ventanilla; sus servicios se definen en window_service.
 CREATE TABLE `window` (
     window_id INT UNSIGNED NOT NULL,
     window_state VARCHAR(20) NOT NULL DEFAULT 'ACTIVA',
@@ -75,6 +81,7 @@ CREATE TABLE `window` (
         CHECK (attention_mode IN ('MIXED', 'PRIORITY_ONLY'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Relaciona cada ventanilla con los servicios que puede atender.
 CREATE TABLE window_service (
     window_id INT UNSIGNED NOT NULL,
     service_code VARCHAR(20) NOT NULL,
@@ -90,6 +97,7 @@ CREATE TABLE window_service (
         REFERENCES service (service_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Conserva cada ocupación de ventanilla; las filas cerradas mantienen el historial.
 CREATE TABLE operator_window_assignment (
     assignment_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     operator_id INT UNSIGNED NOT NULL,
@@ -97,6 +105,8 @@ CREATE TABLE operator_window_assignment (
     started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ended_at TIMESTAMP NULL DEFAULT NULL,
 
+    -- Solo las asignaciones abiertas participan en las claves únicas de ocupación.
+    -- Así se conserva el historial sin permitir dos ocupaciones abiertas por recurso.
     active_operator_id INT UNSIGNED GENERATED ALWAYS AS (
         CASE WHEN ended_at IS NULL
              THEN operator_id ELSE NULL END
@@ -124,6 +134,7 @@ CREATE TABLE operator_window_assignment (
         REFERENCES `window` (window_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Usuarios relacionados con tickets, separados de las cuentas que atienden el sistema.
 CREATE TABLE app_user (
     user_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     username VARCHAR(50) NOT NULL,
@@ -133,6 +144,7 @@ CREATE TABLE app_user (
         CHECK (user_state IN ('ACTIVO', 'INACTIVO'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Guarda el último consecutivo emitido por servicio para coordinar emisiones simultáneas.
 CREATE TABLE ticket_sequence (
     service_id VARCHAR(20) NOT NULL,
     last_number INT UNSIGNED NOT NULL DEFAULT 0,
@@ -141,6 +153,7 @@ CREATE TABLE ticket_sequence (
         FOREIGN KEY (service_id) REFERENCES service (service_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Conserva el ciclo de atención y la asignación histórica de cada turno.
 CREATE TABLE ticket (
     ticket_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     service_id VARCHAR(20) NOT NULL,
@@ -156,6 +169,7 @@ CREATE TABLE ticket (
     call_count INT UNSIGNED NOT NULL DEFAULT 0,
     started_at TIMESTAMP(6) NULL DEFAULT NULL,
     ended_at TIMESTAMP(6) NULL DEFAULT NULL,
+    -- La clave única de esta columna impide dos tickets activos en la misma asignación.
     active_assignment_id BIGINT UNSIGNED GENERATED ALWAYS AS (
         CASE WHEN ticket_state IN ('LLAMADO', 'EN_ATENCION')
             THEN assignment_id ELSE NULL END
@@ -178,6 +192,7 @@ CREATE TABLE ticket (
         (ticket_state IN ('LLAMADO', 'EN_ATENCION', 'FINALIZADO')
             AND assignment_id IS NOT NULL)
     ),
+    -- Cada estado exige sus fechas correspondientes y prohíbe fechas de etapas aún no alcanzadas.
     CONSTRAINT ck_ticket_state_times CHECK (
         (ticket_state = 'EN_ESPERA'
             AND called_at IS NULL AND started_at IS NULL AND ended_at IS NULL)
@@ -193,6 +208,7 @@ CREATE TABLE ticket (
         AND (started_at IS NULL OR started_at >= called_at)
         AND (ended_at IS NULL OR ended_at >= started_at)
     ),
+    -- La espera no tiene llamados; los demás estados conservan primer llamado, último y contador.
     CONSTRAINT ck_ticket_call_history CHECK (
         (ticket_state = 'EN_ESPERA' AND last_called_at IS NULL AND call_count = 0)
         OR (ticket_state <> 'EN_ESPERA' AND last_called_at IS NOT NULL

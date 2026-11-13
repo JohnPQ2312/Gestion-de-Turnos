@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+// Prepara ventanillas de ejemplo, sus modalidades y los servicios que pueden atender.
 public class InMemoryServiceWindowRepository
         implements ServiceWindowRepository {
 

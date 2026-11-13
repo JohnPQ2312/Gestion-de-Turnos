@@ -20,6 +20,8 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
+// Consulta servicios y solicita turnos sin bloquear el hilo de JavaFX.
+// Muestra la confirmación recibida y prepara el formulario para la siguiente persona.
 public class TicketsGeneratorController {
 
     @FunctionalInterface
@@ -77,6 +79,7 @@ public class TicketsGeneratorController {
         loadServices();
     }
 
+    // Consulta el catálogo en segundo plano y crea una opción por servicio recibido.
     private void loadServices() {
         catalogLoaded = false;
         servicesGroup.selectToggle(null);
@@ -126,6 +129,8 @@ public class TicketsGeneratorController {
         startTask(task);
     }
 
+    // Envía una sola solicitud para la selección actual.
+    // Si se pierde la confirmación, informa la incertidumbre sin repetir la emisión.
     @FXML
     private void generateTicket(ActionEvent event) {
         if (busy || closed || confirmationShowing || ticketRequest == null) {
@@ -185,6 +190,8 @@ public class TicketsGeneratorController {
         attentionLabel.setText(priorityCheck.isSelected() ? "Atención preferencial" : "Atención regular");
     }
 
+    // Presenta los datos confirmados y mantiene la emisión bloqueada hasta preparar otra
+    // persona.
     private void showTicketConfirmation(TicketConfirmation ticket) {
         confirmationShowing = true;
         ticketCodeLabel.setText(ticket.visualCode());
@@ -197,6 +204,7 @@ public class TicketsGeneratorController {
         newPersonButton.requestFocus();
     }
 
+    // Limpia la selección y vuelve al formulario sin emitir un turno adicional.
     @FXML
     private void finishConfirmation() {
         if (!confirmationShowing || busy || closed) {
@@ -218,6 +226,7 @@ public class TicketsGeneratorController {
         }
     }
 
+    // Task ejecuta la red en un hilo virtual y entrega sus eventos al hilo de JavaFX.
     private void startTask(Task<?> task) {
         currentTask = task;
         setBusy(true);
@@ -255,6 +264,7 @@ public class TicketsGeneratorController {
         node.setManaged(visible);
     }
 
+    // Cancela la tarea pendiente y evita aplicar sus resultados a la pantalla cerrada.
     public void close() {
         closed = true;
         if (currentTask != null) {

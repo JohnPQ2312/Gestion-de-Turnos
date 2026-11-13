@@ -5,6 +5,8 @@ import cr.ac.una.operatorsystem.model.ManagedOperator;
 import java.io.IOException;
 import java.util.List;
 
+// Define las solicitudes de funcionarios, credenciales y usuarios que utiliza la vista de
+// Personas.
 public interface PeopleRequests {
     List<ManagedOperator> operators() throws IOException;
     List<ManagedAppUser> users() throws IOException;

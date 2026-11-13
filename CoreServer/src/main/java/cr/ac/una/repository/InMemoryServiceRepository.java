@@ -4,6 +4,7 @@ import cr.ac.una.model.Service;
 import java.util.List;
 import java.util.Optional;
 
+// Ofrece el catálogo estático de servicios usado por el flujo en memoria.
 public class InMemoryServiceRepository implements ServiceRepository {
 
     private final List<Service> services = List.of(

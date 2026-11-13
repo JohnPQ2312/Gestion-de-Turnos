@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+// Prepara asignaciones de ejemplo para probar el flujo de atención sin consultar MySQL.
 public class InMemoryOperatorWindowAssignmentRepository
         implements OperatorWindowAssignmentRepository {
 

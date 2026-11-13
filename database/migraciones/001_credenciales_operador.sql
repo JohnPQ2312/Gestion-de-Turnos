@@ -1,8 +1,6 @@
--- =====================================================================
 -- Migración 001: credenciales de acceso de los funcionarios
--- =====================================================================
--- Aplicar UNA vez sobre una base que ya tiene la estructura de
--- "script borrador.sql" anterior a esta migración. No borra ni modifica
+-- Aplicar una sola vez sobre una base que ya tiene la estructura de
+-- "esquema.sql" anterior a esta migración. No borra ni modifica
 -- registros existentes.
 --
 -- Modelo: la identidad, el rol y el estado siguen en `operator`
@@ -16,7 +14,6 @@
 --
 -- Las primeras contraseñas se crean con cr.ac.una.config.CredentialSetup
 -- (ver database/INICIALIZAR_ACCESO.md). Nunca se insertan desde un script.
--- =====================================================================
 
 CREATE TABLE operator_credential (
     operator_id INT UNSIGNED NOT NULL,

@@ -14,14 +14,9 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * Pausa y reanudación de la ventanilla de una asignación.
- *
- * Orden de bloqueo: primero la asignación y después la ventanilla, el mismo
- * orden que usa JdbcTicketCallingRepository. Una pausa y un llamado
- * simultáneos sobre la misma asignación se serializan en la fila de la
- * asignación y no pueden bloquearse en forma circular.
- */
+// Pausa o reanuda la ventanilla sin modificar el turno en curso.
+// Bloquea la asignación antes de la ventanilla, como el llamado, para coordinar ambas
+// operaciones.
 public class JdbcWindowAvailabilityRepository implements WindowAvailabilityRepository {
 
     private final DatabaseConnectionFactory connectionFactory;

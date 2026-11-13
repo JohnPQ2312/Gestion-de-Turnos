@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.util.Objects;
 import java.util.Optional;
 
+// Lee la identidad del funcionario junto con su credencial y guarda hashes mediante JDBC.
 public class JdbcAccountRepository implements AccountRepository {
 
     private static final String SELECT_ACCOUNT = """

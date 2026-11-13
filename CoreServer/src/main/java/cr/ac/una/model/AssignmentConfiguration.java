@@ -3,7 +3,9 @@ package cr.ac.una.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// Captura administrativa de catálogos, habilitaciones e historial.
+// Reúne catálogos, servicios habilitados y asignaciones para la vista administrativa.
+// Cada ServiceLink relaciona el identificador de un funcionario o una ventanilla con un
+// servicio.
 public record AssignmentConfiguration(List<OperatorOption> operators, List<WindowOption> windows,
         List<ServiceOption> services, List<ServiceLink> operatorServices,
         List<ServiceLink> windowServices, List<AssignmentEntry> assignments) {

@@ -1,9 +1,7 @@
 package cr.ac.una.operatorsystem.client;
 
-/**
- * Respuesta DENIED;motivo;mensaje de CoreServer: credenciales, sesión o
- * permisos. Es distinta de un ERROR de negocio y de una falla de red.
- */
+// Representa una respuesta DENIED de CoreServer con su motivo de acceso.
+// Permite decidir si se informa la falta de permiso o se regresa al inicio de sesión.
 public class AccessDeniedException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
@@ -19,7 +17,7 @@ public class AccessDeniedException extends RuntimeException {
         return reason;
     }
 
-    /** La sesión ya no sirve: hay que volver a la pantalla de acceso. */
+    // La sesión ya no sirve: hay que volver a la pantalla de acceso.
     public boolean endsSession() {
         return "SESSION_EXPIRED".equals(reason)
                 || "UNAUTHENTICATED".equals(reason)

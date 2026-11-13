@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+// Consulta el estado del funcionario y sus servicios habilitados en MySQL.
 public class JdbcOperatorRepository implements OperatorRepository {
 
     private final DatabaseConnectionFactory connectionFactory;

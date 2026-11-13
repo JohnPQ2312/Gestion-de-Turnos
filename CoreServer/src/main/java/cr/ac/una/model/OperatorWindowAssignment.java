@@ -3,6 +3,8 @@ package cr.ac.una.model;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+// Conserva quién ocupa una ventanilla y durante qué intervalo.
+// Una fecha de fin nula indica que la asignación continúa abierta.
 public class OperatorWindowAssignment {
 
     private final long assignmentId;
@@ -61,6 +63,7 @@ public class OperatorWindowAssignment {
         return endedAt;
     }
 
+    // La ausencia de fecha de fin mantiene abierta esta ocupación histórica.
     public boolean isOpen() {
         return endedAt == null;
     }

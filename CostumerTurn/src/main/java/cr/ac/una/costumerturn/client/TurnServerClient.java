@@ -16,6 +16,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+// Solicita el catálogo y la emisión de turnos mediante sockets.
+// CoreServer asigna el código; el cliente valida y convierte su respuesta.
 public class TurnServerClient {
 
     private final String host;
@@ -82,6 +84,8 @@ public class TurnServerClient {
         return new TicketConfirmation(response[2], response[3], priority);
     }
 
+    // Abre una conexión por solicitud y decodifica la única línea de respuesta.
+    // Los textos viajan codificados para conservar separadores y caracteres UTF-8.
     private String[] request(String message) throws IOException {
         String line;
 

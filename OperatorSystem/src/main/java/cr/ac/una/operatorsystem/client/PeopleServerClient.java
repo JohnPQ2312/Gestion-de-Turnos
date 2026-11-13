@@ -9,6 +9,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+// Envía comandos autenticados de personas y convierte los listados y confirmaciones recibidos.
 public class PeopleServerClient implements PeopleRequests {
     private final String host;
     private final int port;

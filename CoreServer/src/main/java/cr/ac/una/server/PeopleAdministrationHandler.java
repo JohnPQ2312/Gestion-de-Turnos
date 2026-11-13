@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
-// Mantiene los comandos de personas separados de servicios y ventanillas.
+// Traduce los comandos administrativos de personas y codifica sus respuestas para el cliente.
 public class PeopleAdministrationHandler {
     private final PeopleAdministrationService service;
 

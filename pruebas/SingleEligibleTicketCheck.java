@@ -5,17 +5,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 
-/**
- * Dos ventanillas distintas piden CALL_NEXT al mismo tiempo cuando existe
- * UN SOLO turno en espera, compatible con ambas.
- *
- * Resultado esperado: una ventanilla obtiene el turno y la otra recibe
- * OK;NO_TICKET. Ninguna recibe el mismo turno dos veces.
- *
- * No reintenta ninguna escritura. Uso:
- *   ver pruebas/README.md (Ejecutar.ps1 SingleEligibleTicketCheck)
- * Por defecto: operador 1 en ventanilla 1 y operador 2 en ventanilla 2.
- */
+// Coordina dos ventanillas cuando existe un único turno compatible con ambas.
+// Espera un llamado exitoso y un NO_TICKET, sin duplicar el turno ni reintentar escrituras.
+// Por defecto usa operadores 1 y 2 con ventanillas 1 y 2; ver pruebas/README.md.
 public class SingleEligibleTicketCheck {
     private static final String HOST = "127.0.0.1";
     private static final int PORT = Integer.getInteger("turnos.pruebas.puerto", 5000);
@@ -86,7 +78,7 @@ public class SingleEligibleTicketCheck {
                 + " en la ventanilla " + window + ".");
     }
 
-    /** Devuelve los códigos de los turnos en espera según la pantalla pública. */
+    // Devuelve los códigos de los turnos en espera según la pantalla pública.
     private static List<String> waitingCodes() throws IOException {
         String[] parts = fields(request("GET_DISPLAY_SNAPSHOT"));
         if (parts.length < 4 || !"OK".equals(parts[0]) || !"DISPLAY_SNAPSHOT".equals(parts[1])) {

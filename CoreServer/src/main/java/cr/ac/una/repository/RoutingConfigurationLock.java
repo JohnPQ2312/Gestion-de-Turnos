@@ -2,8 +2,8 @@ package cr.ac.una.repository;
 
 import java.sql.*;
 
-// Serializa cambios de habilitaciones, asignaciones, servicios y ventanillas por base, incluso entre conexiones.
-// No sustituye los bloqueos de filas ni las restricciones SQL del llamado.
+// Coordina cambios de habilitaciones, asignaciones y catálogos mediante GET_LOCK por base.
+// Los bloqueos de filas y las restricciones SQL siguen protegiendo cada operación.
 final class RoutingConfigurationLock implements AutoCloseable {
     private final Connection connection;
 

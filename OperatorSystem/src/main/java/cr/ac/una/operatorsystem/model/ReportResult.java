@@ -3,12 +3,7 @@ package cr.ac.una.operatorsystem.model;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Resultado de una consulta listo para mostrarse en una tabla.
- *
- * El cliente ya convirtió fechas y duraciones a texto legible; la vista solo
- * pinta columnas y filas.
- */
+// Agrupa encabezados, filas y resumen de un reporte ya convertidos a texto para la tabla.
 public record ReportResult(
         List<String> columns,
         List<List<String>> rows,

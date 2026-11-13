@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+// Consulta capturas públicas y abre un canal persistente para recibir avisos de cambios.
+// Valida los campos del protocolo antes de convertirlos en filas de pantalla.
 public class DisplayServerClient {
 
     private final String host;
@@ -40,6 +42,7 @@ public class DisplayServerClient {
         return parseSnapshot(requestSnapshot());
     }
 
+    // Conserva el socket solo después de recibir la confirmación de suscripción.
     public ChangeSubscription subscribe() throws IOException {
         Socket socket = NetworkSettings.open(host, port, 3000, 25000);
         try {
@@ -78,6 +81,7 @@ public class DisplayServerClient {
             this.input = input;
         }
 
+        // Distingue un cambio de un latido; un cierre o mensaje desconocido exige reconectar.
         @Override
         public boolean awaitChange() throws IOException {
             String message = input.readLine();
@@ -113,6 +117,8 @@ public class DisplayServerClient {
         }
     }
 
+    // Comprueba cantidades y estructura antes de leer las filas; cada ticket V2 ocupa nueve
+    // campos.
     private DisplaySnapshot parseSnapshot(String line) throws IOException {
         if (line == null || line.isBlank()) {
             throw new IOException("El servidor no envió información para la pantalla.");

@@ -3,6 +3,7 @@ package cr.ac.una.service;
 import cr.ac.una.repository.TicketLifecycleRepository;
 import java.util.Objects;
 
+// Valida los identificadores y delega el inicio o fin de atención al repositorio.
 public class TicketLifecycleService {
 
     private final TicketLifecycleRepository lifecycleRepository;

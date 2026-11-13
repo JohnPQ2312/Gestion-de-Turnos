@@ -7,6 +7,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+// Traduce los comandos de habilitaciones y asignaciones a operaciones del servicio
+// administrativo.
 public class AssignmentConfigurationHandler {
     private final AssignmentConfigurationService service;
     public AssignmentConfigurationHandler(AssignmentConfigurationService service) { this.service = Objects.requireNonNull(service); }

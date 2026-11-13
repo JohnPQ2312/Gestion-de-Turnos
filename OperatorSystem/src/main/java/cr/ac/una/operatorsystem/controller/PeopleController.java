@@ -15,6 +15,9 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 
+// Administra los formularios de funcionarios, credenciales y usuarios relacionados con tickets.
+// Ejecuta las solicitudes fuera de JavaFX y recarga los datos después de los cambios
+// confirmados.
 public class PeopleController {
     @FXML private BorderPane content;
     @FXML private TableView<ManagedOperator> operatorsTable;
@@ -198,6 +201,8 @@ public class PeopleController {
         return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
     }
 
+    // Distingue rechazos del servidor y fallos de comunicación al completar la tarea.
+    // Tras una escritura incierta exige consultar el estado guardado antes de continuar.
     private <T> void execute(Callable<T> action, Consumer<T> success, boolean write) {
         if (busy || closed || requests == null) return;
         busy = true;

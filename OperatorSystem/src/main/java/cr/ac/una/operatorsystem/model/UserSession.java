@@ -2,10 +2,8 @@ package cr.ac.una.operatorsystem.model;
 
 import java.util.Objects;
 
-/**
- * Sesión iniciada en CoreServer. Solo vive en memoria; el token nunca se
- * guarda en archivos ni se muestra.
- */
+// Conserva en memoria la sesión confirmada por CoreServer.
+// Su representación en texto omite el token para evitar incluirlo en registros o mensajes.
 public record UserSession(
         String token,
         int operatorId,

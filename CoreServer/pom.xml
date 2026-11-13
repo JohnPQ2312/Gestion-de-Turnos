@@ -6,11 +6,13 @@
     <groupId>cr.ac.una</groupId>
     <artifactId>CoreServer</artifactId>
     <version>ALPHA</version>
+    <!-- Codificación y versión de Java usadas al compilar este proyecto. -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
         <exec.mainClass>cr.ac.una.CoreServer.App</exec.mainClass>
     </properties>
+    <!-- Connector/J permite que solo CoreServer abra conexiones JDBC a MySQL. -->
     <dependencies>
         <dependency>
             <groupId>com.mysql</groupId>
@@ -18,6 +20,7 @@
             <version>9.1.0</version>
         </dependency>
     </dependencies>
+    <!-- Plugins para compilar y ejecutar el punto de entrada de CoreServer. -->
     <build>
         <plugins>
             <plugin>

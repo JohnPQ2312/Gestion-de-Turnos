@@ -9,6 +9,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+// Carga db.properties y abre una conexión JDBC por cada operación que la solicita.
+// Registra el tiempo de apertura y los fallos para medir el costo de conexión por solicitud.
 public final class DatabaseConnectionFactory {
 
     private final String url;
@@ -51,6 +53,7 @@ public final class DatabaseConnectionFactory {
         this.password = properties.getProperty("db.clave");
     }
 
+       // Abre una conexión nueva y registra su tiempo, tanto si conecta como si falla.
        public Connection openConnection() throws SQLException {
         long start = System.nanoTime();
         try {

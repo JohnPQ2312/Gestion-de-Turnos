@@ -1,7 +1,5 @@
--- =====================================================================
 -- Migración 002: estado PAUSADA de la ventanilla
--- =====================================================================
--- Aplicar UNA vez, después de la migración 001, sobre una base con la
+-- Aplicar una sola vez, después de la migración 001, sobre una base con la
 -- estructura anterior. No modifica registros.
 --
 -- PAUSADA es una no disponibilidad temporal decidida por el operador:
@@ -10,7 +8,6 @@
 -- administrativa de la ventanilla.
 --
 -- Requiere MySQL 8.0.19 o superior (ALTER TABLE ... DROP CHECK).
--- =====================================================================
 
 ALTER TABLE `window` DROP CHECK ck_window_state;
 

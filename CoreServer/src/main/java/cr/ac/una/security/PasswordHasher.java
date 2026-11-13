@@ -10,15 +10,10 @@ import java.util.Base64;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
-/**
- * Hash de contraseñas con PBKDF2-HMAC-SHA256 (incluido en el JDK).
- *
- * Parámetros según la guía de OWASP para PBKDF2-HMAC-SHA256: 600 000
- * iteraciones, sal aleatoria de 16 bytes y clave derivada de 256 bits.
- * Formato guardado: pbkdf2_sha256$<iteraciones>$<sal Base64>$<hash Base64>.
- * Las iteraciones quedan en cada hash, así que pueden aumentarse en el
- * futuro sin invalidar las contraseñas ya guardadas.
- */
+// Genera y verifica hashes PBKDF2-HMAC-SHA256 con 600 000 iteraciones.
+// Cada contraseña nueva usa una sal aleatoria de 16 bytes y una clave derivada de 256 bits.
+// Guarda algoritmo, iteraciones, sal y hash: pbkdf2_sha256$iteraciones$salBase64$hashBase64.
+// Las iteraciones guardadas permiten verificar credenciales creadas con parámetros anteriores.
 public final class PasswordHasher {
 
     public static final String ALGORITHM_ID = "pbkdf2_sha256";
@@ -30,12 +25,12 @@ public final class PasswordHasher {
     private static final int SALT_BYTES = 16;
     private static final int KEY_BITS = 256;
     private static final int MAX_ACCEPTED_ITERATIONS = 10_000_000;
-    // Sal fija solo para gastar el mismo tiempo cuando el usuario no existe.
+    // La sal de prueba aproxima el trabajo de verificación cuando la cuenta no existe.
     private static final byte[] DUMMY_SALT = "turnos-dummy-salt".getBytes(StandardCharsets.UTF_8);
 
     private final SecureRandom random = new SecureRandom();
 
-    /** Valida la contraseña nueva y devuelve el texto a guardar. */
+    // Valida la contraseña nueva y devuelve el texto a guardar.
     public String hash(char[] password) {
         validateNewPassword(password);
 
@@ -48,7 +43,8 @@ public final class PasswordHasher {
                 + encoder.encodeToString(salt) + "$" + encoder.encodeToString(derived);
     }
 
-    /** Compara en tiempo constante. Un hash con formato inválido nunca coincide. */
+    // Deriva el hash y compara sus bytes con MessageDigest.isEqual.
+    // Si el formato guardado es inválido, la verificación devuelve false.
     public boolean verify(char[] password, String storedHash) {
         if (password == null || storedHash == null) {
             return false;
@@ -74,7 +70,7 @@ public final class PasswordHasher {
         }
     }
 
-    /** Mismo costo que verify, para no revelar si un usuario existe. */
+    // Ejecuta PBKDF2 con una sal de prueba cuando falta la cuenta o su credencial.
     public void verifyDummy(char[] password) {
         derive(password == null ? new char[0] : password, DUMMY_SALT, ITERATIONS);
     }
@@ -103,11 +99,9 @@ public final class PasswordHasher {
         }
     }
 
-    /**
-     * Huella SHA-256 del hash guardado. Solo sirve para detectar en memoria
-     * que la contraseña de una cuenta cambió; no permite verificar ni
-     * recuperar la contraseña y nunca se envía al cliente.
-     */
+    // Huella SHA-256 del hash guardado. Solo sirve para detectar en memoria
+    // que la contraseña de una cuenta cambió; no permite verificar ni
+    // recuperar la contraseña y nunca se envía al cliente.
     public static String fingerprint(String storedHash) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
@@ -118,7 +112,7 @@ public final class PasswordHasher {
         }
     }
 
-    /** Borra una copia de la contraseña que ya no se necesita. */
+    // Borra una copia de la contraseña que ya no se necesita.
     public static void clear(char[] password) {
         if (password != null) {
             Arrays.fill(password, '\0');

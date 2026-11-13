@@ -5,7 +5,7 @@ import cr.ac.una.operatorsystem.model.ManagedWindow;
 import java.io.IOException;
 import java.util.List;
 
-// Solicitudes de administración de servicios y ventanillas. Los controladores no conocen el protocolo.
+// Define las solicitudes de servicios y ventanillas que utiliza la vista administrativa.
 public interface CatalogRequests {
     List<ManagedService> services() throws IOException;
     void createService(String code, String name, String prefix) throws IOException;

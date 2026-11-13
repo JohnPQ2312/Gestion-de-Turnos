@@ -23,6 +23,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.util.StringConverter;
 
+// Coordina las acciones de atención a partir del turno y la ventanilla confirmados por
+// CoreServer.
+// Cada tarea de red deja JavaFX disponible y bloquea acciones incompatibles mientras espera.
 public class OperatorController {
 
     @FunctionalInterface
@@ -49,7 +52,7 @@ public class OperatorController {
         void execute(long assignmentId, long ticketId) throws IOException;
     }
 
-    /** Consulta o cambia el estado de la ventanilla; devuelve el estado resultante. */
+    // Consulta o cambia el estado de la ventanilla; devuelve el estado resultante.
     @FunctionalInterface
     public interface WindowStateRequest {
 
@@ -262,6 +265,7 @@ public class OperatorController {
         startTask(task);
     }
 
+    // Recupera el estado guardado para la asignación seleccionada antes de habilitar acciones.
     private void loadActiveTicket(FailedOperation failedOperation) {
         if (busy || closed || !assignmentsLoaded || activeTicketRequest == null) {
             return;
@@ -370,6 +374,9 @@ public class OperatorController {
         startTask(task);
     }
 
+    // Solo considera recuperados los llamados o inicios que la consulta posterior permite
+    // reconocer.
+    // La ausencia de turno activo no basta para confirmar un fin o un rellamado perdido.
     private boolean recoveredAfterFailure(
             FailedOperation failure,
             Optional<ActiveTicket> active
@@ -407,6 +414,8 @@ public class OperatorController {
         };
     }
 
+    // Solicita un único llamado y comprueba que corresponda al puesto seleccionado.
+    // Después consulta el ticket activo para recuperar su identificador y estado persistido.
     @FXML
     private void callNext() {
         if (busy || closed || !assignmentsLoaded || !activeTicketKnown
@@ -499,6 +508,7 @@ public class OperatorController {
         changeAttention(AttentionOperation.START);
     }
 
+    // Abre la confirmación visual; la solicitud de cierre se envía al aceptar.
     @FXML
     private void finishAttention() {
         if (busy || closed || !activeTicketKnown || currentTicket == null
@@ -541,6 +551,8 @@ public class OperatorController {
         changeAttention(AttentionOperation.RECALL);
     }
 
+    // Captura el turno seleccionado y ejecuta una transición o un rellamado fuera de JavaFX.
+    // Ante un fallo consulta el estado actual, sin repetir automáticamente la escritura.
     private void changeAttention(AttentionOperation operation) {
         boolean starting = operation == AttentionOperation.START;
         boolean recalling = operation == AttentionOperation.RECALL;
@@ -705,6 +717,8 @@ public class OperatorController {
         updateControls();
     }
 
+    // Habilita acciones según la tarea en curso y el estado confirmado del turno y la
+    // ventanilla.
     private void updateControls() {
         boolean noAssignments = assignmentCombo.getItems().isEmpty();
         boolean actionsBlocked = closed || busy || !assignmentsLoaded
@@ -748,10 +762,7 @@ public class OperatorController {
         alert.showAndWait();
     }
 
-    /**
-     * Habilita el botón Consultas. App indica cómo abrir la vista de reportes;
-     * este controlador no conoce el cliente ni la ventana de consultas.
-     */
+    // Recibe de App la acción para abrir la vista de asignaciones.
     public void configureAssignments(Runnable opener) {
         assignmentsOpener = Objects.requireNonNull(opener);
         assignmentsButton.setVisible(true);
@@ -803,7 +814,7 @@ public class OperatorController {
         }
     }
 
-    /** Habilita la pausa y reanudación de la ventanilla (§4.3). */
+    // Conecta la consulta de estado y las acciones de pausa y reanudación.
     public void configurePause(
             WindowStateRequest windowStateRequest,
             WindowStateRequest pauseRequest,
@@ -887,10 +898,8 @@ public class OperatorController {
         windowStateLabel.getStyleClass().add(paused ? "notice-label" : "secondary-text");
     }
 
-    /**
-     * Datos de la sesión iniciada. App decide qué hacer al cerrar la sesión o
-     * cuando el servidor la da por terminada.
-     */
+    // Datos de la sesión iniciada. App decide qué hacer al cerrar la sesión o
+    // cuando el servidor la da por terminada.
     public void configureSession(
             String userDescription,
             Runnable logoutHandler,
@@ -904,7 +913,7 @@ public class OperatorController {
         logoutButton.setDisable(closed);
     }
 
-    /** Oculta Consultas a quien no tiene perfil administrador. */
+    // Oculta Consultas a quien no tiene perfil administrador.
     public void hideReports() {
         reportsButton.setVisible(false);
         reportsButton.setManaged(false);
@@ -940,6 +949,7 @@ public class OperatorController {
         return true;
     }
 
+    // Cancela el trabajo pendiente e impide nuevas actualizaciones de esta vista.
     public void close() {
         closed = true;
         if (currentTask != null) {

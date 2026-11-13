@@ -15,6 +15,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 
+// Muestra las habilitaciones e historial y solicita abrir o cerrar asignaciones.
+// Los cambios se confirman en CoreServer antes de recargar los datos de la vista.
 public class AssignmentsController {
     @FXML private BorderPane content;
     @FXML private ComboBox<String> ownerType;
@@ -154,6 +156,8 @@ public class AssignmentsController {
         alert.initOwner(noticeLabel.getScene().getWindow()); alert.setTitle("Configuración de atención"); alert.setHeaderText("Confirmar cambio");
         return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
     }
+    // Ejecuta una solicitud fuera de JavaFX.
+    // Una escritura sin confirmación obliga a recargar antes de permitir otro cambio.
     private <T> void execute(Callable<T> action, Consumer<T> success, boolean write) {
         if (busy || closed || requests == null) return;
         busy = true; content.setDisable(true); reloadButton.setDisable(true); updateControls();

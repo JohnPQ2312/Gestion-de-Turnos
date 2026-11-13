@@ -1,6 +1,6 @@
 package cr.ac.una.model;
 
-/** Consulta 2: cantidad de turnos finalizados por un funcionario. */
+// Cuenta los turnos finalizados por funcionario dentro del período del reporte.
 public record OperatorAttentionCount(
         int operatorId,
         String operatorName,

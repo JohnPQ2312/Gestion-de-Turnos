@@ -5,6 +5,8 @@ import cr.ac.una.model.AssignmentConfiguration;
 import cr.ac.una.repository.AssignmentConfigurationRepository;
 import java.util.Objects;
 
+// Valida identificadores y códigos antes de delegar los cambios de habilitaciones y
+// asignaciones.
 public class AssignmentConfigurationService {
     private final AssignmentConfigurationRepository repository;
     public AssignmentConfigurationService(AssignmentConfigurationRepository repository) { this.repository = Objects.requireNonNull(repository); }

@@ -15,15 +15,9 @@ import cr.ac.una.security.SessionRegistry;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * Inicio y cierre de sesión, validación del token y autorización.
- *
- * Matriz de permisos actual:
- * - Público, sin sesión: catálogo, emisión, pantalla pública y LOGIN.
- * - Atención: OPERADOR o ADMIN, solo sobre una asignación propia.
- * - Consultas (y administración futura): solo ADMIN.
- * - SUPERVISOR: sin acceso por ahora.
- */
+// Inicia y cierra sesiones, valida tokens y aplica los permisos del servidor.
+// Emisión y pantalla son públicas; atención exige OPERADOR o ADMIN con asignación propia.
+// Reportes y administración exigen ADMIN; SUPERVISOR no tiene acceso habilitado.
 public class AuthService {
 
     public record LoginResult(String token, AuthenticatedUser user) {
@@ -68,8 +62,8 @@ public class AuthService {
         try {
             Optional<OperatorAccount> found = accountRepository.findByUsername(username.trim());
 
-            // Mismo costo y mismo mensaje si el usuario no existe o no tiene
-            // credencial, para no revelar qué cuentas existen.
+            // Ejecuta PBKDF2 y usa el mismo mensaje cuando falta la cuenta o su credencial.
+            // Esto reduce la diferencia de respuesta entre esos casos y una clave incorrecta.
             if (found.isEmpty() || !found.get().hasCredential()) {
                 passwordHasher.verifyDummy(secret);
                 throw new AccessDeniedException(Reason.INVALID_CREDENTIALS, INVALID_CREDENTIALS);
@@ -96,21 +90,18 @@ public class AuthService {
         sessions.remove(token);
     }
 
-    /**
-     * Revoca de inmediato todas las sesiones de un funcionario. Lo usará la
-     * administración de usuarios (bloque 5) al cambiar contraseña, rol o
-     * estado dentro de este mismo servidor.
-     */
+    // Revoca de inmediato todas las sesiones del funcionario en este proceso.
     public void revokeSessions(int operatorId) {
         sessions.removeAllFor(operatorId);
     }
 
-    /** Valida el token y devuelve el funcionario con su rol vigente. */
+    // Valida el token y devuelve el funcionario con su rol vigente.
     public AuthenticatedUser authenticate(String token) {
         return authenticate(token, false);
     }
 
-    // La administración revalida siempre, aunque la sesión aún esté en caché.
+    // Fuerza la consulta de la cuenta y exige ADMIN antes de construir la identidad
+    // administrativa.
     public AdministrationActor administrationActor(String token) {
         AuthenticatedUser user = authenticate(token, true);
         requireRole(user, UserRole.ADMIN);
@@ -119,6 +110,7 @@ public class AuthService {
         return new AdministrationActor(user.operatorId(), current.credentialFingerprint());
     }
 
+    // Revoca las sesiones de la cuenta reemplazada y conserva las de una versión posterior.
     public void accountChanged(AccountChange change) {
         sessions.removeSupersededFor(change);
     }
@@ -136,6 +128,7 @@ public class AuthService {
                         "La sesión venció o fue cerrada. Inicie sesión de nuevo."
                 ));
 
+        // Las operaciones administrativas fuerzan la consulta; las demás usan el intervalo de revalidación.
         if (!forceRevalidation && !sessions.needsRevalidation(session)) {
             sessions.touch(token);
             return session.user();
@@ -190,7 +183,7 @@ public class AuthService {
         }
     }
 
-    /** Atender exige perfil OPERADOR o ADMIN y que la asignación sea propia. */
+    // Exige OPERADOR o ADMIN y comprueba que la asignación pertenezca a ese funcionario.
     public void requireOwnAssignment(AuthenticatedUser user, long assignmentId) {
         AuthenticatedUser current = requireUser(user);
         if (current.role() != UserRole.OPERADOR && current.role() != UserRole.ADMIN) {

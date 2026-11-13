@@ -1,5 +1,5 @@
 package cr.ac.una.model;
 
-// Usuario relacionado con tickets; no representa una cuenta de funcionario.
+// Representa un usuario relacionado con tickets, separado de las cuentas de funcionarios.
 public record ManagedAppUser(int id, String username, boolean active) {
 }

@@ -5,8 +5,8 @@ import cr.ac.una.model.ManagedService;
 import cr.ac.una.model.ManagedWindow;
 import java.util.List;
 
-// Contrato de persistencia para servicios y ventanillas.
-// Cada escritura revalida al ADMIN dentro de su propia transacción.
+// Define las operaciones administrativas de servicios y ventanillas.
+// Las implementaciones deben comprobar el acceso administrativo en cada escritura.
 public interface CatalogAdministrationRepository {
 
     List<ManagedService> listServices(AdministrationActor actor);

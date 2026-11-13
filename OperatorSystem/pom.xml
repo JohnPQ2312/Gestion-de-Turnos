@@ -4,11 +4,13 @@
     <groupId>cr.ac.una</groupId>
     <artifactId>OperatorSystem</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <!-- Codificación y versión de Java usadas al compilar este proyecto. -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
     </properties>
+    <!-- JavaFX aporta los controles de la interfaz y la carga de las vistas FXML. -->
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -21,6 +23,7 @@
             <version>13</version>
         </dependency>
     </dependencies>
+    <!-- Plugins de compilación, ejecución JavaFX y acciones de depuración del IDE. -->
     <build>
         <plugins>
             <plugin>

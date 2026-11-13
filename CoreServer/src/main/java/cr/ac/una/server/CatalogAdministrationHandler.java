@@ -9,7 +9,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-// Comandos ADMIN_SERVICE_ y ADMIN_WINDOW_. TurnRequestHandler ya resolvió al ADMIN antes de llamar aquí.
+// Traduce ADMIN_SERVICE_ y ADMIN_WINDOW_ al servicio de catálogo.
+// TurnRequestHandler obtiene la identidad ADMIN antes de delegar la solicitud.
 public class CatalogAdministrationHandler {
     private final CatalogAdministrationService service;
 

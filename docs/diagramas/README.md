@@ -17,6 +17,6 @@ En base de datos, las multiplicidades junto a cada tabla describen cuántas fila
 
 La relación histórica de muchos tickets por asignación no permite atenderlos al mismo tiempo: el índice único de la columna calculada limita a uno el turno activo. Las columnas calculadas no agregan relaciones foráneas.
 
-El diagrama incluye las diez tablas y once FK del [DDL](../../database/script%20borrador.sql), con nombres y tipos de columna, PK, FK y UQ de una columna. El SQL conserva la especificación completa de nulabilidad, valores predeterminados, índices compuestos y CHECK. No se representa una tabla de eventos de rellamado porque no existe en el esquema actual.
+El diagrama incluye las diez tablas y once FK del [DDL](../../database/esquema.sql), con nombres y tipos de columna, PK, FK y UQ de una columna. El SQL conserva la especificación completa de nulabilidad, valores predeterminados, índices compuestos y CHECK. No se representa una tabla de eventos de rellamado porque no existe en el esquema actual.
 
 La explicación por tabla, relación y restricción está en los apartados 6 y 7 del [documento técnico](../documento_tecnico.md).

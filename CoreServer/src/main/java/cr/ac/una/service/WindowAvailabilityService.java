@@ -4,14 +4,9 @@ import cr.ac.una.model.ServiceWindow;
 import cr.ac.una.repository.WindowAvailabilityRepository;
 import java.util.Objects;
 
-/**
- * Pausa y reanudación de la ventanilla de una asignación (§4.3: indicar que
- * una ventanilla no está disponible temporalmente).
- *
- * Pausar no toca el turno en curso: si está LLAMADO o EN_ATENCION se puede
- * iniciar y finalizar. Solo impide llamar turnos nuevos. La autorización
- * (asignación propia) se comprueba antes, en AuthService.
- */
+// Consulta, pausa o reanuda la ventanilla de una asignación propia.
+// La pausa permite completar el turno actual y detiene los llamados nuevos.
+// AuthService comprueba la autorización antes de llegar a este servicio.
 public class WindowAvailabilityService {
 
     private final WindowAvailabilityRepository repository;

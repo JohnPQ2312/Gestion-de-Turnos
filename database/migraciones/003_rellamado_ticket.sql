@@ -8,7 +8,8 @@ ALTER TABLE ticket
     ADD COLUMN last_called_at TIMESTAMP(6) NULL DEFAULT NULL AFTER called_at,
     ADD COLUMN call_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER last_called_at;
 
--- El único llamado conocido de los turnos anteriores es el primero.
+-- Inicializa el contador y el último llamado con el primer llamado histórico disponible.
+-- Los turnos en espera conservan contador 0 y fechas de llamado nulas.
 UPDATE ticket
 SET last_called_at = called_at, call_count = 1
 WHERE called_at IS NOT NULL AND last_called_at IS NULL AND call_count = 0;

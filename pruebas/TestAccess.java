@@ -14,7 +14,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-// Acceso compartido por las herramientas de prueba, sin credenciales MySQL.
+// Comparte el acceso de las herramientas de prueba mediante sesiones de funcionarios.
+// Pide credenciales de la aplicación y no requiere credenciales MySQL.
 final class TestAccess implements AutoCloseable {
     private final String host;
     private final int port;

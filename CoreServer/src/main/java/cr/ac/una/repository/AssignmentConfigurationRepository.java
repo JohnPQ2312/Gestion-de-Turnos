@@ -3,6 +3,7 @@ package cr.ac.una.repository;
 import cr.ac.una.model.AdministrationActor;
 import cr.ac.una.model.AssignmentConfiguration;
 
+// Define la consulta y modificación de habilitaciones y asignaciones de atención.
 public interface AssignmentConfigurationRepository {
     AssignmentConfiguration snapshot(AdministrationActor actor);
     void setOperatorService(AdministrationActor actor, int operatorId, String serviceCode, boolean enabled);

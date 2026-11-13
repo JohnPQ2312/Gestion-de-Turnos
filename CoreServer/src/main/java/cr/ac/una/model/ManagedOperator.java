@@ -1,6 +1,7 @@
 package cr.ac.una.model;
 
-// Datos administrativos de un funcionario, sin contraseña ni hash.
+// Reúne los datos administrativos del funcionario y sus indicadores de acceso y asignación.
+// La respuesta excluye contraseñas y hashes.
 public record ManagedOperator(int id, String name, String username, UserRole role,
         boolean active, boolean hasCredential, boolean hasOpenAssignment) {
 }

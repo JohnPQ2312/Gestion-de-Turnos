@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
+// Controla las transiciones y fechas de un turno: espera, llamado, atención y finalización.
+// La asignación identifica al funcionario y la ventanilla responsables del llamado.
 public class Ticket {
 
     private final Service service;
@@ -48,6 +50,8 @@ public class Ticket {
         this.state = TicketState.EN_ESPERA;
     }
 
+    // Reconstruye un turno activo desde MySQL y valida su secuencia de fechas.
+    // No genera un consecutivo ni registra un llamado nuevo.
     public static Ticket restoreActive(
             Service service,
             int sequentialNumber,
@@ -96,6 +100,7 @@ public class Ticket {
         return ticket;
     }
 
+    // Exige espera, un servicio compartido y una prioridad admitida por la ventanilla.
     public boolean isEligibleFor(
             Set<String> eligibleServiceCodes,
             AttentionMode attentionMode
@@ -115,6 +120,7 @@ public class Ticket {
                 && attentionMode.allows(priority);
     }
 
+    // Asocia el turno en espera a una asignación abierta y registra el primer llamado.
     public void markCalled(OperatorWindowAssignment assignment) {
         if (state != TicketState.EN_ESPERA) {
             throw new IllegalStateException(
@@ -147,6 +153,7 @@ public class Ticket {
         this.state = TicketState.LLAMADO;
     }
 
+    // Solo permite pasar de LLAMADO a EN_ATENCION, con una fecha posterior o igual al llamado.
     public void startAttention() {
         if (state != TicketState.LLAMADO) {
             throw new IllegalStateException(
@@ -166,6 +173,7 @@ public class Ticket {
         this.state = TicketState.EN_ATENCION;
     }
 
+    // Solo finaliza un turno EN_ATENCION y conserva su fecha de cierre.
     public void finishAttention() {
         if (state != TicketState.EN_ATENCION) {
             throw new IllegalStateException(
@@ -232,6 +240,7 @@ public class Ticket {
         return endedAt;
     }
 
+    // Combina el prefijo con el consecutivo, usando al menos tres dígitos.
     public String getVisualCode() {
         return service.getPrefix()
                 + String.format("%03d", sequentialNumber);

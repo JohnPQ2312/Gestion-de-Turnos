@@ -42,6 +42,8 @@ import java.io.IOException;
 import java.time.Clock;
 import java.sql.SQLException;
 
+// Conecta los repositorios MySQL con los servicios y arranca el servidor de sockets.
+// Las sesiones y las suscripciones se comparten entre las solicitudes de este proceso.
 public class App {
 
     public static void main(String[] args) {
@@ -68,8 +70,10 @@ public class App {
                     new JdbcTicketLifecycleRepository(connectionFactory)
             );
 
+            // Una sola instancia recibe los cambios confirmados y avisa a todas las pantallas suscritas.
             DisplayEventHub displayEvents = new DisplayEventHub();
 
+            // Se comparten las sesiones entre solicitudes, aunque cada conexión use su propio hilo.
             AuthService authService = new AuthService(
                     new JdbcAccountRepository(connectionFactory), new PasswordHasher(),
                     new SessionRegistry(Clock.systemUTC()),

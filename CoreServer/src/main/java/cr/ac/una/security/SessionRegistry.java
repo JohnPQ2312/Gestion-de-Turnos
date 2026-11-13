@@ -13,30 +13,23 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Sesiones activas de CoreServer, compartidas por todos los hilos que
- * atienden solicitudes.
- *
- * Se guardan solo en memoria: al reiniciar CoreServer todas las sesiones
- * terminan y los clientes vuelven a la pantalla de acceso. Cada entrada es
- * inmutable y se reemplaza de forma atómica en el ConcurrentHashMap.
- */
+// Conserva las sesiones en memoria compartida por los hilos de CoreServer.
+// ConcurrentHashMap reemplaza cada entrada inmutable de forma atómica.
+// Reiniciar el servidor termina todas las sesiones registradas.
 public final class SessionRegistry {
 
-    /** Sin uso durante este tiempo, la sesión vence. */
+    // Sin uso durante este tiempo, la sesión vence.
     public static final Duration IDLE_TIMEOUT = Duration.ofMinutes(30);
-    /** Aunque se use, la sesión no dura más que esto. */
+    // Aunque se use, la sesión no dura más que esto.
     public static final Duration ABSOLUTE_TIMEOUT = Duration.ofHours(8);
-    /** Cada cuánto se vuelve a leer el estado y el rol del funcionario. */
+    // Cada cuánto se vuelve a leer el estado y el rol del funcionario.
     public static final Duration REVALIDATION_INTERVAL = Duration.ofSeconds(60);
 
     private static final int TOKEN_BYTES = 32;
 
-    /**
-     * credentialFingerprint identifica la contraseña con que se inició la
-     * sesión (huella del hash guardado). Si la contraseña cambia, la huella
-     * deja de coincidir y la sesión se revoca. Nunca sale del servidor.
-     */
+    // credentialFingerprint identifica la contraseña con que se inició la
+    // sesión (huella del hash guardado). Si la contraseña cambia, la huella
+    // deja de coincidir y la sesión se revoca. Nunca sale del servidor.
     public record Session(
             AuthenticatedUser user,
             String credentialFingerprint,
@@ -70,7 +63,7 @@ public final class SessionRegistry {
         }
     }
 
-    /** Devuelve la sesión si existe y no venció; si venció, la elimina. */
+    // Consulta la sesión y la elimina si ya superó su tiempo de vida o de inactividad.
     public Optional<Session> find(String token) {
         if (token == null || token.isBlank()) {
             return Optional.empty();
@@ -89,11 +82,12 @@ public final class SessionRegistry {
         return Optional.of(session);
     }
 
+    // La sesión puede reutilizar su identidad hasta que llegue el intervalo de consulta de la cuenta.
     public boolean needsRevalidation(Session session) {
         return !clock.instant().isBefore(session.verifiedAt().plus(REVALIDATION_INTERVAL));
     }
 
-    /** Registra el uso de la sesión. */
+    // Registra el uso de la sesión.
     public void touch(String token) {
         Instant now = clock.instant();
         sessions.computeIfPresent(token, (key, current)
@@ -101,7 +95,7 @@ public final class SessionRegistry {
                         current.createdAt(), now, current.verifiedAt()));
     }
 
-    /** Registra el uso y los datos del funcionario recién leídos de la base. */
+    // Registra el uso y los datos del funcionario recién leídos de la base.
     public void refresh(String token, AuthenticatedUser user) {
         Instant now = clock.instant();
         sessions.computeIfPresent(token, (key, current)
@@ -115,7 +109,7 @@ public final class SessionRegistry {
         }
     }
 
-    /** Cierra todas las sesiones de un funcionario (cambio de clave, rol o estado). */
+    // Cierra todas las sesiones de un funcionario (cambio de clave, rol o estado).
     public void removeAllFor(int operatorId) {
         sessions.values().removeIf(session -> session.user().operatorId() == operatorId);
     }
