@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cr.ac.una.operatorsystem.controller.ServicesController">
+ <center><BorderPane fx:id="content">
+  <center><SplitPane dividerPositions="0.62">
+   <items>
+    <VBox spacing="12" minWidth="360">
+     <padding><Insets top="20" right="16" bottom="20" left="24"/></padding>
+     <HBox alignment="CENTER_LEFT" spacing="12">
+      <Label text="Servicios registrados" styleClass="field-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+      <Button text="Nuevo servicio" onAction="#newService" minHeight="40" minWidth="-Infinity" styleClass="secondary-button"/>
+     </HBox>
+     <TableView fx:id="servicesTable" accessibleText="Servicios registrados" VBox.vgrow="ALWAYS">
+      <placeholder><Label text="Sin servicios para mostrar."/></placeholder>
+     </TableView>
+    </VBox>
+    <ScrollPane fitToWidth="true" minWidth="320" styleClass="content-scroll">
+     <VBox spacing="12">
+      <padding><Insets top="20" right="24" bottom="24" left="20"/></padding>
+      <Label fx:id="selectionLabel" styleClass="screen-title"/>
+      <Label text="Código" styleClass="field-label"/>
+      <TextField fx:id="codeField" accessibleText="Código del servicio" promptText="Ej.: PAGO" prefHeight="40"/>
+      <Label text="Nombre" styleClass="field-label"/>
+      <TextField fx:id="nameField" accessibleText="Nombre del servicio" promptText="Ej.: Pagos" prefHeight="40"/>
+      <Label text="Prefijo de los turnos" styleClass="field-label"/>
+      <TextField fx:id="prefixField" accessibleText="Prefijo de los turnos" promptText="Ej.: C" prefHeight="40"/>
+      <Label fx:id="detailLabel" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="secondary-text"/>
+      <Button fx:id="saveButton" onAction="#save" minHeight="44" maxWidth="Infinity" styleClass="primary-button"/>
+      <Button fx:id="stateButton" onAction="#toggleState" minHeight="44" maxWidth="Infinity" styleClass="secondary-button"/>
+     </VBox>
+    </ScrollPane>
+   </items>
+  </SplitPane></center>
+ </BorderPane></center>
+ <bottom><HBox spacing="16" alignment="CENTER_LEFT" styleClass="action-bar">
+  <Label fx:id="noticeLabel" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="summary-label"/>
+  <Button fx:id="reloadButton" text="Actualizar" onAction="#reload" minHeight="44" minWidth="-Infinity" styleClass="secondary-button"/>
+ </HBox></bottom>
+</BorderPane>

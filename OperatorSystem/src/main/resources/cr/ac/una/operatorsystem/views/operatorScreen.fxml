@@ -15,6 +15,7 @@
    <Button fx:id="reportsButton" text="Consultas" disable="true" onAction="#openReports" minWidth="-Infinity" minHeight="44" styleClass="secondary-button"/>
    <Button fx:id="peopleButton" text="Personas" visible="false" managed="false" disable="true" onAction="#openPeople" minWidth="-Infinity" minHeight="44" styleClass="secondary-button"/>
    <Button fx:id="assignmentsButton" text="Asignaciones" visible="false" managed="false" disable="true" onAction="#openAssignments" minWidth="-Infinity" minHeight="44" styleClass="secondary-button"/>
+   <Button fx:id="catalogButton" text="Servicios y ventanillas" visible="false" managed="false" disable="true" onAction="#openCatalog" minWidth="-Infinity" minHeight="44" styleClass="secondary-button"/>
    <Button fx:id="logoutButton" text="Cerrar sesión" disable="true" onAction="#logout" minWidth="-Infinity" minHeight="44" styleClass="secondary-button"/>
   </FlowPane></top>
   <center><ScrollPane fitToWidth="true" fitToHeight="true" styleClass="content-scroll">
