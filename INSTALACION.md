@@ -79,4 +79,4 @@ Si el catálogo no carga, revisar la consola de CoreServer y su conexión a MySQ
 
 ## Verificación y alcance
 
-El [informe de instalación](pruebas/QA_instalacion_2026-11-12.md) documenta la comprobación desde una copia limpia del repositorio, con MySQL local y comunicación TLS. Incluye aplicaciones reales y clientes en procesos separados. El ensayo físico entre computadoras continúa pendiente.
+La instalación se comprobó desde una copia limpia de los archivos versionados, con MySQL local, comunicación TLS y clientes en procesos separados. El [resumen de comprobaciones](pruebas/README.md#comprobaciones-y-límites) precisa el entorno y sus límites. El ensayo físico entre computadoras continúa pendiente.

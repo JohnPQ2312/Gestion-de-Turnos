@@ -6,7 +6,7 @@ El rellamado no genera otro ticket, no consume consecutivos y no libera la asign
 
 ## Preparar una base existente
 
-La migración se validó en MySQL 8.0.32 local, sobre bases desechables. Posteriormente, el usuario aplicó las migraciones a `gamabasis_p3g9` y se completó el [ensayo sobre la base compartida](../pruebas/evidencias/rellamado_2026-11-12/base-compartida.md). No volver a aplicarlas en esa base; las instrucciones siguientes sirven para bases que aún no estén actualizadas.
+La migración se validó en MySQL 8.0.32 local, sobre bases desechables, y se aplicó a `gamabasis_p3g9` para comprobar el rellamado sobre la base compartida. No volver a aplicarla en esa base. Para otra instalación, comprobar primero su estructura y seguir el procedimiento que corresponda. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) distingue ambos entornos.
 
 1. Confirmar que la base ya corresponde a las migraciones 001 y 002. Consultar [la guía de acceso](INICIALIZAR_ACCESO.md) si todavía faltan.
 2. Detener CoreServer y cerrar los clientes para actualizar la versión completa.

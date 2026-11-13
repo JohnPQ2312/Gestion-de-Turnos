@@ -1,6 +1,6 @@
 # Sistema distribuido de Gestión de Turnos
 
-Documento técnico en elaboración. Este borrador desarrolla los apartados 3 a 12 de la estructura solicitada. Versión de referencia: `cc9405e`. La [lista de apartados y su estado](README.md) identifica el contenido restante.
+Descripción técnica de los apartados 3 a 12 del [enunciado](enunciado/Proyecto_Programacion_III.pdf). El [documento editable en Word](Documento_tecnico_Gestion_de_Turnos_APA7_borrador.docx) incorpora también la portada y los integrantes; el [índice documental](README.md) indica los apartados pendientes.
 
 ## 3. Descripción del problema
 
@@ -38,7 +38,7 @@ Las cinco consultas permiten revisar turnos atendidos entre fechas, cantidades p
 
 La administración actual gestiona funcionarios, credenciales y usuarios relacionados con turnos, además de habilitaciones de servicios y apertura/cierre de asignaciones. El registro `app_user` no es una cuenta de acceso del personal; emitir un turno no exige registrar previamente a la persona.
 
-**Alcance del corte:** la administración completa de servicios y ventanillas está pendiente de integrar. No se presenta como funcionalidad terminada. La política de prioridad es estricta y no garantiza un tiempo máximo de espera para los regulares. La atención preferencial con ventanilla exclusiva y apoyo de las mixtas es la característica elegida para desarrollar la justificación de innovación; PDF, QR y transferencias no forman parte de la implementación de este corte.
+La administración completa de servicios y ventanillas está pendiente de integrar. La política de prioridad es estricta y no garantiza un tiempo máximo de espera para los regulares. La innovación propuesta es la atención preferencial con una ventanilla exclusiva y el apoyo de las mixtas. Las ideas de PDF, QR y transferencias quedan fuera de esta versión.
 
 ## 5. Arquitectura utilizada
 
@@ -74,7 +74,7 @@ Las implementaciones `InMemory` se conservan como apoyo para desarrollo y compro
 
 ### Motivo de esta organización
 
-La separación permite que todas las estaciones operen sobre las mismas reglas y datos, mientras cada cliente mantiene su responsabilidad. Centralizar la persistencia evita que cada pantalla gestione SQL, credenciales de MySQL y bloqueos por su cuenta. Los contratos permiten modificar el acceso a datos sin trasladar esas decisiones a los controles gráficos.
+Todas las estaciones operan sobre las mismas reglas y datos. CoreServer concentra el SQL, las credenciales MySQL y los bloqueos; cada cliente se ocupa de su interfaz y sus solicitudes. Los contratos permiten modificar el acceso a datos sin trasladar esas decisiones a los controles gráficos.
 
 Los hilos mantienen la disponibilidad de las interfaces y del servidor, mientras que las transacciones, los bloqueos y las restricciones protegen la consistencia. Son responsabilidades distintas: ejecutar solicitudes en paralelo no garantiza por sí solo que dos operaciones no tomen el mismo turno.
 
@@ -105,7 +105,7 @@ El diagrama representa componentes lógicos, no la distribución física entre c
 
 ## 7. Diseño de la base de datos
 
-El sistema utiliza MySQL 8 con tablas InnoDB. El [script de creación](../database/script%20borrador.sql) es la referencia para los tipos, nulabilidad, valores predeterminados, claves e índices completos. El diagrama corresponde al esquema actual de diez tablas; sustituye el modelo preliminar de seis tablas.
+El sistema utiliza MySQL 8 con tablas InnoDB. El [script de creación](../database/script%20borrador.sql) define los tipos, nulabilidad, valores predeterminados, claves e índices completos. El diagrama corresponde al esquema actual de diez tablas.
 
 ![Tablas, claves y relaciones del sistema](diagramas/base_datos.svg)
 
@@ -183,27 +183,27 @@ Los dos diagramas se contrastaron con el corte `cc9405e`. Deben comprobarse otra
 
 ### MVC: separar la presentación de sus datos y operaciones
 
-**Problema:** si una pantalla calcula consecutivos, ejecuta SQL y modifica controles, un cambio de almacenamiento o de regla obliga a modificar también la interfaz. Además, distintas estaciones podrían aplicar reglas diferentes.
+Si una pantalla calcula consecutivos, ejecuta SQL y modifica controles, un cambio de almacenamiento o de regla obliga a modificar también la interfaz. Además, distintas estaciones podrían aplicar reglas diferentes.
 
-**Aplicación:** las vistas FXML y los estilos describen la presentación; los controladores JavaFX coordinan entradas y resultados; los modelos representan los datos. Por ejemplo, `ticketsGenerator.fxml`, `TicketsGeneratorController`, `ServiceOption` y `TicketConfirmation` forman parte de esa separación en CostumerTurn. Las reglas compartidas y los modelos del dominio, como `Ticket`, se encuentran en CoreServer. El cliente recibe datos por red; no comparte la misma instancia del modelo del servidor.
+Las vistas FXML y los estilos describen la presentación; los controladores JavaFX coordinan entradas y resultados; los modelos representan los datos. Por ejemplo, `ticketsGenerator.fxml`, `TicketsGeneratorController`, `ServiceOption` y `TicketConfirmation` forman parte de esa separación en CostumerTurn. Las reglas compartidas y los modelos del dominio, como `Ticket`, se encuentran en CoreServer. El cliente recibe datos por red; no comparte la misma instancia del modelo del servidor.
 
-**Beneficio:** se puede modificar la presentación sin trasladar SQL al controlador, y todos los clientes utilizan las reglas del servidor. Es una aplicación de MVC dentro de una arquitectura distribuida, no una afirmación de que las cuatro aplicaciones compartan un único objeto modelo.
+Se puede modificar la presentación sin trasladar SQL al controlador, y todos los clientes utilizan las reglas del servidor. MVC organiza la presentación de cada cliente dentro de la arquitectura distribuida. Cada aplicación mantiene sus propios objetos.
 
 ### Repository: separar el caso de uso del almacenamiento
 
-**Problema:** la generación necesita guardar un turno y reservar su número, pero no debería contener directamente la implementación SQL dentro de la pantalla o del servicio de entrada.
+La generación necesita guardar un turno y reservar su número, pero no debería contener directamente la implementación SQL dentro de la pantalla o del servicio de entrada.
 
-**Aplicación:** `TicketService` recibe por constructor un `TicketCreationRepository`, cuyo contrato ofrece `createWithNextNumber`. El ensamblado de CoreServer entrega una instancia de `JdbcTicketCreationRepository`. Esa implementación contiene la transacción que consulta el servicio, bloquea el consecutivo, inserta el ticket y actualiza el número.
+`TicketService` recibe por constructor un `TicketCreationRepository`, cuyo contrato ofrece `createWithNextNumber`. El ensamblado de CoreServer entrega una instancia de `JdbcTicketCreationRepository`. Esa implementación contiene la transacción que consulta el servicio, bloquea el consecutivo, inserta el ticket y actualiza el número.
 
-**Beneficio:** el servicio depende de una operación del dominio y de un contrato, mientras la implementación JDBC concentra los detalles del almacenamiento. Existen contratos equivalentes para llamado, ciclo, rellamado, consultas y administración. Las implementaciones InMemory de apoyo no significan que todos los contratos dispongan de un sustituto intercambiable ya terminado.
+El servicio depende de una operación del dominio y de un contrato, mientras la implementación JDBC concentra los detalles del almacenamiento. Existen contratos equivalentes para llamado, ciclo, rellamado, consultas y administración. Las implementaciones InMemory disponibles cubren solo parte de esos contratos.
 
 ### Publicación/suscripción y el principio de Observer
 
-**Problema:** varias pantallas deben actualizarse cuando cambia la atención, sin que cada operación conozca qué ventanas están abiertas ni espere a que cada una dibuje los datos.
+Varias pantallas deben actualizarse cuando cambia la atención, sin que cada operación conozca qué ventanas están abiertas ni espere a que cada una dibuje los datos.
 
-**Aplicación:** `DisplayEventHub` registra suscripciones y publica un aviso después de confirmar un cambio. `TurnServer` transmite el aviso al suscriptor y `DisplayRefreshService` consulta una captura actualizada. Cada suscripción tiene una cola de capacidad uno: varios cambios próximos pueden agruparse, porque interesa recuperar el estado vigente y no reproducir cada aviso como una operación histórica.
+`DisplayEventHub` registra suscripciones y publica un aviso después de confirmar un cambio. `TurnServer` transmite el aviso al suscriptor y `DisplayRefreshService` consulta una captura actualizada. Cada suscripción tiene una cola de capacidad uno: varios cambios próximos pueden agruparse, porque interesa recuperar el estado vigente y no reproducir cada aviso como una operación histórica.
 
-**Beneficio:** el productor del cambio no administra las interfaces de cada pantalla. Es publicación/suscripción con una finalidad relacionada con Observer; no se utiliza la clase `java.util.Observable` ni un callback remoto de objetos Java. MVC y Repository constituyen los dos patrones principales justificados aquí.
+El productor del cambio no administra las interfaces de cada pantalla. La publicación/suscripción aplica el principio de notificar a los interesados en un cambio. La implementación utiliza mensajes por sockets; no depende de `java.util.Observable` ni de callbacks remotos de objetos Java. MVC y Repository son los dos patrones principales del diseño.
 
 ## 9. Explicación del mecanismo de comunicación
 
@@ -261,7 +261,7 @@ Al cerrar una pantalla pública se detiene el reloj, se cancela su trabajo y se 
 
 Se comparten entre solicitudes el manejador, los servicios, los repositorios, el registro de sesiones y el centro de avisos del servidor. Las transacciones utilizan conexiones JDBC propias de la operación; no se comparte una única `Connection` entre todos los hilos. `ConnectionMetrics` utiliza `ThreadLocal` para separar las mediciones de solicitudes simultáneas. El conjunto de suscripciones y sus colas emplean colecciones concurrentes.
 
-Los hilos permiten concurrencia, pero no resuelven automáticamente las carreras sobre turnos, consecutivos o asignaciones. Esa protección se explica en el apartado siguiente.
+Las solicitudes concurrentes requieren además protección sobre los turnos, los consecutivos y las asignaciones mediante transacciones, bloqueos y restricciones.
 
 ## 11. Explicación del control de concurrencia
 
@@ -297,9 +297,9 @@ No existe un único orden universal de todas las tablas para todas las operacion
 
 Las operaciones publican el aviso público después de confirmar el cambio. Las colas de avisos usan `offer`, con capacidad uno por suscripción, para que una pantalla lenta no obligue a esperar a la operación de negocio. No hay una transacción distribuida entre MySQL y los sockets; el estado persistido es la referencia para recuperar los datos.
 
-La evidencia incluye emisiones y llamados concurrentes, solicitudes sobre una misma asignación, rollback y conflictos de pausa, rellamado y administración. Se conserva por versión en [QA integral](../pruebas/QA_2026-11-12.md), [rellamado](../pruebas/QA_rellamado_2026-11-12.md), [Personas](../pruebas/QA_personas_2026-11-12.md) y [Asignaciones](../pruebas/QA_asignaciones_2026-11-12.md). Las [herramientas concurrentes](../pruebas/README.md) documentan su preparación y alcance.
+Se comprobaron emisiones y llamados concurrentes, solicitudes sobre una misma asignación, rollback y conflictos de pausa, rellamado y administración. Los [procedimientos de pruebas](../pruebas/README.md#comprobaciones-y-límites) distinguen las comprobaciones locales de las realizadas sobre la base compartida y explican cómo ejecutar las tres herramientas de concurrencia.
 
-Los casos de regresión repetidos no se suman como pruebas diferentes. Estos resultados no prueban carga prolongada, ausencia de todo interbloqueo ni la integración de código todavía no recibido. Falta contrastar la administración de servicios y ventanillas, completar el ensayo físico entre computadoras y medir el rendimiento remoto.
+Los casos de regresión repetidos no se suman como pruebas diferentes. Quedan fuera del alcance de esas pruebas la carga prolongada, la ausencia de todo interbloqueo y el código pendiente de integrar. Falta contrastar la administración de servicios y ventanillas, completar el ensayo físico entre computadoras y medir el rendimiento remoto.
 
 ### Ubicación del código explicado
 
@@ -309,7 +309,7 @@ Los casos de regresión repetidos no se suman como pruebas diferentes. Estos res
 
 ## 12. Instrucciones para ejecutar el sistema
 
-La ejecución habitual se realiza desde NetBeans. No requiere iniciar las cuatro aplicaciones mediante comandos de consola. La [guía de instalación](../INSTALACION.md) desarrolla la preparación; este apartado reúne el orden de ejecución y el recorrido de demostración.
+Las cuatro aplicaciones se ejecutan desde NetBeans. La preparación del entorno se detalla en la [guía de instalación](../INSTALACION.md); a continuación se indica el orden de arranque y el recorrido de demostración.
 
 ### Preparación del entorno
 
@@ -321,7 +321,7 @@ La ejecución habitual se realiza desde NetBeans. No requiere iniciar las cuatro
 
 La instalación nueva prepara diez tablas, cinco funcionarios, tres servicios, cuatro ventanillas, tres asignaciones abiertas y cero tickets. El administrador inicial no tiene una asignación de atención. Estos datos corresponden al seed, no a los nombres o al estado actual de la base compartida.
 
-La exportación privada revisada no sustituye esta instalación: omite restricciones y no contiene un ADMIN activo con credencial. Su [contraste](revision_exportacion_bd.md) explica las diferencias. No se restaura sobre la base compartida para preparar una demostración.
+El esquema versionado define las restricciones necesarias para la instalación. Si se prepara una copia desde una exportación, comprobar que conserve claves, índices, CHECK y opciones de tabla. Las exportaciones con credenciales se mantienen fuera de Git y no se restauran sobre una base compartida para preparar la demostración.
 
 ### Conexión local y entre computadoras
 
@@ -357,7 +357,7 @@ El siguiente procedimiento utiliza la base nueva del seed, sin otras emisiones n
 | 6 | Ingresar como ADMIN y abrir Consultas con fechas que incluyan el recorrido. | Se recuperan los turnos atendidos, cantidades por funcionario/servicio y duraciones. |
 | 7 | Abrir Personas y Asignaciones como ADMIN. | Se pueden consultar los registros, habilitaciones e historial; los operadores no disponen de esos controles administrativos. |
 
-Este es el procedimiento previsto para la demostración; no constituye por sí mismo una nueva evidencia de que se ejecutaron todos sus pasos. La [instalación comprobada](../pruebas/QA_instalacion_2026-11-12.md) documenta el recorrido ya realizado y sus límites. La administración de servicios y ventanillas se añadirá a la demostración después de integrar y verificar su implementación.
+La instalación y el recorrido de atención se comprobaron en MySQL local mediante TLS, incluidas ejecuciones en procesos separados. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) precisa sus límites. Los pasos anteriores son un procedimiento de demostración, sin una nueva ejecución asociada a esta revisión documental. La administración de servicios y ventanillas se añadirá después de integrar y verificar su implementación.
 
 Para una prueba coordinada de concurrencia, dejar libres las asignaciones 1 y 2 y preparar dos preferenciales de Información general. Ejecutar la herramienta siguiendo [pruebas/README.md](../pruebas/README.md), con una cuenta propia por funcionario. El procedimiento también contiene los casos de la misma asignación y de un único turno elegible. Usar la configuración local admitida por las herramientas; esa ejecución no sustituye el ensayo entre computadoras ni comprueba por sí sola el transporte TLS del despliegue.
 

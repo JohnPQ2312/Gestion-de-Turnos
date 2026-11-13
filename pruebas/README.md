@@ -1,6 +1,4 @@
-# Prueba de llamados concurrentes
-
-> Estado actual: las tres herramientas utilizan el protocolo autenticado. `TestAccess` inicia una sesión propia por funcionario, asocia sus asignaciones y cierra las sesiones al terminar. Se conservaron las evidencias históricas. Ver también [QA integral](QA_2026-11-12.md) y [validación de estas correcciones](QA_herramientas_2026-11-12.md).
+# Herramientas de concurrencia
 
 Esta prueba prepara dos conexiones a CoreServer y libera sus solicitudes CALL_NEXT desde una misma señal. Comprueba las respuestas y vuelve a leer los turnos activos mediante el servidor. CoreServer ejecuta las operaciones reales sobre la base configurada.
 
@@ -12,7 +10,7 @@ Esta prueba prepara dos conexiones a CoreServer y libera sus solicitudes CALL_NE
 4. Preparar dos turnos preferenciales de Información general como primeros turnos de la lista de espera.
 5. Mantener estables las asignaciones y la cola durante la prueba.
 
-La herramienta identifica las asignaciones activas mediante LIST_ASSIGNMENTS y consulta GET_ACTIVE_TICKET antes de enviar los llamados. Si los requisitos de preparación no se cumplen, detiene la ejecución.
+`ConcurrentCallingCheck.java` identifica las asignaciones activas mediante LIST_ASSIGNMENTS y consulta GET_ACTIVE_TICKET antes de enviar los llamados. Si los requisitos de preparación no se cumplen, detiene la ejecución. `TestAccess` inicia una sesión propia por funcionario, vincula cada asignación con su cuenta y cierra las sesiones al terminar.
 
 ## Ejecución
 
@@ -32,7 +30,7 @@ Envía dos llamados y deja los turnos llamados para inspeccionarlos. Si se agota
 - Ingresar la cuenta de cada funcionario solicitado. Una cuenta ADMIN no permite hacerse pasar por otro operador.
 - La contraseña se oculta cuando Java dispone de consola interactiva. Si no existe, se informa que la entrada será visible. No pasar contraseñas ni tokens como argumentos ni guardarlos en archivos de pruebas.
 - Las sesiones se cierran al terminar, incluso ante un error de preparación. Si no se confirma LOGOUT por un corte, se informa y la sesión vence según la política de CoreServer.
-- El proceso devuelve código **0** si pasan las comprobaciones y **1** si la prueba falla o se detiene. Se puede consultar `$LASTEXITCODE` en PowerShell.
+- El proceso devuelve código 0 si pasan las comprobaciones y 1 si la prueba falla o se detiene. Se puede consultar `$LASTEXITCODE` en PowerShell.
 - No se reintentan escrituras automáticamente. Un tiempo de espera agotado exige revisar el estado antes de repetir.
 
 Ejemplos para las otras pruebas:
@@ -52,60 +50,18 @@ javac -encoding UTF-8 --release 21 -d pruebas/.build pruebas/TestAccess.java pru
 java -cp pruebas/.build ConcurrentCallingCheck
 ```
 
-Las herramientas ahora comparten `TestAccess`; no se ejecutan mediante `java pruebas/Nombre.java` de forma aislada.
+Las herramientas dependen de `TestAccess`; deben compilarse juntas mediante el lanzador o el comando anterior.
 
-## Ejecución observada el 4 de noviembre de 2026
-
-Ambas asignaciones estaban libres. Los turnos preparados eran A008 y A009, ambos preferenciales de Información general.
-
-| Ventanilla / operador | Asignación | Turno recibido | Identificador interno | Estado posterior | Respuesta |
-| --- | --- | --- | --- | --- | --- |
-| 1 / 1 | 1 | A009 | 11 | LLAMADO | 6518 ms |
-| 2 / 2 | 2 | A008 | 9 | LLAMADO | 5525 ms |
-
-La separación entre los inicios de envío fue de 0,326 ms. Ambas solicitudes obtuvieron códigos distintos y GET_ACTIVE_TICKET confirmó las asignaciones correspondientes. La ventanilla 2 recibió el preferencial más antiguo, A008. El orden de presentación de las respuestas por la herramienta no determina cuál solicitud se procesó primero.
-
-El usuario ejecutó después las consultas SQL siguientes en phpMyAdmin. A008 quedó con prioridad 1, asignación 2 y llamado a las 03:22:35 del 5 de noviembre. A009 quedó con prioridad 1, asignación 1 y llamado a las 03:22:36. Las horas de esa sesión MySQL son UTC y corresponden al 4 de noviembre en Costa Rica.
-
-```sql
-SELECT
-    t.ticket_id, t.visual_code, t.`priority`, t.ticket_state,
-    t.assignment_id, a.operator_id, a.window_id, t.called_at
-FROM gamabasis_p3g9.ticket t
-JOIN gamabasis_p3g9.operator_window_assignment a
-    ON a.assignment_id = t.assignment_id
-WHERE t.visual_code IN ('A008', 'A009')
-ORDER BY t.visual_code;
-
-SELECT a.window_id, COUNT(*) AS turnos_activos
-FROM gamabasis_p3g9.ticket t
-JOIN gamabasis_p3g9.operator_window_assignment a
-    ON a.assignment_id = t.assignment_id
-WHERE t.ticket_state IN ('LLAMADO', 'EN_ATENCION')
-GROUP BY a.window_id
-HAVING COUNT(*) > 1;
-```
-
-La primera consulta devolvió los dos registros esperados. La segunda devolvió cero filas.
-
-## Alcance y continuación
-
-Se comprobó una ejecución de dos llamados coordinados contra MySQL. Los escenarios adicionales con un solo turno elegible, la misma asignación, generación concurrente y fallos de transacción se ensayaron posteriormente en MySQL local; ver [QA integral](QA_2026-11-12.md). Los resultados locales no sustituyen mediciones con la base remota.
-
-Los tiempos de respuesta de 5,5 y 6,5 segundos quedan registrados para medir y optimizar las consultas y conexiones. Son tiempos de llamado completos, distintos del tiempo que tarda la pantalla en mostrar un aviso.
-
-En esa ejecución histórica, A008 y A009 quedaron LLAMADO; su estado actual puede ser distinto. Para trabajar desde los operadores, utilizar Actualizar asignaciones y revisar el estado recuperado antes de iniciar o finalizar sus atenciones.
-
-# Prueba de llamados simultáneos sobre una misma asignación
+## Llamados simultáneos sobre una misma asignación
 
 `SameAssignmentCallingCheck.java` envía dos `CALL_NEXT` sobre **la misma** asignación, liberados por una señal común. Comprueba que el sistema admita un solo llamado y rechace el otro por ocupación, y después verifica el estado guardado mediante el servidor.
 
-## Preparación
+### Preparación
 
 Coordinar con el equipo quién prepara los datos y cuándo se ejecuta. Ninguna otra operación debe modificar la asignación ni la cola durante la prueba.
 
 1. Iniciar CoreServer.
-2. Elegir una asignación vigente (por defecto, operador 1 en ventanilla 1) y comprobar desde OperatorSystem que no tenga turno activo. Si conserva un turno de pruebas anteriores, como A008 o A009, completar o revisar su atención antes.
+2. Elegir una asignación vigente (por defecto, operador 1 en ventanilla 1) y comprobar desde OperatorSystem que no tenga turno activo. Si conserva un turno de una prueba anterior, completar o revisar su atención antes.
 3. Tener al menos dos turnos `EN_ESPERA` compatibles con esa asignación y menos de 50 turnos en espera en total.
 
 La herramienta detiene la ejecución si la asignación no existe, no está libre o hay menos de dos turnos en espera. La compatibilidad no se puede consultar por el protocolo; se comprueba antes en MySQL con la consulta siguiente, que debe devolver al menos dos filas:
@@ -122,7 +78,7 @@ WHERE t.ticket_state = 'EN_ESPERA'
 ORDER BY t.`priority` DESC, t.created_at, t.ticket_id;
 ```
 
-## Ejecución
+### Ejecución
 
 Desde PowerShell, en la raíz del repositorio:
 
@@ -133,7 +89,7 @@ Desde PowerShell, en la raíz del repositorio:
 
 Los dos números son el operador y la ventanilla de la asignación. No reintenta escrituras.
 
-## Resultado esperado
+### Resultado esperado
 
 - Exactamente una respuesta `OK;CALLED` para el operador y la ventanilla de la asignación.
 - Exactamente una respuesta `ERROR` con el mensaje de ocupación: «La asignación, el operador o la ventanilla ya tienen un turno activo.» Un error distinto (por ejemplo, de base de datos) cuenta como falla.
@@ -142,22 +98,11 @@ Los dos números son el operador y la ventanilla de la asignación. No reintenta
 
 Al final la herramienta imprime dos consultas para confirmar en phpMyAdmin el estado de los turnos involucrados y que la asignación tiene un solo turno activo. Las líneas `[tiempo]` de la consola de CoreServer registran el procesamiento de cada `CALL_NEXT`.
 
-## Resultados
-
-| Fecha | Entorno | Asignación | Respuestas | Turno llamado | Comprobaciones | MySQL |
-| --- | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Ensayo local (ver abajo) | 1 (operador 1, ventanilla 1) | `OK;CALLED` y `ERROR` de ocupación | A002, preferencial | 7 de 7; 20 de 20 repeticiones consistentes | A002 `LLAMADO` en la asignación 1; A001 y B001 `EN_ESPERA` |
-| Pendiente | `gamabasis_p3g9` | — | — | — | — | — |
-
-**Ensayo local del 11 de noviembre.** Ejecutado por Claude en un entorno aislado, no sobre la base del equipo: MySQL 8.0.46 en la misma máquina, base nueva creada con `database/script borrador.sql` y `database/datos_prueba.sql`, y CoreServer compilado desde `main` (0d6216a) sin modificaciones. Como en ese entorno Maven Central no estaba disponible, el controlador JDBC fue MariaDB Connector/J compilado desde su código fuente, no MySQL Connector/J 9.1.0. Antes de la prueba se generaron A001 (Información general, regular), B001 (Trámites, regular) y A002 (Información general, preferencial). Se llamó primero A002, conforme a la prioridad acordada. La prueba se repitió 20 veces, cada una sobre una base recién creada, y todas terminaron consistentes. Cada `CALL_NEXT` abrió 6 conexiones (unos 30 ms en total, por la ausencia de latencia de red).
-
-Además, la herramienta se comprobó contra servidores simulados (correcto, defectuoso y sin preparación) para validar su propia lógica. Queda pendiente repetir la prueba sobre `gamabasis_p3g9` en una sesión coordinada.
-
-# Prueba de un único turno elegible para dos ventanillas
+## Un único turno elegible para dos ventanillas
 
 `SingleEligibleTicketCheck.java` envía `CALL_NEXT` desde dos asignaciones distintas, liberados por una señal común, cuando existe un solo turno en espera compatible con ambas. Comprueba que solo una ventanilla obtenga el turno y que la otra reciba `OK;NO_TICKET`.
 
-## Preparación
+### Preparación
 
 Coordinar con el equipo quién prepara los datos y cuándo se ejecuta. Nadie debe generar ni llamar turnos durante la prueba.
 
@@ -179,7 +124,7 @@ WHERE t.ticket_state = 'EN_ESPERA'
   AND (w.attention_mode = 'MIXED' OR t.`priority` = TRUE);
 ```
 
-## Ejecución
+### Ejecución
 
 Desde PowerShell, en la raíz del repositorio:
 
@@ -190,7 +135,7 @@ Desde PowerShell, en la raíz del repositorio:
 
 Los números son operador y ventanilla de la primera asignación y de la segunda. No reintenta escrituras.
 
-## Resultado esperado
+### Resultado esperado
 
 - Exactamente una ventanilla recibe `OK;CALLED` con el turno en disputa.
 - La otra recibe `OK;NO_TICKET`. Un `ERROR` o un segundo `OK;CALLED` cuenta como falla.
@@ -199,11 +144,27 @@ Los números son operador y ventanilla de la primera asignación y de la segunda
 
 Al final la herramienta imprime dos consultas para confirmar en phpMyAdmin el estado del turno y que cada asignación tiene como máximo un turno activo.
 
-## Resultados
 
-| Fecha | Entorno | Asignaciones | Respuestas | Ventanilla ganadora | Comprobaciones | MySQL |
-| --- | --- | --- | --- | --- | --- | --- |
-| 2026-11-11 | Ensayo local (mismo entorno que la prueba anterior) | 1 (ventanilla 1) y 2 (ventanilla 2) | `OK;CALLED` y `OK;NO_TICKET` | Ventanilla 1 en la ejecución detallada; en 20 repeticiones, la 1 ganó 9 veces y la 2, 11 | 5 de 5; 20 de 20 repeticiones consistentes | A001 `LLAMADO` en la asignación 1; ninguna asignación con más de un turno activo |
-| Pendiente | `gamabasis_p3g9` | — | — | — | — | — |
+## Comprobaciones y límites
 
-En el ensayo local el turno en disputa fue A001 (Información general, regular), compatible con ambas asignaciones según la consulta de preparación. Que la ventanilla ganadora variara entre repeticiones muestra que las dos solicitudes competían realmente por el mismo turno. Queda pendiente repetir la prueba sobre `gamabasis_p3g9` en una sesión coordinada.
+La validación local incluyó los repositorios JDBC, el servidor, los clientes y las vistas JavaFX sobre MySQL 8.0.32 desechable. Se ejecutó con JDK 25.0.3, destino de compilación Java 21 y JavaFX 13. No se probó por separado un runtime JDK 21.
+
+| Área | Comprobaciones realizadas |
+| --- | --- |
+| Emisión y atención | Consecutivos por servicio, prioridad, compatibilidad, ocupación, recuperación del turno activo y ciclo completo con fechas persistidas. |
+| Concurrencia | Generación simultánea, dos asignaciones compitiendo por turnos, dos llamados sobre la misma asignación, un único turno elegible y rollback ante fallos provocados. |
+| Acceso y administración | Permisos por rol, sesiones, revocación tras cambios de cuenta, protección del último ADMIN con credencial, bajas lógicas y conservación del historial. |
+| Habilitaciones y asignaciones | Compatibilidad compartida, rechazo de retiradas que afectan turnos o dejan sin servicio una asignación, apertura/cierre y conflictos concurrentes. |
+| Rellamado | Identidad y primer llamado conservados, contador y última fecha actualizados, pausa, estados no permitidos y recuperación tras una confirmación perdida. |
+| Pantalla pública | Varias suscripciones, avisos tras cambios confirmados, latidos, sincronización inicial, desconexión y recuperación. |
+| Transporte | TLS con clientes reales, nombre de certificado incorrecto, falta de confianza y configuración inválida, sin degradación automática a TCP. |
+
+La instalación se comprobó desde una copia limpia obtenida de los archivos versionados, sin reutilizar los recursos generados o privados de la carpeta del equipo. Se aplicaron esquema y datos iniciales, se prepararon credenciales con `CredentialSetup` y se ejecutó el recorrido por TLS. También se comprobaron clientes en procesos separados en la misma computadora. La compilación utilizó dependencias disponibles en la caché de Maven; no verificó su primera descarga en un equipo sin caché.
+
+Sobre la base compartida se comprobó la generación con persistencia, la continuación de consecutivos, el ciclo de atención y dos llamados coordinados a asignaciones diferentes. Ese ensayo produjo dos turnos distintos y ninguna ventanilla con más de un turno activo. Los llamados tardaron aproximadamente 5,5 y 6,5 segundos; esos tiempos históricos no equivalen a una medición actual bajo carga ni al tiempo de actualización visual.
+
+Después de aplicar las migraciones también se comprobó el rellamado sobre la base compartida: conservó el ticket y el primer llamado, aumentó el contador, actualizó ambas pantallas y permitió completar la atención. La administración de Personas y Asignaciones se probó en MySQL local, sin ejecutar sus escrituras sobre la base compartida durante esa validación.
+
+Las tres herramientas de esta carpeta se verificaron con el protocolo autenticado, incluyendo preparación inválida, credenciales incorrectas, identidades distintas y salida sin sesiones residuales en los casos comprobados. Los resultados locales de una misma asignación y un único turno elegible siguen separados de los ensayos remotos. Las baterías amplias utilizaron auxiliares de prueba externos y no forman una suite Maven/CI reproducible íntegramente desde este repositorio. Los casos repetidos de regresión no se cuentan como escenarios nuevos.
+
+Quedan pendientes el ensayo físico entre computadoras, la medición de rendimiento con la base remota, la revisión de fechas históricas anteriores al ajuste horario y la regresión de la administración de servicios y ventanillas cuando se integre. Los resultados no acreditan carga prolongada ni ausencia de cualquier interbloqueo. Las herramientas de esta carpeta conectan a un servidor local y no validan por sí solas un despliegue TLS entre equipos.

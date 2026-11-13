@@ -1,4 +1,0 @@
-Aviso: no hay una consola interactiva; la contraseña se verá mientras se escribe. Asegúrese de que nadie más vea la pantalla.
-Usuario del funcionario (operator_username): Funcionario: Administración | rol ADMIN | ACTIVO | ya tiene contraseña: se reemplazará
-Contraseña nueva (mínimo 8 caracteres): Repita la contraseña: Contraseña guardada para admin.
-Si CoreServer está en ejecución, las sesiones abiertas de esta cuenta se rechazarán en su siguiente revalidación, cada 60 segundos de uso.

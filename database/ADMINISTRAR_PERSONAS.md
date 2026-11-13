@@ -6,7 +6,7 @@ Abrir CoreServer y OperatorSystem con la versión actual. Iniciar sesión con un
 
 La administración no crea un administrador inicial ni contiene contraseñas predeterminadas. Si todavía no existe una cuenta administrativa con credencial, preparar su acceso siguiendo [INICIALIZAR_ACCESO.md](INICIALIZAR_ACCESO.md). No convertir a un operador en ADMIN mediante un comando público.
 
-Esta versión usa las tablas actuales `operator`, `operator_credential` y `app_user`: **no requiere una migración adicional**. Sobre la base del equipo no se deben repetir el DDL, las migraciones 001/002/003 ni los datos de prueba.
+La administración utiliza las tablas `operator`, `operator_credential` y `app_user`, sin una migración adicional. Sobre la base del equipo no se deben repetir el DDL, las migraciones 001/002/003 ni los datos de prueba.
 
 ### Funcionarios
 
@@ -64,4 +64,4 @@ Cada funcionario del listado contiene siete campos: `id;nombre;acceso;rol;activo
 - `ManagedOperator` y `ManagedAppUser` son los datos de los listados, sin secretos.
 - OperatorSystem: `PeopleServerClient`, el contrato `PeopleRequests`, `PeopleController` y `people.fxml`. La vista reutiliza `operator.css`.
 
-Ver [el informe de pruebas](../pruebas/QA_personas_2026-11-12.md). El bloque está validado sobre MySQL local desechable; su recorrido administrativo no se ejecutó contra la base compartida durante esta implementación.
+La administración se comprobó sobre MySQL local desechable. Su recorrido no se ejecutó contra la base compartida durante esas pruebas. Consultar el [alcance de las comprobaciones](../pruebas/README.md#comprobaciones-y-límites).

@@ -4,9 +4,6 @@ nbproject/private/
 
 Thumbs.db
 .DS_Store
-/turnos-cliente/target/
-/turnos-pantalla/target/
-/turnos-servidor/target/
 /CostumerTurn/target/
 /QueueDisplayScreen/target/
 /CoreServer/target/
@@ -17,3 +14,7 @@ network.properties
 *.p12
 *.pfx
 *.jks
+
+/pruebas/.build/
+# Archivos temporales de Word
+~$*.docx

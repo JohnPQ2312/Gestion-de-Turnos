@@ -6,7 +6,7 @@ Iniciar CoreServer y OperatorSystem actualizados, entrar con una cuenta **ADMIN*
 
 El bloque utiliza `operator_service`, `window_service` y `operator_window_assignment` existentes. **No requiere tablas ni migraciones nuevas.** No repetir el esquema, las migraciones 001/002/003 ni los datos iniciales sobre la base compartida.
 
-La creación/edición de servicios y ventanillas corresponde a otro bloque. Esta vista trabaja con los registros existentes, incluidos los inactivos, para preparar sus habilitaciones y consultar su historia.
+La vista trabaja con servicios y ventanillas existentes, incluidos los inactivos, para preparar sus habilitaciones y consultar su historia. Su creación y edición todavía no están integradas.
 
 ## Configurar servicios
 
@@ -16,7 +16,7 @@ La creación/edición de servicios y ventanillas corresponde a otro bloque. Esta
 
 Se pueden preparar habilitaciones de un funcionario o una ventanilla inactivos, pero solo con servicios activos. Eso no activa al destinatario ni abre una asignación. La atención efectiva sigue siendo la intersección de servicios activos habilitados para ambos.
 
-La retirada se rechaza si el servicio tiene turnos en espera, si corresponde a un turno llamado/en atención del destinatario o si deja una asignación abierta sin ningún servicio activo compartido. Son políticas conservadoras de nuestro diseño. No se transfieren ni cancelan tickets para forzar el cambio.
+La retirada se rechaza si el servicio tiene turnos en espera, si corresponde a un turno llamado/en atención del destinatario o si deja una asignación abierta sin ningún servicio activo compartido. Estas restricciones conservan la compatibilidad de las asignaciones y los turnos existentes. No se transfieren ni cancelan tickets para forzar el cambio.
 
 Repetir una habilitación existente o retirar una que no existe no duplica enlaces ni crea registros adicionales. Las bajas no borran turnos históricos. Esta configuración define servicios permitidos, no una reserva de capacidad ni una garantía de que siempre habrá personal disponible para toda emisión futura.
 
@@ -48,7 +48,7 @@ El llamado normal no toma ese bloqueo administrativo: sigue usando sus filas y t
 
 Las habilitaciones bloquean al destinatario y después el servicio, sin adquirir a continuación el bloqueo de la asignación. Así evitan el orden inverso al llamado. Se usa READ_COMMITTED en las escrituras para que las comprobaciones posteriores a una espera no lean una captura antigua. La compatibilidad toma FOR SHARE para mantener el servicio válido hasta confirmar. La captura administrativa completa usa una transacción de lectura REPEATABLE_READ.
 
-**Integración con servicios/ventanillas:** cualquier implementación futura que retire rutas, dé de baja registros o cambie modalidades debe coordinar sus validaciones y bloqueos con estos recorridos. No invertir el orden de filas ni asumir que una comprobación fuera de la transacción evita una carrera. El bloqueo nombrado es común por base y puede reutilizarse al concretar esas modificaciones; no tomarlo después de bloquear filas que otro recorrido espera con él adquirido.
+Cualquier implementación futura de servicios y ventanillas que retire rutas, dé de baja registros o cambie modalidades debe coordinar sus validaciones y bloqueos con estos recorridos. No invertir el orden de filas ni asumir que una comprobación fuera de la transacción evita una carrera. El bloqueo nombrado es común por base y puede reutilizarse al concretar esas modificaciones; no tomarlo después de bloquear filas que otro recorrido espera con él adquirido.
 
 La serialización es conservadora y no constituye una medición de escalabilidad. Las modificaciones SQL externas no participan en este recorrido de aplicación. No se prometen cancelaciones de operaciones ya en curso al revocar una sesión.
 
@@ -80,4 +80,4 @@ Los errores conservan `DENIED;motivo;mensaje` y `ERROR;mensaje`. No se modifican
 
 CoreServer incorpora `AssignmentConfigurationService`, `AssignmentConfigurationRepository`, `JdbcAssignmentConfigurationRepository` y `AssignmentConfigurationHandler`. `AssignmentConfiguration` representa la captura. OperatorSystem utiliza `AssignmentServerClient`, `AssignmentRequests`, `AssignmentsController` y `assignments.fxml`.
 
-Ver [la validación local](../pruebas/QA_asignaciones_2026-11-12.md). No se ejecutó esta administración contra la base compartida durante su implementación.
+Las habilitaciones y asignaciones se comprobaron sobre MySQL local desechable. Esa administración no se ejecutó contra la base compartida durante las pruebas. Consultar el [alcance de las comprobaciones](../pruebas/README.md#comprobaciones-y-límites).

@@ -44,6 +44,6 @@ Los constructores anteriores que reciben host/puerto se conservan; leen el modo 
 
 La configuración se lee al arrancar para elegir host/puerto y al abrir conexiones para preparar el transporte. Reiniciar las aplicaciones después de cambiarla; no editar archivos mientras hay sesiones o suscripciones abiertas.
 
-Esto protege el enlace entre aplicaciones y CoreServer. La configuración JDBC y la conexión de CoreServer a MySQL se administran por separado mediante `db.properties`; no se cambió su política TLS en este bloque.
+TLS protege el enlace entre las aplicaciones y CoreServer. La conexión JDBC hacia MySQL se configura por separado mediante `db.properties`; activar TLS para los clientes no modifica su transporte.
 
-La validación realizada es local. El ensayo físico entre computadoras y su medición de rendimiento siguen pendientes. Ver [las pruebas del transporte](pruebas/QA_red_2026-11-12.md).
+La validación realizada es local. El ensayo físico entre computadoras y su medición de rendimiento siguen pendientes. Consultar el [alcance de las comprobaciones](pruebas/README.md#comprobaciones-y-límites).

@@ -1,111 +1,51 @@
 # Gestión de turnos
 
-Sistema de gestión de turnos en Java, organizado en cuatro proyectos Maven que se abren por separado en NetBeans.
-
-Documentación técnica en elaboración: [apartados y avance](docs/README.md).
+Sistema distribuido en Java para emitir turnos, atenderlos por ventanilla y mostrar los llamados en una pantalla pública. Las cuatro aplicaciones son proyectos Maven independientes que se abren en NetBeans. Solo CoreServer accede a MySQL.
 
 | Proyecto | Responsabilidad |
 | --- | --- |
-| `CoreServer` | Entidades, reglas de atención, repositorios y servidor TCP. Catálogo, generación y ciclo de atención persistente en MySQL. |
-| `CostumerTurn` | Pantalla de solicitud de turnos y confirmación, conectada al servidor. |
-| `OperatorSystem` | Inicio de sesión, asignaciones propias, pausa/reanudación, rellamado, ciclo de atención, consultas, administración de personas y configuración de asignaciones para ADMIN. |
-| `QueueDisplayScreen` | Pantalla pública conectada al servidor, con último llamado, ventanilla, llamados recientes, turnos en espera y reloj. |
+| `CoreServer` | Comunicación, permisos, reglas de atención y persistencia JDBC. |
+| `CostumerTurn` | Selección de servicio y prioridad, emisión y confirmación del turno. |
+| `OperatorSystem` | Acceso del personal, atención, consultas y administración. |
+| `QueueDisplayScreen` | Último llamado, ventanilla, llamados recientes, espera y reloj. |
 
-## Estado actual
+## Funciones disponibles
 
-La lógica de negocio se encuentra en `CoreServer`. Cada cliente contiene su pantalla y controlador. Los clientes se comunican con el servidor; las conexiones a MySQL se realizan desde `CoreServer`.
+Los turnos tienen un consecutivo independiente por servicio. La creación del ticket y la actualización de ese número se confirman en una misma transacción. La prioridad se guarda por separado del código visual.
 
-`CoreServer` escucha conexiones TCP locales en el puerto 5000 y procesa las solicitudes de catálogo, generación, asignaciones, llamado, inicio, finalización, consulta del turno activo, consulta de la pantalla pública y suscripción a sus avisos de cambios. `CostumerTurn` ejecuta sus solicitudes en segundo plano para mantener la interfaz disponible y muestra la confirmación del turno generado.
+Cada funcionario atiende sus propias asignaciones abiertas. El llamado comprueba actividad, ocupación y servicios habilitados tanto para el funcionario como para la ventanilla. Entre los turnos compatibles se atienden primero los preferenciales y luego los regulares; dentro de cada prioridad se ordenan por fecha de creación e identificador. Las ventanillas mixtas atienden ambos tipos y las `PRIORITY_ONLY` solo preferenciales. Esta prioridad estricta no garantiza una espera máxima para los regulares.
 
-El catálogo se consulta mediante `JdbcServiceRepository`. La generación utiliza `JdbcTicketCreationRepository`, que comprueba el servicio activo, bloquea la fila de su consecutivo y guarda el turno y el nuevo consecutivo dentro de una misma transacción. Los turnos se registran como `EN_ESPERA`, con su prioridad y fecha de creación.
+El ciclo es `EN_ESPERA`, `LLAMADO`, `EN_ATENCION` y `FINALIZADO`. Finalizar libera la asignación y conserva el historial. **Volver a llamar** mantiene el mismo turno y su primer llamado, actualiza el último llamado y aumenta el contador. La pausa impide nuevos llamados y rellamados; permite completar el turno activo.
 
-El llamado utiliza `JdbcTicketCallingRepository`. Dentro de una transacción vuelve a comprobar la asignación abierta e iniciada, el operador y la ventanilla activos, los servicios compatibles y la ocupación. Selecciona preferenciales primero y ordena cada prioridad por fecha de creación e identificador. Las ventanillas `PRIORITY_ONLY` atienden únicamente preferenciales. Guarda la asignación, el estado `LLAMADO` y la fecha de llamado.
+La pantalla pública recibe avisos por una suscripción al servidor y consulta una captura actualizada después de cada cambio confirmado. Muestra hasta 50 turnos en espera y cinco llamados recientes. Si pierde la conexión, conserva los datos, avisa que están desactualizados y vuelve a sincronizarse al reconectar. Las modificaciones directas en MySQL no emiten esos avisos.
 
-El inicio y la finalización utilizan `TicketLifecycleService` y `JdbcTicketLifecycleRepository`. Cada solicitud identifica tanto la asignación como el turno interno. La transacción bloquea ambos registros, comprueba su correspondencia y el estado requerido, restaura las fechas guardadas con `Ticket.restoreActive` y aplica las reglas del modelo. El inicio guarda `EN_ATENCION` y `started_at`; la finalización guarda `FINALIZADO` y `ended_at`. El turno conserva su historial y deja de ocupar la asignación al finalizar.
+El perfil ADMIN dispone de cinco consultas: atenciones entre fechas, cantidades por funcionario y servicio, tiempos de espera y tiempos de atención. También gestiona funcionarios, credenciales, usuarios relacionados con tickets, habilitaciones de servicios e historial de asignaciones. Los usuarios de `app_user` son registros opcionales de personas atendidas; no son las cuentas de acceso del personal.
 
-Las interfaces separan los contratos de creación (`TicketCreationRepository`), llamado (`TicketCallingRepository`), inicio y finalización (`TicketLifecycleRepository`) y consulta del turno activo (`ActiveTicketRepository`). Las implementaciones en memoria se conservan como alternativa para desarrollo y comprobaciones; las operaciones conectadas de generación y atención utilizan repositorios JDBC.
+## Instalación y uso
 
-`OperatorSystem` carga las asignaciones activas desde el servidor. Al seleccionar una, consulta su turno actual mediante `JdbcActiveTicketRepository` y muestra sus datos y estado. Habilita el llamado si está libre, el inicio si está `LLAMADO` y la finalización si está `EN_ATENCION`. Las acciones permanecen deshabilitadas mientras se procesa una solicitud o no se conoce el estado. Las operaciones se ejecutan en segundo plano y vuelven a consultar el turno activo al completarse. Si se pierde una confirmación, el cliente consulta el estado guardado sin repetir automáticamente la operación. Una finalización sin confirmación requiere revisar el historial; la ausencia de un turno activo por sí sola no se presenta como confirmación de esa operación. Al volver a abrir la pantalla y seleccionar la asignación, recupera el turno desde MySQL.
+Se requiere JDK 21 o superior, NetBeans con soporte Maven y MySQL 8. Los clientes incorporan JavaFX 13 mediante Maven.
 
-`QueueDisplayScreen` consulta el comando `GET_DISPLAY_SNAPSHOT` mediante `DisplayServerClient`. En CoreServer, `JdbcDisplayRepository` obtiene hasta 50 turnos en espera y 5 llamados recientes en una misma transacción de lectura con aislamiento `REPEATABLE_READ`. Los turnos en espera se ordenan por prioridad, fecha de creación e identificador; los recientes, por fecha de llamado e identificador descendentes. La consulta conserva los llamados de turnos ya finalizados.
+1. Seguir [INSTALACION.md](INSTALACION.md) para preparar una base vacía, los datos iniciales y las primeras credenciales. Sobre una base existente, aplicar solo las migraciones necesarias.
+2. Configurar MySQL únicamente en `CoreServer/src/main/resources/db.properties`. El archivo es privado y está excluido de Git.
+3. Ejecutar primero CoreServer y después los tres clientes mediante **Run Project** en NetBeans.
+4. Para atender, iniciar sesión, seleccionar una asignación propia y utilizar **Llamar siguiente**, **Iniciar atención** y **Finalizar atención**.
 
-`DisplayEventHub` distribuye avisos a las pantallas suscritas. CoreServer publica un aviso después de confirmar una generación, llamado, inicio o finalización; las consultas, los rechazos y los llamados sin turno disponible no generan avisos. Cada suscripción mantiene como máximo un aviso pendiente dentro del centro de eventos. El envío por sockets se ejecuta en el hilo de cada suscriptor, separado de la operación que modifica los datos.
+La ejecución predeterminada utiliza `127.0.0.1:5000`. Las conexiones entre computadoras requieren TLS y certificados según [RED_Y_TLS.md](RED_Y_TLS.md). No hay contraseñas predeterminadas.
 
-`DisplayServerClient` abre un canal mediante `SUBSCRIBE_DISPLAY`. El servidor confirma con `OK;SUBSCRIBED`, envía `EVENT;DISPLAY_CHANGED` cuando hay cambios y `OK;HEARTBEAT` después de diez segundos sin avisos. `DisplayRefreshService` se suscribe antes de consultar la captura inicial para conservar los avisos que lleguen durante la sincronización. Después consulta los datos al recibir avisos, sin consultar MySQL por cada latido. Los avisos corresponden a operaciones procesadas por CoreServer; las modificaciones directas en la base no publican eventos.
+Las operaciones de red se ejecutan en segundo plano. Si una escritura pierde su confirmación, consultar el estado persistido o el historial antes de repetirla: una espera agotada no demuestra que haya fallado. Reiniciar CoreServer termina las sesiones, pero conserva los turnos y los consecutivos de MySQL.
 
-La escucha y las consultas se ejecutan sobre un hilo virtual. El controlador actualiza JavaFX mediante `Platform.runLater` y mantiene el reloj con `Timeline`. Si falla la conexión o una consulta, conserva los datos visibles, muestra que están desactualizados y vuelve a intentar la suscripción después de dos segundos. Al reconectar obtiene una captura completa. Al cerrar la pantalla detiene el reloj, cierra el canal e interrumpe la escucha. La hora de última actualización permanece fija mientras no se reciben nuevos datos; el reloj sigue avanzando.
+## Documentación y pruebas
 
-OperatorSystem exige sesión: cada funcionario atiende únicamente sus asignaciones; ADMIN dispone además de las cinco consultas. La pausa de una ventanilla impide llamar turnos nuevos y permite completar el que ya está llamado o en atención. No cierra la asignación ni elimina el historial.
+- [Documento técnico y diagramas](docs/README.md).
+- [Enunciado del proyecto](docs/enunciado/Proyecto_Programacion_III.pdf).
+- [Acceso y sesiones](database/INICIALIZAR_ACCESO.md).
+- [Administración de personas](database/ADMINISTRAR_PERSONAS.md).
+- [Habilitaciones y asignaciones](database/CONFIGURAR_ATENCION.md).
+- [Rellamado y migración](database/RELLAMADO.md).
+- [Herramientas de concurrencia y alcance de las comprobaciones](pruebas/README.md).
 
-El botón **Volver a llamar** conserva el ticket y su primer llamado; actualiza la fecha del último llamado y el contador. La pantalla pública reconoce y destaca la repetición. Solo se permite sobre un turno propio LLAMADO y con la ventanilla ACTIVA. Ver [instalación y funcionamiento del rellamado](database/RELLAMADO.md).
+Se comprobaron instalación, recorrido de atención, concurrencia, permisos, administración, notificaciones y transporte TLS en entornos locales. También hay comprobaciones funcionales de generación, llamado y rellamado sobre la base compartida. Los procedimientos de pruebas distinguen ese alcance del despliegue entre computadoras.
 
-La vista **Personas**, exclusiva de ADMIN, permite gestionar funcionarios, credenciales y usuarios relacionados con los turnos. Conserva el historial, protege al último administrador con acceso y rechaza cambios de rol/estado con asignaciones abiertas. No asigna servicios o ventanillas automáticamente. Ver [uso y contratos](database/ADMINISTRAR_PERSONAS.md) y [pruebas locales](pruebas/QA_personas_2026-11-12.md).
+## Alcance pendiente
 
-La vista **Asignaciones**, exclusiva de ADMIN, gestiona los servicios habilitados de funcionarios/ventanillas y la apertura/cierre de asignaciones, conservando el historial. La baja de un funcionario con asignación abierta requiere cerrarla primero desde esta vista, después de finalizar su turno y reanudar la ventanilla si estaba pausada. Ver [guía y contratos](database/CONFIGURAR_ATENCION.md) y [pruebas locales](pruebas/QA_asignaciones_2026-11-12.md).
-
-## Configuración y ejecución
-
-Para preparar una base vacía, las primeras credenciales y el recorrido inicial en NetBeans, seguir [INSTALACION.md](INSTALACION.md).
-
-Host, puerto, dirección de escucha y TLS se configuran según [RED_Y_TLS.md](RED_Y_TLS.md). Sin configuración se conserva el modo local; las conexiones entre equipos requieren TLS. Los cuatro proyectos incluyen network.properties.example, sin secretos.
-
-
-- Utilizar JDK 21 o superior y abrir cada carpeta de proyecto en NetBeans.
-- Los tres clientes utilizan JavaFX 13, con sus FXML ajustados a la misma versión. Java y JavaFX tienen versiones independientes.
-- Disponer de la estructura MySQL del proyecto y de los servicios y filas de `ticket_sequence` inicializados. La estructura está en `database/script borrador.sql`.
-- Para una instalación nueva, ejecutar también `database/datos_prueba.sql`. Para una base existente, revisar las migraciones sin volver a ejecutar el esquema ni los datos iniciales.
-- Inicializar las credenciales y revisar los permisos siguiendo [database/INICIALIZAR_ACCESO.md](database/INICIALIZAR_ACCESO.md). No hay contraseñas predeterminadas.
-- Crear localmente `CoreServer/src/main/resources/db.properties` con las propiedades indicadas debajo. Este archivo está excluido de Git.
-
-```properties
-db.url=jdbc:mysql://HOST:3306/NOMBRE_BASE?connectionTimeZone=SERVER&preserveInstants=true
-db.usuario=USUARIO
-db.clave=CONTRASEÑA_LOCAL
-```
-
-- Iniciar primero `CoreServer` con su clase `cr.ac.una.CoreServer.App` y mantenerlo ejecutándose.
-- Ejecutar `CostumerTurn` con **Run Project**. Sin configuración de red personalizada se conecta a `127.0.0.1:5000` y carga los servicios automáticamente.
-- Si falla la carga del catálogo, comprobar el servidor y su acceso a MySQL, y utilizar **Reconectar** en el generador.
-- Ejecutar `OperatorSystem` con **Run Project** e iniciar sesión con una cuenta habilitada; después seleccionar su asignación. Utiliza el servidor configurado (por defecto `127.0.0.1:5000`), consulta su turno activo y habilita el llamado si está libre. **Actualizar asignaciones** vuelve a consultar la lista y el estado de la selección conservada.
-- Para atender, utilizar **Llamar siguiente**, **Iniciar atención** y **Finalizar atención**, en ese orden. Al confirmar que la asignación quedó libre, se habilita un nuevo llamado.
-- El cliente del operador espera hasta 15 segundos por una respuesta. Una espera agotada no demuestra que el llamado haya fallado; la pantalla intenta consultar el estado guardado.
-- Los parámetros de zona horaria permiten convertir los `TIMESTAMP` entre la sesión MySQL y la zona de Java. La configuración es necesaria para comparar correctamente el inicio de las asignaciones.
-- Ejecutar `QueueDisplayScreen` con **Run Project**. Se suscribe a los avisos del servidor configurado (por defecto `127.0.0.1:5000`), consulta los datos iniciales y muestra su estado de conexión. Si CoreServer se detiene, conserva los datos anteriores y vuelve a suscribirse y sincronizarse cuando está disponible; no requiere presionar botones. El canal de avisos espera hasta 25 segundos por un mensaje y las consultas de datos hasta 15 segundos por una respuesta.
-
-## Comprobaciones realizadas
-
-La [verificación de instalación limpia](pruebas/QA_instalacion_2026-11-12.md) comprobó el esquema, los datos iniciales, CredentialSetup, el recorrido de las aplicaciones por TLS y clientes en procesos separados contra MySQL local. No sustituye el ensayo entre computadoras.
-
-- Registro de un turno regular y consulta de su fila y consecutivo en MySQL.
-- Continuación de la numeración después de reiniciar `CoreServer`.
-- Registro de un turno preferencial y comprobación de su prioridad en MySQL.
-- Consecutivos independientes por servicio: Información general y Trámites.
-- Generación desde dos ejecuciones de `CostumerTurn` conectadas al mismo servidor, con códigos distintos.
-- Carga de asignaciones activas desde MySQL después de configurar la conversión horaria.
-- Llamado preferencial de A003 desde la asignación 2 y comprobación de su estado `LLAMADO`, asignación y fecha en MySQL.
-- Confirmación de un llamado desde la ventanilla mixta y rechazo de otro mientras la asignación sigue ocupada.
-- Recuperación de A003 en la pantalla del operador tras perder su confirmación, con el botón de llamado deshabilitado.
-- Inicio y finalización de A003 desde OperatorSystem. La consulta posterior en MySQL mostró `FINALIZADO`, la asignación 2 y las fechas de creación, llamado, inicio y fin. Entre el inicio y el fin transcurrieron 27 segundos.
-- Tras finalizar A003, la ventanilla preferencial quedó libre y respondió que no había turnos compatibles, sin tomar los regulares pendientes.
-- Comprobaciones del protocolo con repositorios en memoria y del FXML y tareas de interfaz con respuestas simuladas, incluida la recuperación tras una confirmación perdida.
-- Comprobaciones adicionales del ciclo con JDBC simulado y de la interfaz con respuestas simuladas: estados permitidos, identificadores incorrectos, conservación de fechas, reversión ante fallos, bloqueo de controles y recuperación de un inicio con confirmación perdida. Estas simulaciones no sustituyen las pruebas de concurrencia ni de fallos contra MySQL real.
-- Visualización de datos persistidos en la pantalla pública, con ventanilla, estado y fecha de llamado.
-- Generación de A006 preferencial desde CostumerTurn y aparición automática antes de los regulares. Llamado desde la ventanilla 2, salida de la lista de espera y actualización a último llamado. Inicio y finalización desde OperatorSystem reflejados automáticamente en la pantalla pública.
-- Detención y reinicio de CoreServer manteniendo abierta la pantalla pública: aviso de datos desactualizados, conservación de las filas y del reloj, y recuperación automática de la conexión.
-
-- Actualización por eventos al generar preferenciales y al llamar, iniciar y finalizar A007 desde la ventanilla 2. Se observó una demora aproximada de medio segundo a un segundo; es una observación manual, no una medición de rendimiento bajo carga.
-- Recuperación del canal de notificaciones al detener y reiniciar CoreServer, con conservación de los datos y del reloj.
-- Dos instancias de QueueDisplayScreen recibieron el mismo turno generado y mostraron los mismos datos automáticamente.
-- Comprobaciones adicionales con sockets locales y repositorios en memoria: suscripción de varias pantallas, avisos después de operaciones exitosas, ausencia de avisos ante rechazos, latidos sin consultas de datos, cambios durante la sincronización inicial y recuperación tras desconexión. Estas comprobaciones no acceden a MySQL.
-
-La prueba coordinada del 4 de noviembre de 2026 liberó dos solicitudes de llamado con una separación de 0,326 ms. La ventanilla 2 recibió A008 y la 1 recibió A009. Las consultas posteriores mediante CoreServer y phpMyAdmin confirmaron dos turnos distintos, prioridad preferencial, estado LLAMADO y asignaciones correctas. La consulta de ventanillas con más de un turno activo devolvió cero filas. El procedimiento, la herramienta y el resultado están en [pruebas/README.md](pruebas/README.md). Quedan por ampliar los escenarios concurrentes y comprobar la recuperación ante fallos de transacción.
-
-## Continuación
-
-Quedan pendientes la administración de servicios y ventanillas, las pruebas entre computadoras. Los bloques se incorporan sin alterar el historial existente.
-
-El acceso, los permisos, la pausa, el rellamado, las cinco consultas y la administración de personas y la gestión de habilitaciones/asignaciones ya están implementados. El esquema y los datos iniciales están incluidos; su aplicación a la base compartida debe coordinarse con el equipo.
-
-La revisión de QA local se documenta en [pruebas/QA_2026-11-12.md](pruebas/QA_2026-11-12.md). Las tres herramientas de concurrencia ya utilizan sesiones propias por funcionario, con inicio y cierre de sesión. Su [ejecución](pruebas/README.md) y [validación](pruebas/QA_herramientas_2026-11-12.md) están documentadas.
-
-Se mantienen pendientes la medición del rendimiento con la base remota, la revisión de las fechas anteriores al ajuste horario y la actualización de diagramas, documento técnico y presentación. Los tiempos de una base local no sustituyen mediciones en el servidor compartido. La validación local y el ensayo posterior en la base compartida del rellamado están en [pruebas/QA_rellamado_2026-11-12.md](pruebas/QA_rellamado_2026-11-12.md).
+Faltan integrar y comprobar la administración de servicios y ventanillas, realizar el ensayo físico entre computadoras y medir el rendimiento con la base remota. También quedan la revisión de fechas históricas anteriores al ajuste horario y el cierre del documento técnico, la presentación y el paquete de entrega. Los diagramas deberán contrastarse con la integración final.

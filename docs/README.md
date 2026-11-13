@@ -1,56 +1,49 @@
 # Documentación del proyecto
 
-Documento editable en Word: [borrador del documento técnico](Documento_tecnico_Gestion_de_Turnos_APA7_borrador.docx).
+El [documento técnico editable en Word](Documento_tecnico_Gestion_de_Turnos_APA7_borrador.docx) reúne la portada institucional, los integrantes y la explicación del sistema. Conserva el formato APA 7 en el cuerpo, tablas, figuras y referencias. Continúa como borrador hasta completar los aportes, las conclusiones y el contraste de la integración final.
 
-El Word incluye la portada institucional y los integrantes confirmados, con el cuerpo, las tablas, las figuras y las referencias adaptados a APA 7. El [documento técnico en Markdown](documento_tecnico.md) conserva el desarrollo de los apartados 3 a 12. Los aportes y las conclusiones siguen pendientes del cierre de la integración.
+El [documento técnico en Markdown](documento_tecnico.md) contiene los apartados 3 a 12 como apoyo de consulta. El Word es el documento académico de entrega. Los diagramas se conservan en [formatos editables y exportados](diagramas/README.md).
 
-Este trabajo sigue los catorce apartados de la sección 23.C del enunciado. El borrador se completa por bloques; la versión de referencia inicial es `cc9405e`.
+## Material del entregable
 
-## Estado de los apartados
+| Material | Ubicación |
+| --- | --- |
+| Enunciado original | [Proyecto de Programación III](enunciado/Proyecto_Programacion_III.pdf) |
+| Documento técnico | [Word](Documento_tecnico_Gestion_de_Turnos_APA7_borrador.docx) y [consulta en Markdown](documento_tecnico.md) |
+| Componentes y base de datos | [Diagramas y lectura de conexiones](diagramas/README.md) |
+| Creación y datos iniciales | [Esquema](../database/script%20borrador.sql) y [datos de prueba](../database/datos_prueba.sql) |
+| Actualización de bases existentes | [Migraciones](../database/migraciones) |
+| Configuración y ejecución | [Instalación](../INSTALACION.md) y [red y TLS](../RED_Y_TLS.md) |
+| Pruebas reproducibles | [Procedimientos de concurrencia](../pruebas/README.md) |
+
+## Apartados del documento técnico
+
+La sección 23.C del enunciado solicita catorce apartados:
 
 | N.º | Apartado | Estado |
 | --- | --- | --- |
-| 1 | Portada | Preparada en Word: Universidad Nacional, Sede Regional Brunca, Campus Coto; EIF206 Programación III, Grupo 95 (NRC 50891); Juan Gamboa Abarca; 13 de noviembre de 2026. |
-| 2 | Integrantes | Incorporados en Word: John Perez Quesada, Joe Sandoval Diaz y Joshua Barrantes Granados. |
-| 3 | Descripción del problema | Redactado en el primer bloque. |
-| 4 | Descripción general de la solución | Redactado; revisar alcance al integrar servicios y ventanillas. |
-| 5 | Arquitectura utilizada | Redactado; contrastar después de la integración. |
+| 1 | Portada | Incorporada en Word. |
+| 2 | Integrantes | Incorporados en Word. |
+| 3 | Descripción del problema | Redactado. |
+| 4 | Descripción general de la solución | Redactado. |
+| 5 | Arquitectura utilizada | Redactado. |
 | 6 | Diagrama general de componentes | Preparado, con lectura y archivo editable. |
-| 7 | Diseño de la base de datos | Preparado: diez tablas, once relaciones y sus reglas; revisar tras integrar servicios/ventanillas. |
+| 7 | Diseño de la base de datos | Preparado: diez tablas y once relaciones. |
 | 8 | Descripción de los patrones utilizados | Redactado: MVC, Repository y publicación/suscripción. |
-| 9 | Explicación del mecanismo de comunicación | Redactado: protocolo, TLS, sesión, avisos y confirmaciones inciertas. |
-| 10 | Explicación del uso de hilos | Redactado: servidor, clientes, JavaFX y recursos compartidos. |
-| 11 | Explicación del control de concurrencia | Redactado; contrastar la integración de servicios/ventanillas. |
-| 12 | Instrucciones para ejecutar el sistema | Redactado: instalación, NetBeans, demostración y recuperación; revalidar al integrar servicios/ventanillas. |
-| 13 | Distribución del trabajo realizado por cada integrante | Pendiente de contrastar los aportes reales. |
-| 14 | Conclusiones | Se redactarán al cerrar la integración. |
+| 9 | Explicación del mecanismo de comunicación | Redactado: protocolo, TLS, sesiones y avisos. |
+| 10 | Explicación del uso de hilos | Redactado. |
+| 11 | Explicación del control de concurrencia | Redactado. |
+| 12 | Instrucciones para ejecutar el sistema | Redactado, con instalación y demostración. |
+| 13 | Distribución del trabajo realizado por cada integrante | Pendiente de completar con los aportes reales. |
+| 14 | Conclusiones | Pendiente del cierre de la integración. |
 
-## Orden de continuación
+Los apartados técnicos y los diagramas deben contrastarse después de integrar la administración de servicios y ventanillas. La presentación sigue pendiente. El ensayo entre computadoras y el rendimiento remoto se mantienen como comprobaciones pendientes; ejecutar varios procesos en una sola computadora no los sustituye.
 
-1. **Problema, solución y arquitectura:** apartados 3 a 5, preparados en el borrador actual.
-2. **Diagramas y datos:** apartados 6 y 7, preparados en [diagramas](diagramas/README.md), con archivos editables y lectura de conexiones.
-3. **Decisiones técnicas:** apartados 8 a 11 redactados, con ejemplos del código y sus motivos; contrastar tras integrar a Joshua.
-4. **Ejecución y comprobación:** apartado 12 redactado; escenario propuesto y referencias a las pruebas existentes.
-5. **Cierre:** portada e integrantes preparados; completar los apartados 13 y 14 después de contrastar los aportes y el resultado final.
-6. **Presentación y defensa:** material visual, recorrido y explicación individual.
-7. **Paquete de entrega:** revisión de archivos, scripts, instrucciones y ausencia de secretos.
+## Guías de operación
 
-Los diagramas requeridos son el general de componentes y el de base de datos. Un UML de clases es material complementario; no reemplaza ninguno de ellos.
+- [Acceso y sesiones](../database/INICIALIZAR_ACCESO.md).
+- [Personas y credenciales](../database/ADMINISTRAR_PERSONAS.md).
+- [Habilitaciones y asignaciones](../database/CONFIGURAR_ATENCION.md).
+- [Rellamado](../database/RELLAMADO.md).
 
-## Fuentes que ya existen
-
-- [Descripción y estado del sistema](../README.md).
-- [Instalación en NetBeans](../INSTALACION.md).
-- [Configuración de red y TLS](../RED_Y_TLS.md).
-- [Esquema actual](../database/script%20borrador.sql), [datos iniciales](../database/datos_prueba.sql) y [migraciones](../database/migraciones).
-- [Acceso](../database/INICIALIZAR_ACCESO.md), [Personas](../database/ADMINISTRAR_PERSONAS.md), [Asignaciones](../database/CONFIGURAR_ATENCION.md) y [rellamado](../database/RELLAMADO.md).
-- [Procedimientos de concurrencia](../pruebas/README.md) y [verificación de instalación limpia](../pruebas/QA_instalacion_2026-11-12.md).
-
-Cada informe QA conserva el alcance de su versión. Los casos repetidos de regresión no se suman como escenarios nuevos. El ensayo entre computadoras y la medición con la base remota siguen pendientes. La administración de servicios y ventanillas se documentará como integrada cuando se reciba y compruebe el bloque de Joshua.
-
-## Contraste de la base exportada
-
-La [revisión de la exportación](revision_exportacion_bd.md) encontró coincidencia de tablas y relaciones, pero ausencia de CHECK y opciones de varias tablas. La exportación contiene credenciales y no se incorpora al repositorio. El esquema versionado sigue siendo la referencia del entregable.
-
-Los datos de portada e integrantes ya están confirmados. Se conservaron los nombres tal como aparecen en la identificación del grupo. No se atribuyen aportes definitivos ni se redactan conclusiones de cierre antes de integrar el trabajo restante.
-
+Las configuraciones privadas, los almacenes TLS y las exportaciones con credenciales no forman parte del entregable. Para una instalación nueva se utilizan el esquema y los datos iniciales versionados.
