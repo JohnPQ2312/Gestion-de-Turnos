@@ -9,6 +9,7 @@
  <center><TabPane tabClosingPolicy="UNAVAILABLE">
   <tabs>
    <Tab text="Servicios"><fx:include fx:id="services" source="services.fxml"/></Tab>
+   <Tab text="Ventanillas"><fx:include fx:id="windows" source="windows.fxml"/></Tab>
   </tabs>
  </TabPane></center>
 </BorderPane>
