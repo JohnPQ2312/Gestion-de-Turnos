@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="componentes" name="componentes">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1500" pageHeight="1080">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="e0" edge="1" parent="1" source="generator" target="server" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#647b85;strokeWidth=2;endArrow=block;dashed=0;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1.0;entryX=0.16379310344827586;entryY=0.0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="255" y="340" />
+              <mxPoint x="360" y="340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="operator" target="server" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#647b85;strokeWidth=2;endArrow=block;dashed=0;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1.0;entryX=0.5;entryY=0.0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="display" target="server" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#647b85;strokeWidth=2;endArrow=block;dashed=0;jumpStyle=arc;jumpSize=10;exitX=0.24390243902439024;exitY=1.0;entryX=0.8362068965517241;entryY=0.0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="server" target="display" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#647b85;strokeWidth=2;endArrow=block;dashed=1;jumpStyle=arc;jumpSize=10;exitX=0.9655172413793104;exitY=0.0;entryX=0.6097560975609756;entryY=1.0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="server" target="mysql" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=0;strokeColor=#647b85;strokeWidth=2;endArrow=block;dashed=0;jumpStyle=arc;jumpSize=10;exitX=0.5;exitY=1.0;entryX=0.5;entryY=0.0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="generator" value="CostumerTurn" style="swimlane;html=0;startSize=40;horizontal=1;rounded=0;fillColor=#006d66;swimlaneFillColor=#ffffff;strokeColor=#647b85;fontColor=#ffffff;fontFamily=Segoe UI;fontSize=21;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="50" y="130" width="410" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="generator-body" value="JavaFX / controlador / cliente de red&#10;Catálogo y generación de turnos" style="text;html=0;align=left;verticalAlign=top;fontFamily=Segoe UI;fontSize=18;fontColor=#193540;spacingLeft=14;spacingTop=7;" vertex="1" parent="generator">
+          <mxGeometry x="0" y="40" width="410" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="operator" value="OperatorSystem" style="swimlane;html=0;startSize=40;horizontal=1;rounded=0;fillColor=#006d66;swimlaneFillColor=#ffffff;strokeColor=#647b85;fontColor=#ffffff;fontFamily=Segoe UI;fontSize=21;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="545" y="130" width="410" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="operator-body" value="JavaFX / controladores / clientes de red&#10;Acceso, atención y administración" style="text;html=0;align=left;verticalAlign=top;fontFamily=Segoe UI;fontSize=18;fontColor=#193540;spacingLeft=14;spacingTop=7;" vertex="1" parent="operator">
+          <mxGeometry x="0" y="40" width="410" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="display" value="QueueDisplayScreen" style="swimlane;html=0;startSize=40;horizontal=1;rounded=0;fillColor=#006d66;swimlaneFillColor=#ffffff;strokeColor=#647b85;fontColor=#ffffff;fontFamily=Segoe UI;fontSize=21;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="130" width="410" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="display-body" value="JavaFX / DisplayRefreshService&#10;Llamados, espera y reloj" style="text;html=0;align=left;verticalAlign=top;fontFamily=Segoe UI;fontSize=18;fontColor=#193540;spacingLeft=14;spacingTop=7;" vertex="1" parent="display">
+          <mxGeometry x="0" y="40" width="410" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="server" value="CoreServer" style="swimlane;html=0;startSize=40;horizontal=1;rounded=0;fillColor=#193540;swimlaneFillColor=#ffffff;strokeColor=#647b85;fontColor=#ffffff;fontFamily=Segoe UI;fontSize=21;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="170" y="440" width="1160" height="154" as="geometry" />
+        </mxCell>
+        <mxCell id="server-body" value="TurnServer + TurnRequestHandler: conexiones, protocolo y permisos&#10;Servicios: generación, atención, rellamado, acceso, consultas y administración&#10;Repositorios JDBC: SQL parametrizado, transacciones y bloqueos&#10;DisplayEventHub: avisos posteriores a la confirmación de cambios" style="text;html=0;align=left;verticalAlign=top;fontFamily=Segoe UI;fontSize=18;fontColor=#193540;spacingLeft=14;spacingTop=7;" vertex="1" parent="server">
+          <mxGeometry x="0" y="40" width="1160" height="114" as="geometry" />
+        </mxCell>
+        <mxCell id="mysql" value="MySQL 8 / InnoDB" style="swimlane;html=0;startSize=40;horizontal=1;rounded=0;fillColor=#006d66;swimlaneFillColor=#ffffff;strokeColor=#647b85;fontColor=#ffffff;fontFamily=Segoe UI;fontSize=21;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="520" y="790" width="460" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="mysql-body" value="Diez tablas, claves y restricciones&#10;Turnos, asignaciones y credenciales" style="text;html=0;align=left;verticalAlign=top;fontFamily=Segoe UI;fontSize=18;fontColor=#193540;spacingLeft=14;spacingTop=7;" vertex="1" parent="mysql">
+          <mxGeometry x="0" y="40" width="460" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="txt0" value="Gestión de Turnos | Componentes" style="text;html=0;align=left;verticalAlign=middle;fontFamily=Segoe UI;fontSize=30;fontColor=#193540;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="6" width="558.0" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="txt1" value="Tres clientes independientes; CoreServer centraliza reglas y persistencia. Referencia: cc9405e." style="text;html=0;align=left;verticalAlign=middle;fontFamily=Segoe UI;fontSize=18;fontColor=#193540;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="54" width="1026.0" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="txt2" value="Solicitudes / respuestas" style="text;html=0;align=left;verticalAlign=middle;fontFamily=Segoe UI;fontSize=17;fontColor=#193540;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="62" y="286" width="244.79999999999998" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="txt3" value="Solicitudes autenticadas" style="text;html=0;align=left;verticalAlign=middle;fontFamily=Segoe UI;fontSize=17;fontColor=#193540;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="555" y="286" width="244.79999999999998" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="txt4" value="Snapshot" style="text;html=0;align=left;verticalAlign=middle;fontFamily=Segoe UI;fontSize=17;fontColor=#193540;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="984" y="336" width="81.6" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="txt5" value="Avisos" style="text;html=0;align=left;verticalAlign=middle;fontFamily=Segoe UI;fontSize=17;fontColor=#193540;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="1300" y="331" width="80" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="txt6" value="JDBC: lecturas y escrituras" style="text;html=0;align=left;verticalAlign=middle;fontFamily=Segoe UI;fontSize=18;fontColor=#193540;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="780" y="700" width="291.59999999999997" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="txt7" value="Líneas continuas: solicitudes y respuestas por el mismo canal; la flecha indica quién inicia la operación." style="text;html=0;align=left;verticalAlign=middle;fontFamily=Segoe UI;fontSize=17;fontColor=#193540;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="946" width="1081.2" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="txt8" value="Línea discontinua: canal persistente SUBSCRIBE_DISPLAY; el aviso provoca una nueva consulta de snapshot." style="text;html=0;align=left;verticalAlign=middle;fontFamily=Segoe UI;fontSize=17;fontColor=#193540;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="976" width="1060.8" height="27" as="geometry" />
+        </mxCell>
+        <mxCell id="txt9" value="TLS obligatorio fuera de loopback. La configuración TLS de JDBC se administra por separado." style="text;html=0;align=left;verticalAlign=middle;fontFamily=Segoe UI;fontSize=17;fontColor=#193540;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1006" width="928.1999999999999" height="27" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

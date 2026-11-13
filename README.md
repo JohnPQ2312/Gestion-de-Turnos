@@ -2,6 +2,8 @@
 
 Sistema de gestión de turnos en Java, organizado en cuatro proyectos Maven que se abren por separado en NetBeans.
 
+Documentación técnica en elaboración: [apartados y avance](docs/README.md).
+
 | Proyecto | Responsabilidad |
 | --- | --- |
 | `CoreServer` | Entidades, reglas de atención, repositorios y servidor TCP. Catálogo, generación y ciclo de atención persistente en MySQL. |
