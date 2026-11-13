@@ -16,7 +16,7 @@ El alta de un servicio o una ventanilla conserva separada la configuración de s
 - Reactivar: conserva la numeración. Si faltara la fila de consecutivo (datos anteriores), se crea a partir del mayor consecutivo usado; si no hay tickets históricos, comienza en 0.
 - El listado muestra turnos emitidos, pendientes y **rutas abiertas** (asignaciones abiertas cuyo funcionario y ventanilla tienen habilitado el servicio). Un servicio activo sin rutas se señala, porque sus turnos quedarían en espera.
 
-CostumerTurn consulta los servicios activos mediante `LIST_SERVICES`. Su botón **Actualizar servicios** permite recuperar los cambios del catálogo. Al renombrar un servicio se emite `DISPLAY_CHANGED` para que las pantallas vuelvan a consultar el nombre.
+CostumerTurn consulta los servicios activos mediante `LIST_SERVICES`. La consulta se realiza al abrir el generador. Si ya tiene servicios cargados, volver a abrirlo para incorporar cambios posteriores; el botón **Actualizar servicios** solo aparece cuando la lista está vacía. Al renombrar un servicio se emite `DISPLAY_CHANGED` para que las pantallas vuelvan a consultar el nombre.
 
 ## Ventanillas
 
@@ -64,4 +64,4 @@ Se conservan `DENIED;motivo;mensaje` y `ERROR;mensaje`. El cliente valida cantid
 
 ## Comprobaciones y alcance
 
-Los cuatro proyectos compilan con Maven. Se comprobaron las operaciones JDBC y el protocolo sobre MySQL local, y las vistas JavaFX con respuestas controladas. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) distingue esos ensayos. El recorrido integrado del catálogo sobre la base compartida y el despliegue entre computadoras siguen pendientes.
+Los cuatro proyectos compilan con Maven. Se comprobaron las operaciones JDBC y el protocolo sobre MySQL local, y las vistas JavaFX con respuestas controladas. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) distingue esos ensayos. El 13 de noviembre se comprobó el catálogo sobre la base compartida con vistas y clientes de protocolo reales: alta y edición del servicio, alta de ventanilla, habilitaciones, asignación, dos emisiones, restricciones y atención completa. El despliegue físico entre computadoras sigue pendiente.

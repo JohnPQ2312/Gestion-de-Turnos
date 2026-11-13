@@ -168,6 +168,27 @@ Después de aplicar las migraciones también se comprobó el rellamado sobre la 
 
 Las tres herramientas de esta carpeta se verificaron con el protocolo autenticado, incluyendo preparación inválida, credenciales incorrectas, identidades distintas y salida sin sesiones residuales en los casos comprobados. Los resultados locales de una misma asignación y un único turno elegible siguen separados de los ensayos remotos. Las baterías amplias utilizaron auxiliares de prueba externos y no forman una suite Maven/CI reproducible íntegramente desde este repositorio. Los casos repetidos de regresión no se cuentan como escenarios nuevos.
 
-La administración de servicios y ventanillas se comprobó con MySQL 8.0.32 local, JDK 26.0.2, destino Java 21 y JavaFX 13. Pasaron 21 comprobaciones de servidor y protocolo, diez de las vistas con respuestas controladas y 29 de regresión de Asignaciones. El cliente de catálogo también se probó por sockets contra el servidor y JDBC reales. Estos resultados corresponden a pruebas separadas de servidor e interfaz; no acreditan un recorrido integrado de las pantallas del catálogo sobre la base compartida.
+La administración de servicios y ventanillas se comprobó con MySQL 8.0.32 local, JDK 26.0.2, destino Java 21 y JavaFX 13. Pasaron 21 comprobaciones de servidor y protocolo, diez de las vistas con respuestas controladas y 29 de regresión de Asignaciones. El cliente de catálogo también se probó por sockets contra el servidor y JDBC reales. Esas cifras corresponden a pruebas separadas de servidor e interfaz. El recorrido compartido posterior se describe a continuación.
 
-Quedan pendientes ese recorrido compartido, el ensayo físico entre computadoras, la medición de rendimiento remoto y la revisión de fechas históricas anteriores al ajuste horario. Los resultados no acreditan carga prolongada ni ausencia de cualquier interbloqueo. Las herramientas de esta carpeta conectan a un servidor local y no validan por sí solas un despliegue TLS entre equipos.
+Quedan pendientes el ensayo físico entre computadoras, una medición de rendimiento bajo carga y la revisión de fechas históricas anteriores al ajuste horario. Los resultados no acreditan carga prolongada ni ausencia de cualquier interbloqueo. Las herramientas de esta carpeta conectan a un servidor local y no validan por sí solas un despliegue TLS entre equipos.
+
+
+### Recorrido del catálogo sobre la base compartida
+
+El 13 de noviembre de 2026 se ejecutó sobre MySQL 8.0.32 compartido, con JDK 26.0.2, destino Java 21 y JavaFX 13. Los cuatro módulos compilaron. Servidor y clientes se ejecutaron en una sola computadora mediante loopback; MySQL era remoto.
+
+| Comprobación | Resultado |
+| --- | --- |
+| Servicio desde la interfaz | Alta activa con consecutivo 0; edición de nombre y prefijo antes de emitir, confirmada en MySQL. |
+| Ventanilla desde la interfaz | Alta activa sin habilitaciones ni asignación implícitas. |
+| Cliente de administración | Baja y reactivación de ventanilla libre, cambios de modalidad, habilitaciones y apertura/cierre de asignación confirmados. |
+| Validaciones | Diez rechazos correctos: duplicados de código, nombre, prefijo y ventanilla; prefijo inválido; bajas incompatibles, retirada con pendientes, cambio de prefijo tras emitir y cambio de modalidad con turno activo. |
+| Generador y pantalla pública | Emisión regular y preferencial con el servicio nuevo, códigos y prioridad persistidos; llamados y finalizaciones visibles por la suscripción. |
+| Atención mediante cliente real | La exclusiva tomó primero el preferencial y dejó en espera al regular. Al cambiar a mixta se atendió el regular. Ambos terminaron FINALIZADO con fechas en orden. |
+| Cierre | Cuenta, servicio y ventanilla de QA inactivos, asignación cerrada y dos tickets finalizados. Se conservaron las mismas huellas de los 44 registros anteriores de las diez tablas. |
+
+La autenticación de QA utilizó AuthServerClient con una cuenta exclusiva autorizada. Las altas y edición indicadas, las emisiones y la vista pública se comprobaron en las pantallas reales. Los cambios de modalidad, restricciones y atención utilizaron los clientes de protocolo reales; no se acredita que todos los botones administrativos se hayan recorrido en esta sesión. No se provocaron nuevos fallos de red ni conflictos concurrentes en la base compartida.
+
+Los llamados con turno tardaron 6289 y 6154 ms de procesamiento. Cada uno abrió siete conexiones, cuyas aperturas sumaron aproximadamente 4,9 segundos. La petición sin turno tardó 6013 ms. Son observaciones del recorrido y no una prueba de carga.
+
+Una comprobación visual separada, sin MySQL ni emisión, cargó 20 servicios de ejemplo en el generador. El último fue accesible y seleccionable; el botón de generar permaneció visible. Al desplazarse por la lista también se pierde de vista temporalmente el panel preferencial. El generador abierto no incorpora automáticamente altas posteriores: se debe volver a abrir para consultar el catálogo actualizado.

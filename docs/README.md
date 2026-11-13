@@ -1,6 +1,6 @@
 # Documentación del proyecto
 
-El [documento técnico editable en Word](documento_tecnico.docx) desarrolla los catorce apartados solicitados: portada, integrantes, explicación del sistema, distribución del trabajo y conclusiones. Conserva las limitaciones y comprobaciones pendientes de la integración.
+El [documento técnico editable en Word](documento_tecnico.docx) desarrolla los catorce apartados solicitados: portada, integrantes, explicación del sistema, distribución del trabajo y conclusiones. Conserva los límites comprobados y las verificaciones pendientes del despliegue.
 
 El [documento técnico en Markdown](documento_tecnico.md) conserva una explicación ampliada de los apartados 3 a 12 como apoyo de consulta. El Word es la versión concentrada para la entrega académica. Los diagramas se conservan en [formatos editables y exportados](diagramas/README.md).
 
@@ -10,6 +10,7 @@ El [documento técnico en Markdown](documento_tecnico.md) conserva una explicaci
 | --- | --- |
 | Enunciado original | [Proyecto de Programación III](enunciado/Proyecto_Programacion_III.pdf) |
 | Documento técnico | [Word](documento_tecnico.docx) y [consulta en Markdown](documento_tecnico.md) |
+| Material para la defensa | [Presentación editable](presentacion.pptx) |
 | Componentes y base de datos | [Diagramas y lectura de conexiones](diagramas/README.md) |
 | Creación y datos iniciales | [Esquema](../database/esquema.sql) y [datos de prueba](../database/datos_prueba.sql) |
 | Actualización de bases existentes | [Migraciones](../database/migraciones) |
@@ -37,7 +38,7 @@ La sección 23.C del enunciado solicita catorce apartados:
 | 13 | Distribución del trabajo realizado por cada integrante | Incorporada en Word a partir del historial de contribuciones. |
 | 14 | Conclusiones | Incorporadas en Word, con el alcance y las verificaciones pendientes. |
 
-Los apartados técnicos incluyen la administración de servicios y ventanillas integrada. Los diagramas conservan las cuatro aplicaciones y el modelo de diez tablas, que este bloque no modifica. La presentación sigue pendiente. El ensayo entre computadoras y el rendimiento remoto se mantienen como comprobaciones pendientes; ejecutar varios procesos en una sola computadora no los sustituye.
+Los apartados técnicos incluyen la administración de servicios y ventanillas integrada. Los diagramas conservan las cuatro aplicaciones y el modelo de diez tablas, que este bloque no modifica. La presentación editable acompaña el documento técnico. El ensayo entre computadoras y el rendimiento remoto se mantienen como comprobaciones pendientes; ejecutar varios procesos en una sola computadora no los sustituye.
 
 ## Guías de operación
 

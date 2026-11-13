@@ -37,6 +37,7 @@ Las operaciones de red se ejecutan en segundo plano. Si una escritura pierde su 
 ## Documentación y pruebas
 
 - [Documento técnico y diagramas](docs/README.md).
+- [Presentación para la defensa](docs/presentacion.pptx).
 - [Enunciado del proyecto](docs/enunciado/Proyecto_Programacion_III.pdf).
 - [Acceso y sesiones](database/INICIALIZAR_ACCESO.md).
 - [Administración de personas](database/ADMINISTRAR_PERSONAS.md).
@@ -47,6 +48,10 @@ Las operaciones de red se ejecutan en segundo plano. Si una escritura pierde su 
 
 Se comprobaron instalación, recorrido de atención, concurrencia, permisos, administración, notificaciones y transporte TLS en entornos locales. También hay comprobaciones funcionales de generación, llamado y rellamado sobre la base compartida. Los procedimientos de pruebas distinguen ese alcance del despliegue entre computadoras.
 
-## Alcance pendiente
+## Verificación y límites
 
-Quedan pendientes el recorrido integrado de la administración de servicios y ventanillas sobre la base compartida, el ensayo físico entre computadoras y la medición del rendimiento remoto. La administración del catálogo ya está integrada y comprobada en local. También faltan la revisión de fechas históricas anteriores al ajuste horario y el cierre del documento técnico, la presentación y el paquete de entrega.
+El 13 de noviembre se comprobó el catálogo sobre la base compartida: altas y edición desde las vistas, emisión regular y preferencial, restricciones administrativas, modalidades de atención y finalización de ambos turnos. La prueba combinó interfaces reales y clientes de protocolo. Los registros previos se conservaron. El resumen de pruebas precisa ese alcance.
+
+Siguen pendientes el ensayo físico entre computadoras, la medición de rendimiento bajo carga y la revisión de fechas históricas anteriores al ajuste horario. Dos llamados del recorrido remoto tardaron aproximadamente 6,2 segundos de procesamiento. Estos tiempos no equivalen a la demora de actualización visual ni garantizan un máximo.
+
+CostumerTurn carga el catálogo al abrirse. Para incorporar cambios posteriores, volver a abrir el generador; el botón «Actualizar servicios» aparece cuando la consulta devuelve una lista vacía. Una lista larga permite desplazamiento, aunque también desplaza el panel de atención preferencial.

@@ -1,6 +1,6 @@
 # Sistema distribuido de Gestión de Turnos
 
-Descripción técnica de los apartados 3 a 12 del [enunciado](enunciado/Proyecto_Programacion_III.pdf). El [documento editable en Word](documento_tecnico.docx) incorpora también la portada y los integrantes; el [índice documental](README.md) indica los apartados pendientes.
+Descripción técnica de los apartados 3 a 12 del [enunciado](enunciado/Proyecto_Programacion_III.pdf). El [documento editable en Word](documento_tecnico.docx) incorpora también la portada y los integrantes; el [índice documental](README.md) reúne los archivos de entrega.
 
 ## 3. Descripción del problema
 
@@ -302,7 +302,7 @@ Las operaciones publican el aviso público después de confirmar el cambio. Las 
 
 Se comprobaron emisiones y llamados concurrentes, solicitudes sobre una misma asignación, rollback y conflictos de pausa, rellamado y administración. Los [procedimientos de pruebas](../pruebas/README.md#comprobaciones-y-límites) distinguen las comprobaciones locales de las realizadas sobre la base compartida y explican cómo ejecutar las tres herramientas de concurrencia.
 
-Los casos de regresión repetidos no se suman como pruebas diferentes. Las pruebas del catálogo incluyen JDBC y protocolo sobre MySQL local, vistas con respuestas controladas y regresión de Asignaciones. Siguen pendientes el recorrido integrado del catálogo sobre la base compartida, el ensayo físico entre computadoras y la medición del rendimiento remoto. Los resultados no acreditan carga prolongada ni ausencia de cualquier interbloqueo.
+Los casos de regresión repetidos no se suman como pruebas diferentes. Las pruebas del catálogo incluyen JDBC y protocolo sobre MySQL local, vistas con respuestas controladas y regresión de Asignaciones. El 13 de noviembre se comprobó el catálogo sobre la base compartida mediante vistas y clientes de protocolo reales, incluyendo dos emisiones, restricciones y atención completa. Siguen pendientes el ensayo físico entre computadoras y una medición de rendimiento bajo carga. Los resultados no acreditan carga prolongada ni ausencia de cualquier interbloqueo.
 
 ### Ubicación del código explicado
 
@@ -378,4 +378,4 @@ Para una prueba coordinada de concurrencia, dejar libres las asignaciones 1 y 2 
 
 Al terminar, cerrar las aplicaciones cliente y detener CoreServer. Cerrar sesión revoca el token cuando el servidor confirma; si falla el aviso de salida, la sesión vence según su política. Cerrar una ventana no finaliza por sí solo un ticket activo ni elimina su historial: completar la atención antes del cierre cuando corresponda.
 
-El cierre del entregable requiere registrar el recorrido integrado del catálogo sobre la base compartida y el ensayo de despliegue entre computadoras. La distribución del trabajo y las conclusiones se incluyen en el documento Word.
+El recorrido compartido del catálogo quedó registrado en los procedimientos de pruebas. El ensayo físico entre computadoras sigue pendiente. La distribución del trabajo y las conclusiones se incluyen en el documento Word; el material para la defensa está en [presentacion.pptx](presentacion.pptx).
