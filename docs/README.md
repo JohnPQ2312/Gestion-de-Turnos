@@ -19,7 +19,7 @@ Este trabajo sigue los catorce apartados de la sección 23.C del enunciado. El b
 | 9 | Explicación del mecanismo de comunicación | Redactado: protocolo, TLS, sesión, avisos y confirmaciones inciertas. |
 | 10 | Explicación del uso de hilos | Redactado: servidor, clientes, JavaFX y recursos compartidos. |
 | 11 | Explicación del control de concurrencia | Redactado; contrastar la integración de servicios/ventanillas. |
-| 12 | Instrucciones para ejecutar el sistema | Pendiente de resumir la guía existente. |
+| 12 | Instrucciones para ejecutar el sistema | Redactado: instalación, NetBeans, demostración y recuperación; revalidar al integrar servicios/ventanillas. |
 | 13 | Distribución del trabajo realizado por cada integrante | Pendiente de contrastar los aportes reales. |
 | 14 | Conclusiones | Se redactarán al cerrar la integración. |
 
@@ -28,7 +28,7 @@ Este trabajo sigue los catorce apartados de la sección 23.C del enunciado. El b
 1. **Problema, solución y arquitectura:** apartados 3 a 5, preparados en el borrador actual.
 2. **Diagramas y datos:** apartados 6 y 7, preparados en [diagramas](diagramas/README.md), con archivos editables y lectura de conexiones.
 3. **Decisiones técnicas:** apartados 8 a 11 redactados, con ejemplos del código y sus motivos; contrastar tras integrar a Joshua.
-4. **Ejecución y comprobación:** apartado 12 y escenario de demostración, reutilizando los procedimientos existentes.
+4. **Ejecución y comprobación:** apartado 12 redactado; escenario propuesto y referencias a las pruebas existentes.
 5. **Identificación y cierre:** apartados 1, 2, 13 y 14.
 6. **Presentación y defensa:** material visual, recorrido y explicación individual.
 7. **Paquete de entrega:** revisión de archivos, scripts, instrucciones y ausencia de secretos.
@@ -49,3 +49,5 @@ Cada informe QA conserva el alcance de su versión. Los casos repetidos de regre
 ## Contraste de la base exportada
 
 La [revisión de la exportación](revision_exportacion_bd.md) encontró coincidencia de tablas y relaciones, pero ausencia de CHECK y opciones de varias tablas. La exportación contiene credenciales y no se incorpora al repositorio. El esquema versionado sigue siendo la referencia del entregable.
+
+La identificación de portada e integrantes queda pendiente de los nombres completos, sede y grupo que John confirmará. No se atribuyen aportes definitivos ni se redactan conclusiones de cierre antes de integrar el trabajo restante.

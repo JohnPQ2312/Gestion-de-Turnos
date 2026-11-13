@@ -1,6 +1,6 @@
 # Sistema distribuido de Gestión de Turnos
 
-Documento técnico en elaboración. Este borrador desarrolla los apartados 3 a 11 de la estructura solicitada. Versión de referencia: `cc9405e`. La [lista de apartados y su estado](README.md) identifica el contenido restante.
+Documento técnico en elaboración. Este borrador desarrolla los apartados 3 a 12 de la estructura solicitada. Versión de referencia: `cc9405e`. La [lista de apartados y su estado](README.md) identifica el contenido restante.
 
 ## 3. Descripción del problema
 
@@ -306,3 +306,73 @@ Los casos de regresión repetidos no se suman como pruebas diferentes. Estos res
 - [Controlador del generador](../CostumerTurn/src/main/java/cr/ac/una/costumerturn/controller/TicketsGeneratorController.java), [contrato de creación](../CoreServer/src/main/java/cr/ac/una/repository/TicketCreationRepository.java) y [repositorio JDBC](../CoreServer/src/main/java/cr/ac/una/repository/JdbcTicketCreationRepository.java).
 - [Servidor y ejecutor](../CoreServer/src/main/java/cr/ac/una/server/TurnServer.java), [centro de avisos](../CoreServer/src/main/java/cr/ac/una/server/DisplayEventHub.java) y [escucha pública](../QueueDisplayScreen/src/main/java/cr/ac/una/QueueDisplayScreen/service/DisplayRefreshService.java).
 - [Llamado](../CoreServer/src/main/java/cr/ac/una/repository/JdbcTicketCallingRepository.java), [ciclo](../CoreServer/src/main/java/cr/ac/una/repository/JdbcTicketLifecycleRepository.java), [rellamado](../CoreServer/src/main/java/cr/ac/una/repository/JdbcTicketRecallRepository.java) y [bloqueo administrativo](../CoreServer/src/main/java/cr/ac/una/repository/RoutingConfigurationLock.java).
+
+## 12. Instrucciones para ejecutar el sistema
+
+La ejecución habitual se realiza desde NetBeans. No requiere iniciar las cuatro aplicaciones mediante comandos de consola. La [guía de instalación](../INSTALACION.md) desarrolla la preparación; este apartado reúne el orden de ejecución y el recorrido de demostración.
+
+### Preparación del entorno
+
+1. Disponer de JDK 21 o superior, NetBeans con soporte Maven y MySQL 8. Abrir por separado los proyectos CoreServer, CostumerTurn, OperatorSystem y QueueDisplayScreen. Maven necesita acceso a sus dependencias si aún no están en la caché. Los tres clientes incorporan JavaFX 13 mediante sus dependencias.
+2. Para una instalación nueva, crear y seleccionar una base vacía, ejecutar [el esquema](../database/script%20borrador.sql) y después [los datos iniciales](../database/datos_prueba.sql). No ejecutar además las migraciones sobre ese esquema nuevo. Para una base existente, revisar su versión y aplicar solo las migraciones que correspondan, conservando los datos.
+3. Crear `CoreServer/src/main/resources/db.properties` con la URL JDBC, el usuario y la contraseña del entorno. Conservar `connectionTimeZone=SERVER&preserveInstants=true` en la URL. Los clientes no necesitan este archivo ni credenciales MySQL.
+4. Compilar CoreServer y ejecutar `cr.ac.una.config.CredentialSetup` mediante **Run File** para preparar las contraseñas de `admin`, `amora` y `lvargas` en la base nueva. Esos usuarios vienen en los datos iniciales, sin contraseña. El procedimiento está en [la guía de acceso](../database/INICIALIZAR_ACCESO.md).
+5. Compilar los cuatro proyectos. La configuración privada, las contraseñas y los almacenes TLS no se incluyen en Git ni en las capturas de la demostración.
+
+La instalación nueva prepara diez tablas, cinco funcionarios, tres servicios, cuatro ventanillas, tres asignaciones abiertas y cero tickets. El administrador inicial no tiene una asignación de atención. Estos datos corresponden al seed, no a los nombres o al estado actual de la base compartida.
+
+La exportación privada revisada no sustituye esta instalación: omite restricciones y no contiene un ADMIN activo con credencial. Su [contraste](revision_exportacion_bd.md) explica las diferencias. No se restaura sobre la base compartida para preparar una demostración.
+
+### Conexión local y entre computadoras
+
+Para ejecutar todo en una misma computadora se puede conservar la configuración predeterminada `127.0.0.1:5000`, sin crear `network.properties`. CoreServer debe estar escuchando en ese puerto y los clientes deben utilizar el mismo destino.
+
+Para comunicar computadoras, configurar host, puerto, dirección de escucha y TLS según [RED_Y_TLS.md](../RED_Y_TLS.md), usando los archivos de ejemplo de cada proyecto. El nombre o IP del servidor debe coincidir con el certificado. Reiniciar las aplicaciones después de cambiar la configuración. El modo TLS de los clientes no configura automáticamente la conexión JDBC.
+
+El despliegue entre computadoras debe ensayarse en la red elegida; no se considera comprobado por ejecutar varios procesos en una sola computadora.
+
+### Orden de arranque en NetBeans
+
+| Orden | Acción | Resultado que debe observarse |
+| --- | --- | --- |
+| 1 | Ejecutar CoreServer con `cr.ac.una.CoreServer.App`. | La consola informa el puerto de escucha. Mantener el servidor ejecutándose. |
+| 2 | Ejecutar QueueDisplayScreen con **Run Project**. | Estado conectado, reloj en marcha y listas inicialmente vacías si la base es nueva. |
+| 3 | Ejecutar OperatorSystem e ingresar como `amora`. | Asignación propia de funcionario 1 a ventanilla 1. |
+| 4 | Abrir otra ejecución de OperatorSystem e ingresar como `lvargas`. | Asignación propia de funcionario 2 a ventanilla 2. |
+| 5 | Ejecutar CostumerTurn con **Run Project**. | Catálogo con Información general, Trámites y Pagos. |
+
+Una pantalla conectada no prueba por sí sola el funcionamiento de MySQL. Generar y consultar un turno permite comprobar el recorrido completo. No es necesario volver a ejecutar CredentialSetup en cada arranque.
+
+### Recorrido de demostración
+
+El siguiente procedimiento utiliza la base nueva del seed, sin otras emisiones ni cambios administrativos durante su preparación. Si se usa otra base, registrar sus códigos y asignaciones reales: reiniciar CoreServer no reinicia los consecutivos.
+
+| Paso | Acción | Comprobación esperada |
+| --- | --- | --- |
+| 1 | Generar, en este orden, Información general regular, Información general preferencial, Trámites regular y Pagos regular. | A001 regular, A002 preferencial, B001 y C001. La pantalla pública recibe los turnos automáticamente. |
+| 2 | Llamar primero desde la ventanilla 1 y después desde la 2, ambas libres. | La primera recibe A002 preferencial y la segunda A001 regular; son dos tickets diferentes y cada funcionario conserva el suyo. |
+| 3 | Rellamar A002; pausar y reanudar su ventanilla antes de continuar. | El mismo código aumenta su contador y se actualiza en la pantalla. En pausa el rellamado se deshabilita; al reanudar vuelve a permitirse mientras siga LLAMADO. |
+| 4 | Iniciar ambas atenciones y finalizarlas desde sus respectivas ventanas. | Cada turno sigue su propio ciclo, se conserva el historial y ambas asignaciones quedan libres. |
+| 5 | Llamar B001 desde la ventanilla 1 y C001 desde la 2; iniciar y finalizar sus atenciones. | Se atienden servicios diferentes, compatibles con el funcionario y la ventanilla correspondientes. |
+| 6 | Ingresar como ADMIN y abrir Consultas con fechas que incluyan el recorrido. | Se recuperan los turnos atendidos, cantidades por funcionario/servicio y duraciones. |
+| 7 | Abrir Personas y Asignaciones como ADMIN. | Se pueden consultar los registros, habilitaciones e historial; los operadores no disponen de esos controles administrativos. |
+
+Este es el procedimiento previsto para la demostración; no constituye por sí mismo una nueva evidencia de que se ejecutaron todos sus pasos. La [instalación comprobada](../pruebas/QA_instalacion_2026-11-12.md) documenta el recorrido ya realizado y sus límites. La administración de servicios y ventanillas se añadirá a la demostración después de integrar y verificar su implementación.
+
+Para una prueba coordinada de concurrencia, dejar libres las asignaciones 1 y 2 y preparar dos preferenciales de Información general. Ejecutar la herramienta siguiendo [pruebas/README.md](../pruebas/README.md), con una cuenta propia por funcionario. El procedimiento también contiene los casos de la misma asignación y de un único turno elegible. Usar la configuración local admitida por las herramientas; esa ejecución no sustituye el ensayo entre computadoras ni comprueba por sí sola el transporte TLS del despliegue.
+
+### Recuperación de errores y cierre
+
+| Situación | Acción |
+| --- | --- |
+| No carga el catálogo | Revisar CoreServer, host/puerto, configuración JDBC y consola de errores; después utilizar Reconectar o actualizar servicios. |
+| Credenciales rechazadas | Comprobar la cuenta activa y su credencial. Diferenciar el usuario MySQL del nombre de acceso a OperatorSystem. |
+| No aparecen asignaciones | Comprobar que pertenezcan al funcionario autenticado, estén abiertas e iniciadas y sus recursos permitan la atención. Revisar la conversión horaria antes de modificar fechas. |
+| No hay turnos compatibles | Revisar la cola, servicios habilitados y modalidad. Una ventanilla exclusivamente preferencial no debe tomar regulares aunque esté libre. |
+| Falla la validación TLS | Revisar nombre/IP, certificado, confianza, rutas y contraseña del almacén. No desactivar la validación para forzar una conexión fuera de loopback. |
+| Se pierde una confirmación | Consultar el estado persistido o el historial antes de repetir. No suponer que el agotamiento de la espera implica rollback. |
+| Se detiene CoreServer | La pantalla pública conserva datos y vuelve a sincronizarse al reconectar. Las sesiones del servidor se pierden; los operadores deben iniciar sesión nuevamente. |
+
+Al terminar, cerrar las aplicaciones cliente y detener CoreServer. Cerrar sesión revoca el token cuando el servidor confirma; si falla el aviso de salida, la sesión vence según su política. Cerrar una ventana no finaliza por sí solo un ticket activo ni elimina su historial: completar la atención antes del cierre cuando corresponda.
+
+Los procedimientos describen el funcionamiento actual. El cierre del entregable requiere volver a contrastarlos tras la integración de servicios y ventanillas y registrar el ensayo de despliegue pendiente.
