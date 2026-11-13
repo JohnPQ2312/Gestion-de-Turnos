@@ -2,6 +2,7 @@ package cr.ac.una.service;
 
 import cr.ac.una.model.AdministrationActor;
 import cr.ac.una.model.ManagedService;
+import cr.ac.una.model.ManagedWindow;
 import cr.ac.una.repository.CatalogAdministrationRepository;
 import java.util.List;
 import java.util.Objects;
@@ -15,6 +16,7 @@ public class CatalogAdministrationService {
     private static final Pattern CODE = Pattern.compile("[A-Z][A-Z0-9_]{0,19}");
     private static final String PREFIX_RULE
             = "El prefijo debe tener de 1 a 5 letras mayúsculas sin tildes, sin dígitos ni espacios.";
+    private static final int MAX_WINDOW_ID = 999;
 
     private final CatalogAdministrationRepository repository;
 
@@ -40,6 +42,22 @@ public class CatalogAdministrationService {
 
     public void setServiceActive(AdministrationActor actor, String code, boolean active) {
         repository.setServiceActive(actor, storedCode(code), active);
+    }
+
+    public List<ManagedWindow> windows(AdministrationActor actor) {
+        return repository.listWindows(actor);
+    }
+
+    public void createWindow(AdministrationActor actor, int id, String mode) {
+        repository.createWindow(actor, windowId(id), mode(mode));
+    }
+
+    public void updateWindowMode(AdministrationActor actor, int id, String mode) {
+        repository.updateWindowMode(actor, windowId(id), mode(mode));
+    }
+
+    public String setWindowActive(AdministrationActor actor, int id, boolean active) {
+        return repository.setWindowActive(actor, windowId(id), active);
     }
 
     // Código de un servicio nuevo.
@@ -75,5 +93,19 @@ public class CatalogAdministrationService {
             throw new IllegalArgumentException(PREFIX_RULE);
         }
         return result;
+    }
+
+    private static int windowId(int id) {
+        if (id <= 0 || id > MAX_WINDOW_ID) {
+            throw new IllegalArgumentException("El número de ventanilla debe ser un entero entre 1 y " + MAX_WINDOW_ID + ".");
+        }
+        return id;
+    }
+
+    private static String mode(String value) {
+        if (!"MIXED".equals(value) && !"PRIORITY_ONLY".equals(value)) {
+            throw new IllegalArgumentException("Seleccione una modalidad válida: mixta o solo preferencial.");
+        }
+        return value;
     }
 }

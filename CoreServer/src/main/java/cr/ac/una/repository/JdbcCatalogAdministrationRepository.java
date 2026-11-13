@@ -4,10 +4,11 @@ import cr.ac.una.config.DatabaseConnectionFactory;
 import cr.ac.una.exception.DataAccessException;
 import cr.ac.una.model.AdministrationActor;
 import cr.ac.una.model.ManagedService;
+import cr.ac.una.model.ManagedWindow;
 import java.sql.*;
 import java.util.*;
 
-// Administración de servicios.
+// Administración de servicios y ventanillas.
 // Orden de bloqueos de las escrituras: bloqueo nombrado de configuración → fila del catálogo → lecturas de control.
 // Emisión (servicio → consecutivo) y llamado (asignación → funcionario → ventanilla → servicio → ticket)
 // esperan la fila bloqueada aquí; este recorrido no bloquea después ninguna fila que ellos tengan, así no se cruzan.
@@ -228,6 +229,129 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
         }
     }
 
+    // ---------------------------------------------------------------- ventanillas
+
+    @Override
+    public List<ManagedWindow> listWindows(AdministrationActor actor) {
+        return readOnly(actor, c -> read(c, """
+                SELECT w.window_id, w.window_state, w.attention_mode,
+                       COALESCE(a.assignment_id, 0), COALESCE(o.operator_name, ''),
+                       EXISTS(SELECT 1 FROM ticket t
+                              JOIN operator_window_assignment a2 ON a2.assignment_id = t.assignment_id
+                              WHERE a2.window_id = w.window_id AND t.ticket_state IN ('LLAMADO','EN_ATENCION')),
+                       (SELECT COUNT(*) FROM window_service ws JOIN service s ON s.service_code = ws.service_code
+                         WHERE ws.window_id = w.window_id AND s.service_state = 'ACTIVO')
+                FROM `window` w
+                LEFT JOIN operator_window_assignment a ON a.window_id = w.window_id AND a.ended_at IS NULL
+                LEFT JOIN `operator` o ON o.operator_id = a.operator_id
+                ORDER BY w.window_id
+                """, r -> new ManagedWindow(r.getInt(1), r.getString(2), r.getString(3), r.getLong(4),
+                r.getString(5), r.getBoolean(6), r.getInt(7))));
+    }
+
+    @Override
+    public void createWindow(AdministrationActor actor, int id, String mode) {
+        write(actor, "Ya existe la ventanilla " + id + ".", c -> {
+            if (exists(c, "SELECT 1 FROM `window` WHERE window_id = ?", id)) {
+                throw new IllegalStateException("Ya existe la ventanilla " + id + ".");
+            }
+            try (PreparedStatement s = c.prepareStatement(
+                    "INSERT INTO `window` (window_id, window_state, attention_mode) VALUES (?, 'ACTIVA', ?)")) {
+                s.setInt(1, id);
+                s.setString(2, mode);
+                s.executeUpdate();
+            }
+            return null;
+        });
+    }
+
+    @Override
+    public void updateWindowMode(AdministrationActor actor, int id, String mode) {
+        write(actor, null, c -> {
+            StoredWindow current = lockWindow(c, id);
+            if (current.mode().equals(mode)) return null;
+            // El llamado bloquea la ventanilla antes de elegir ticket y compara su modalidad:
+            // con la fila tomada aquí, un llamado simultáneo espera y luego rechaza el cambio.
+            if (hasActiveTicket(c, id)) {
+                throw new IllegalStateException("La ventanilla " + id + " tiene un turno llamado o en atención; "
+                        + "finalícelo antes de cambiar la modalidad.");
+            }
+            try (PreparedStatement s = c.prepareStatement("UPDATE `window` SET attention_mode = ? WHERE window_id = ?")) {
+                s.setString(1, mode);
+                s.setInt(2, id);
+                if (s.executeUpdate() != 1) throw new SQLException("No se actualizó la ventanilla esperada.");
+            }
+            return null;
+        });
+    }
+
+    @Override
+    public String setWindowActive(AdministrationActor actor, int id, boolean active) {
+        return write(actor, null, c -> {
+            StoredWindow current = lockWindow(c, id);
+            String target;
+            if (active) {
+                if (!"INACTIVA".equals(current.state())) {
+                    throw new IllegalStateException("La ventanilla " + id + " no está dada de baja (estado "
+                            + current.state() + "). La pausa la reanuda su operador desde Atención.");
+                }
+                target = "ACTIVA";
+            } else {
+                if ("INACTIVA".equals(current.state())) throw new IllegalStateException("La ventanilla " + id + " ya está dada de baja.");
+                // La apertura de asignaciones toma el mismo bloqueo nombrado: no puede abrirse una mientras se decide.
+                rejectOpenAssignment(c, id);
+                if (hasActiveTicket(c, id)) {
+                    throw new IllegalStateException("La ventanilla " + id + " tiene un turno llamado o en atención; finalícelo primero.");
+                }
+                target = "INACTIVA";
+            }
+            try (PreparedStatement s = c.prepareStatement(
+                    "UPDATE `window` SET window_state = ? WHERE window_id = ? AND window_state = ?")) {
+                s.setString(1, target);
+                s.setInt(2, id);
+                s.setString(3, current.state());
+                if (s.executeUpdate() != 1) throw new SQLException("No se actualizó el estado de la ventanilla.");
+            }
+            return target;
+        });
+    }
+
+    private record StoredWindow(String state, String mode) { }
+
+    private static StoredWindow lockWindow(Connection c, int id) throws SQLException {
+        try (PreparedStatement s = c.prepareStatement("SELECT window_state, attention_mode FROM `window` WHERE window_id = ? FOR UPDATE")) {
+            s.setInt(1, id);
+            try (ResultSet r = s.executeQuery()) {
+                if (!r.next()) throw new IllegalArgumentException("La ventanilla " + id + " no existe. Actualice el listado.");
+                return new StoredWindow(r.getString(1), r.getString(2));
+            }
+        }
+    }
+
+    private static boolean hasActiveTicket(Connection c, int windowId) throws SQLException {
+        return exists(c, """
+                SELECT 1 FROM ticket t JOIN operator_window_assignment a ON a.assignment_id = t.assignment_id
+                WHERE a.window_id = ? AND t.ticket_state IN ('LLAMADO','EN_ATENCION') LIMIT 1
+                """, windowId);
+    }
+
+    private static void rejectOpenAssignment(Connection c, int windowId) throws SQLException {
+        try (PreparedStatement s = c.prepareStatement("""
+                SELECT a.assignment_id, o.operator_name FROM operator_window_assignment a
+                JOIN `operator` o ON o.operator_id = a.operator_id
+                WHERE a.window_id = ? AND a.ended_at IS NULL
+                """)) {
+            s.setInt(1, windowId);
+            try (ResultSet r = s.executeQuery()) {
+                if (r.next()) {
+                    throw new IllegalStateException("La ventanilla " + windowId + " tiene abierta la asignación #" + r.getLong(1)
+                            + " (" + r.getString(2) + "). Ciérrela primero desde Asignaciones: si hay un turno activo "
+                            + "debe finalizarse y, si está en pausa, su operador debe reanudarla.");
+                }
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- soporte JDBC
 
     @FunctionalInterface private interface Row<T> { T map(ResultSet r) throws SQLException; }
@@ -247,7 +371,7 @@ public class JdbcCatalogAdministrationRepository implements CatalogAdministratio
         } catch (SQLException e) { throw failure(e); }
     }
 
-    // Las escrituras de servicios se serializan con los cambios de habilitaciones y asignaciones.
+    // Las escrituras del catálogo se serializan con los cambios de habilitaciones y asignaciones.
     private <T> T write(AdministrationActor actor, String duplicateMessage, Work<T> action) {
         try (Connection c = factory.openConnection(); RoutingConfigurationLock guard = new RoutingConfigurationLock(c)) {
             c.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);

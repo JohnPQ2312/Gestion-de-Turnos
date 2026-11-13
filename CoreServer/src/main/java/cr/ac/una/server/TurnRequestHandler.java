@@ -195,9 +195,9 @@ public class TurnRequestHandler {
                     if (assignmentConfiguration == null) throw new IllegalStateException("La configuración de atención no está disponible.");
                     return assignmentConfiguration.handle(envelope[2], actor);
                 }
-                if (envelope[2].startsWith("ADMIN_SERVICE_")) {
+                if (envelope[2].startsWith("ADMIN_SERVICE_") || envelope[2].startsWith("ADMIN_WINDOW_")) {
                     var actor = authService.administrationActor(envelope[1]);
-                    if (catalogAdministration == null) throw new IllegalStateException("La administración de servicios no está configurada.");
+                    if (catalogAdministration == null) throw new IllegalStateException("La administración de servicios y ventanillas no está configurada.");
                     String response = catalogAdministration.handle(envelope[2], actor);
                     // Las pantallas muestran el nombre del servicio: se refrescan tras confirmar un cambio.
                     if (response.startsWith("OK;ADMIN_SERVICE_UPDATED;")) displayEvents.publishChange();
@@ -240,7 +240,7 @@ public class TurnRequestHandler {
     // lo ignoran; los protegidos lo exigen y comprueban sus permisos.
     private String dispatch(String request, AuthenticatedUser user) {
         if (request.startsWith("ADMIN_PEOPLE_") || request.startsWith("ADMIN_ROUTING_")
-                || request.startsWith("ADMIN_SERVICE_")) authService.requireRole(user, UserRole.ADMIN);
+                || request.startsWith("ADMIN_SERVICE_") || request.startsWith("ADMIN_WINDOW_")) authService.requireRole(user, UserRole.ADMIN);
         if ("LIST_SERVICES".equals(request)) {
             return listServices();
         }
