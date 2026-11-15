@@ -1,0 +1,7 @@
+# Copiar como db.properties en esta misma carpeta y completar los valores; el archivo privado queda fuera de Git.
+# Solo CoreServer usa este archivo: los clientes acceden a los datos mediante el servidor.
+# Sustituir SERVIDOR, PUERTO y BASE por los de la base MySQL y conservar los parámetros horarios,
+# necesarios para convertir correctamente los campos TIMESTAMP entre MySQL y Java.
+db.url=jdbc:mysql://SERVIDOR:PUERTO/BASE?connectionTimeZone=SERVER&preserveInstants=true
+db.usuario=USUARIO_MYSQL
+db.clave=CONTRASENA_MYSQL

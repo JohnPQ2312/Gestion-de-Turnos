@@ -14,6 +14,10 @@
       <Label text="Ventanillas registradas" styleClass="field-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
       <Button text="Nueva ventanilla" onAction="#newWindow" minHeight="40" minWidth="-Infinity" styleClass="secondary-button"/>
      </HBox>
+     <HBox alignment="CENTER_LEFT" spacing="12">
+      <TextField fx:id="windowsFilter" promptText="Buscar por número, estado, modalidad u operador" accessibleText="Buscar en las ventanillas" HBox.hgrow="ALWAYS" maxWidth="Infinity" prefHeight="36"/>
+      <Label fx:id="windowsFilterSummary" wrapText="true" minHeight="-Infinity" prefWidth="210" maxWidth="210" styleClass="secondary-text"/>
+     </HBox>
      <TableView fx:id="windowsTable" accessibleText="Ventanillas registradas" VBox.vgrow="ALWAYS">
       <placeholder><Label text="Sin ventanillas para mostrar."/></placeholder>
      </TableView>

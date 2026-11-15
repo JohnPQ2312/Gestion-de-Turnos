@@ -1,6 +1,6 @@
 # Documentación del proyecto
 
-El [documento técnico editable en Word](documento_tecnico.docx) desarrolla los catorce apartados solicitados: portada, integrantes, explicación del sistema, distribución del trabajo y conclusiones. Conserva los límites comprobados y las verificaciones pendientes del despliegue.
+El [documento técnico editable en Word](documento_tecnico.docx) desarrolla los catorce apartados solicitados: portada, integrantes, explicación del sistema, distribución del trabajo y conclusiones. Conserva el alcance comprobado y el trabajo futuro del despliegue.
 
 El [documento técnico en Markdown](documento_tecnico.md) conserva una explicación ampliada de los apartados 3 a 12 como apoyo de consulta. El Word es la versión concentrada para la entrega académica. Los diagramas se conservan en [formatos editables y exportados](diagramas/README.md).
 
@@ -14,7 +14,7 @@ El [documento técnico en Markdown](documento_tecnico.md) conserva una explicaci
 | Componentes y base de datos | [Diagramas y lectura de conexiones](diagramas/README.md) |
 | Creación y datos iniciales | [Esquema](../database/esquema.sql) y [datos de prueba](../database/datos_prueba.sql) |
 | Actualización de bases existentes | [Migraciones](../database/migraciones) |
-| Configuración y ejecución | [Instalación](../INSTALACION.md) y [red y TLS](../RED_Y_TLS.md) |
+| Configuración y ejecución | [Instalación con la base asignada](../INSTALACION.md), [instalación con base propia](../INSTALACION_BASE_PROPIA.md) y [red y TLS](../RED_Y_TLS.md) |
 | Pruebas reproducibles | [Procedimientos de concurrencia](../pruebas/README.md) |
 
 ## Apartados del documento técnico
@@ -36,9 +36,9 @@ La sección 23.C del enunciado solicita catorce apartados:
 | 11 | Explicación del control de concurrencia | Redactado. |
 | 12 | Instrucciones para ejecutar el sistema | Redactado, con instalación y demostración. |
 | 13 | Distribución del trabajo realizado por cada integrante | Incorporada en Word a partir del historial de contribuciones. |
-| 14 | Conclusiones | Incorporadas en Word, con el alcance y las verificaciones pendientes. |
+| 14 | Conclusiones | Incorporadas en Word, con el alcance y el trabajo futuro. |
 
-Los apartados técnicos incluyen la administración de servicios y ventanillas integrada. Los diagramas conservan las cuatro aplicaciones y el modelo de diez tablas, que este bloque no modifica. La presentación editable acompaña el documento técnico. El ensayo entre computadoras y el rendimiento remoto se mantienen como comprobaciones pendientes; ejecutar varios procesos en una sola computadora no los sustituye.
+Los apartados técnicos incluyen la administración de servicios y ventanillas integrada. Los diagramas conservan las cuatro aplicaciones y el modelo de diez tablas, que esta versión no modifica. La presentación editable acompaña el documento técnico. El ensayo entre computadoras y el rendimiento remoto quedan como trabajo futuro; ejecutar varios procesos en una sola computadora no los sustituye.
 
 ## Guías de operación
 

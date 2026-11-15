@@ -4,7 +4,7 @@
 --   2. Ejecutar primero "esquema.sql" (estructura de las tablas).
 --   3. Ejecutar este archivo.
 --
--- Usar solo en una instalación nueva; no ejecutar sobre la base compartida que ya tiene
+-- Usar solo en una instalación nueva; no ejecutar sobre la base asignada que ya tiene
 -- datos (gamabasis_p3g9). Los identificadores fijos chocarían con los
 -- registros existentes. Este script es para instalaciones nuevas.
 --

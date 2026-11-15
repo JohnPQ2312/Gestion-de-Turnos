@@ -1,6 +1,6 @@
 # Diagramas del sistema
 
-Los diagramas se prepararon con el código y el esquema de `cc9405e`. La administración de servicios y ventanillas incorporada hasta `b2f5c1a` conserva los componentes lógicos, las diez tablas y sus once claves foráneas. Las vistas administrativas se ejecutan dentro de OperatorSystem y sus operaciones se procesan en CoreServer.
+Los diagramas corresponden al esquema actual: diez tablas y once claves foráneas. La administración de servicios y ventanillas conserva los componentes lógicos; sus vistas se ejecutan dentro de OperatorSystem y sus operaciones se procesan en CoreServer.
 
 | Diagrama | Vista ampliable | Imagen | Editable |
 | --- | --- | --- | --- |

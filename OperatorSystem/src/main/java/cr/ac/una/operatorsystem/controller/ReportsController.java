@@ -195,28 +195,30 @@ public class ReportsController {
     // tabla no reparte el ancho de la ventana entre las columnas: si no caben,
     // muestra desplazamiento horizontal en lugar de recortar los textos.
     private static double columnWidth(String header, List<List<String>> rows, int columnIndex) {
-        double width = textWidth(header);
+        Text measure = new Text(header);
+        measure.setFont(MEASURE_FONT);
+        double width = measure.getLayoutBounds().getWidth();
         for (List<String> row : rows) {
-            width = Math.max(width, textWidth(row.get(columnIndex)));
+            // Una columna que ya alcanzó el tope no necesita seguir midiendo filas.
+            if (width + CELL_PADDING >= MAX_COLUMN_WIDTH) return MAX_COLUMN_WIDTH;
+            measure.setText(row.get(columnIndex));
+            width = Math.max(width, measure.getLayoutBounds().getWidth());
         }
         return Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, width + CELL_PADDING));
     }
 
-    private static double textWidth(String value) {
-        Text text = new Text(value);
-        text.setFont(MEASURE_FONT);
-        return text.getLayoutBounds().getWidth();
-    }
-
     // Celda que muestra su texto completo al pasar el cursor, por si aún se recorta.
     private static final class TooltipCell extends TableCell<List<String>, String> {
+
+        private final Tooltip tooltip = new Tooltip();
 
         @Override
         protected void updateItem(String item, boolean empty) {
             super.updateItem(item, empty);
             boolean blank = empty || item == null || item.isEmpty();
             setText(blank ? null : item);
-            setTooltip(blank ? null : new Tooltip(item));
+            tooltip.setText(blank ? "" : item);
+            setTooltip(blank ? null : tooltip);
         }
     }
 

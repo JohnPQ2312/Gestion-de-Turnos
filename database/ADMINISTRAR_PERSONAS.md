@@ -2,11 +2,11 @@
 
 ## Acceso y uso
 
-Abrir CoreServer y OperatorSystem con la versión actual. Iniciar sesión con un funcionario activo de perfil **ADMIN** y pulsar **Personas**. La vista se abre en otra ventana; al cerrar sesión se cierra también esa vista y se cancela su trabajo pendiente.
+Abrir CoreServer y OperatorSystem con la versión actual. Iniciar sesión con un funcionario activo de perfil **ADMIN**, abrir el menú **Administración** y elegir **Personas**. La vista se abre en otra ventana; al cerrar sesión se cierra también esa vista y se cancela su trabajo pendiente.
 
 La administración no crea un administrador inicial ni contiene contraseñas predeterminadas. Si todavía no existe una cuenta administrativa con credencial, preparar su acceso siguiendo [INICIALIZAR_ACCESO.md](INICIALIZAR_ACCESO.md). No convertir a un operador en ADMIN mediante un comando público.
 
-La administración utiliza las tablas `operator`, `operator_credential` y `app_user`, sin una migración adicional. Sobre la base del equipo no se deben repetir el DDL, las migraciones 001/002/003 ni los datos de prueba.
+La administración utiliza las tablas `operator`, `operator_credential` y `app_user`, sin una migración adicional. Sobre la base asignada no se ejecutan el esquema, las migraciones ni los datos iniciales ([INSTALACION.md](../INSTALACION.md)).
 
 ### Funcionarios
 
@@ -39,7 +39,7 @@ Las operaciones JDBC son transaccionales y los accesos de red se ejecutan en seg
 
 La revocación actúa sobre este proceso de CoreServer. No se implementó una coordinación distribuida de sesiones entre varios servidores centrales. Las comprobaciones de cambios concurrentes cubren los recorridos del sistema; SQL externo no participa automáticamente en sus protocolos ni avisos.
 
-El bloque de [habilitaciones y asignaciones](CONFIGURAR_ATENCION.md) coordina la apertura/cierre con estas bajas y cambios de perfil. No invertir el orden asignación/operador del llamado ni omitir la comprobación del estado dentro de la transacción.
+La configuración de [habilitaciones y asignaciones](CONFIGURAR_ATENCION.md) coordina la apertura y el cierre con estas bajas y cambios de perfil. No invertir el orden asignación/operador del llamado ni omitir la comprobación del estado dentro de la transacción.
 
 ## Contratos de red
 
@@ -64,4 +64,4 @@ Cada funcionario del listado contiene siete campos: `id;nombre;acceso;rol;activo
 - `ManagedOperator` y `ManagedAppUser` son los datos de los listados, sin secretos.
 - OperatorSystem: `PeopleServerClient`, el contrato `PeopleRequests`, `PeopleController` y `people.fxml`. La vista reutiliza `operator.css`.
 
-La administración se comprobó sobre MySQL local desechable. Su recorrido no se ejecutó contra la base compartida durante esas pruebas. Consultar el [alcance de las comprobaciones](../pruebas/README.md#comprobaciones-y-límites).
+La administración de Personas se comprobó sobre MySQL local desechable; no hay constancia de su recorrido sobre la base asignada. Consultar el [alcance de las comprobaciones](../pruebas/README.md#comprobaciones-y-límites).

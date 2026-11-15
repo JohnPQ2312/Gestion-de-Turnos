@@ -21,6 +21,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
+import javafx.stage.Screen;
+import javafx.geometry.Rectangle2D;
 
 // Coordina el acceso, la atención y las ventanas administrativas de OperatorSystem.
 // Conserva la sesión en memoria y cierra sus vistas cuando el acceso termina.
@@ -64,7 +66,7 @@ public class App extends Application {
         stage.setMinWidth(900);
         stage.setMinHeight(680);
         showLogin(null);
-        stage.show();
+        showWithinScreen(stage);
     }
 
     private void showLogin(String notice) {
@@ -206,9 +208,12 @@ public class App extends Application {
 
     // Abre la vista de consultas en una ventana aparte, o la trae al frente
     // si ya estaba abierta. La pantalla de atención no se modifica.
+    // Al cerrarse, como las demás ventanas administrativas, cancela la consulta
+    // en curso y libera la vista: reabrir muestra una ventana nueva, sin el
+    // resultado ni los filtros anteriores (la consulta es de solo lectura).
     private void openReports(ReportServerClient reportClient) {
         if (reportsStage != null) {
-            reportsStage.show();
+            showWithinScreen(reportsStage);
             reportsStage.toFront();
             return;
         }
@@ -218,16 +223,29 @@ public class App extends Application {
                     App.class.getResource("/cr/ac/una/operatorsystem/views/reports.fxml")
             );
             Parent root = loader.load();
-            reportsController = loader.getController();
-            reportsController.configure(reportClient::fetch, this::sessionEnded);
+            ReportsController createdController = loader.getController();
+            createdController.configure(reportClient::fetch, this::sessionEnded);
 
-            reportsStage = new Stage();
-            reportsStage.initOwner(stage);
-            reportsStage.setTitle("Consultas");
-            reportsStage.setScene(new Scene(root, 1100, 700));
-            reportsStage.setMinWidth(860);
-            reportsStage.setMinHeight(560);
-            reportsStage.show();
+            Stage createdStage = new Stage();
+            createdStage.initOwner(stage);
+            createdStage.setTitle("Consultas");
+            createdStage.setScene(new Scene(root, 1100, 700));
+            createdStage.setMinWidth(860);
+            createdStage.setMinHeight(560);
+            // Solo limpia las referencias si siguen siendo de esta ventana: un aviso
+            // tardío de una ventana anterior no debe borrar la que esté abierta.
+            createdStage.setOnHidden(event -> {
+                createdController.close();
+                if (reportsController == createdController) {
+                    reportsController = null;
+                }
+                if (reportsStage == createdStage) {
+                    reportsStage = null;
+                }
+            });
+            reportsController = createdController;
+            reportsStage = createdStage;
+            showWithinScreen(createdStage);
 
         } catch (IOException exception) {
             showOpenError("No se pudo abrir la vista de consultas.", exception);
@@ -236,7 +254,7 @@ public class App extends Application {
 
     private void openPeople(PeopleServerClient client) {
         if (peopleStage != null) {
-            peopleStage.show();
+            showWithinScreen(peopleStage);
             peopleStage.toFront();
             return;
         }
@@ -256,14 +274,14 @@ public class App extends Application {
                 peopleStage = null;
             });
             peopleController.configure(client, session.operatorId(), this::sessionEnded);
-            peopleStage.show();
+            showWithinScreen(peopleStage);
         } catch (IOException exception) {
             showOpenError("No se pudo abrir la administración de personas.", exception);
         }
     }
 
     private void openAssignments(AssignmentServerClient client) {
-        if (assignmentsStage != null) { assignmentsStage.show(); assignmentsStage.toFront(); return; }
+        if (assignmentsStage != null) { showWithinScreen(assignmentsStage); assignmentsStage.toFront(); return; }
         try {
             FXMLLoader loader = new FXMLLoader(App.class.getResource("/cr/ac/una/operatorsystem/views/assignments.fxml"));
             Parent root = loader.load();
@@ -280,14 +298,14 @@ public class App extends Application {
                 assignmentsStage = null;
             });
             assignmentsController.configure(client, this::sessionEnded);
-            assignmentsStage.show();
+            showWithinScreen(assignmentsStage);
         } catch (IOException exception) {
             showOpenError("No se pudo abrir la configuración de atención.", exception);
         }
     }
 
     private void openCatalog(CatalogServerClient client) {
-        if (catalogStage != null) { catalogStage.show(); catalogStage.toFront(); return; }
+        if (catalogStage != null) { showWithinScreen(catalogStage); catalogStage.toFront(); return; }
         try {
             FXMLLoader loader = new FXMLLoader(App.class.getResource("/cr/ac/una/operatorsystem/views/catalog.fxml"));
             Parent root = loader.load();
@@ -304,10 +322,24 @@ public class App extends Application {
                 catalogStage = null;
             });
             catalogController.configure(client, this::sessionEnded);
-            catalogStage.show();
+            showWithinScreen(catalogStage);
         } catch (IOException exception) {
             showOpenError("No se pudo abrir la administración de servicios y ventanillas.", exception);
         }
+    }
+
+    // Usa el área útil del monitor para mantener visibles los controles y los avisos.
+    private static void showWithinScreen(Stage window) {
+        window.show();
+        Rectangle2D bounds = Screen.getScreensForRectangle(
+                window.getX(), window.getY(), window.getWidth(), window.getHeight())
+                .stream().findFirst().orElse(Screen.getPrimary()).getVisualBounds();
+        window.setMinWidth(Math.min(window.getMinWidth(), bounds.getWidth()));
+        window.setMinHeight(Math.min(window.getMinHeight(), bounds.getHeight()));
+        window.setWidth(Math.min(window.getWidth(), bounds.getWidth()));
+        window.setHeight(Math.min(window.getHeight(), bounds.getHeight()));
+        window.setX(Math.max(bounds.getMinX(), Math.min(window.getX(), bounds.getMaxX() - window.getWidth())));
+        window.setY(Math.max(bounds.getMinY(), Math.min(window.getY(), bounds.getMaxY() - window.getHeight())));
     }
 
     private void setRoot(Parent root) {

@@ -1,18 +1,9 @@
 package cr.ac.una.operatorsystem.client;
 
-import cr.ac.una.operatorsystem.network.NetworkSettings;
 import cr.ac.una.operatorsystem.model.ReportResult;
 import cr.ac.una.operatorsystem.model.ReportType;
 import cr.ac.una.operatorsystem.model.UserSession;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,8 +19,7 @@ public class ReportServerClient {
     private static final DateTimeFormatter DATE_TIME
             = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
-    private final String host;
-    private final int port;
+    private final ProtocolTransport transport;
     private final UserSession session;
 
     public ReportServerClient(String host, int port, UserSession session) {
@@ -39,8 +29,7 @@ public class ReportServerClient {
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("El puerto no es válido.");
         }
-        this.host = host;
-        this.port = port;
+        this.transport = new ProtocolTransport(host, port, ProtocolTransport.Messages.GENERAL);
         this.session = Objects.requireNonNull(session, "La sesión es obligatoria.");
     }
 
@@ -88,7 +77,7 @@ public class ReportServerClient {
             rows.add(List.of(
                     response[start],
                     response[start + 1],
-                    "true".equals(response[start + 2]) ? "Preferencial" : "Regular",
+                    priority(response[start + 2]),
                     response[start + 3],
                     response[start + 5],
                     dateTime(response[start + 6]),
@@ -184,6 +173,16 @@ public class ReportServerClient {
         );
     }
 
+    // Solo se aceptan los valores que emite el servidor; cualquier otro es una respuesta inválida
+    // y no se presenta como «Regular» por omisión.
+    private static String priority(String value) throws IOException {
+        return switch (value) {
+            case "true" -> "Preferencial";
+            case "false" -> "Regular";
+            default -> throw new IOException("La respuesta contiene una prioridad inválida.");
+        };
+    }
+
     private void requireLength(String[] response, int header, int count, int width)
             throws IOException {
         if (response.length != header + count * width) {
@@ -224,48 +223,6 @@ public class ReportServerClient {
     }
 
     private String[] request(String message) throws IOException {
-        String line;
-
-        try (Socket socket = NetworkSettings.open(host, port, 3000, 15000)) {
-
-            try (
-                    BufferedWriter output = new BufferedWriter(
-                            new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)
-                    ); BufferedReader input = new BufferedReader(
-                            new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
-                    )) {
-                output.write("AUTH;" + session.token() + ";" + message);
-                output.newLine();
-                output.flush();
-                line = input.readLine();
-            }
-        }
-
-        if (line == null || line.isBlank()) {
-            throw new IOException("El servidor no envió una respuesta.");
-        }
-
-        String[] response = line.split(";", -1);
-        try {
-            for (int index = 0; index < response.length; index++) {
-                response[index] = URLDecoder.decode(response[index], StandardCharsets.UTF_8);
-            }
-        } catch (IllegalArgumentException exception) {
-            throw new IOException("La respuesta tiene una codificación inválida.", exception);
-        }
-
-        if (response.length == 3 && "DENIED".equals(response[0])) {
-            throw new AccessDeniedException(response[1], response[2]);
-        }
-        // Igual que OperatorServerClient: un ERROR del servidor es un rechazo
-        // con mensaje para el usuario, no una falla de comunicación.
-        if (response.length == 2 && "ERROR".equals(response[0])) {
-            throw new IllegalArgumentException(response[1]);
-        }
-        if (response.length < 2 || !"OK".equals(response[0])) {
-            throw new IOException("El formato de respuesta no es válido.");
-        }
-
-        return response;
+        return transport.authenticated(session.token(), message);
     }
 }

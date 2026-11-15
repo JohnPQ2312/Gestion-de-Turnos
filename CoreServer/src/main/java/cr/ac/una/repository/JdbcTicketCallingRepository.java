@@ -3,6 +3,7 @@ package cr.ac.una.repository;
 import cr.ac.una.config.DatabaseConnectionFactory;
 import cr.ac.una.exception.DataAccessException;
 import cr.ac.una.model.AttentionMode;
+import cr.ac.una.model.CalledTicket;
 import cr.ac.una.model.OperatorWindowAssignment;
 import cr.ac.una.model.Service;
 import cr.ac.una.model.Ticket;
@@ -35,7 +36,7 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
     // Bloquea asignación, funcionario y ventanilla antes de elegir el ticket.
     // Las comprobaciones previas del servicio se repiten con los datos actuales de MySQL.
     @Override
-    public Optional<Ticket> callNext(
+    public Optional<CalledTicket> callNext(
             OperatorWindowAssignment assignment,
             Set<String> eligibleServiceCodes,
             AttentionMode attentionMode
@@ -74,7 +75,7 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
                 }
 
                 rejectOccupiedAssignment(connection, currentAssignment);
-                Optional<Ticket> next = selectAndCall(
+                Optional<CalledTicket> next = selectAndCall(
                         connection, currentAssignment, services, currentMode
                 );
 
@@ -292,7 +293,7 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
     // Prioriza preferenciales y desempata por creación e identificador.
     // FOR UPDATE protege la selección hasta guardar el llamado; una ventanilla exclusiva filtra
     // regulares.
-    private Optional<Ticket> selectAndCall(
+    private Optional<CalledTicket> selectAndCall(
             Connection connection,
             OperatorWindowAssignment assignment,
             Map<String, Service> services,
@@ -333,7 +334,7 @@ public class JdbcTicketCallingRepository implements TicketCallingRepository {
 
         ticket.markCalled(assignment);
         updateCalledTicket(connection, ticketId, ticket);
-        return Optional.of(ticket);
+        return Optional.of(new CalledTicket(ticketId, ticket));
     }
 
     private Ticket mapWaitingTicket(

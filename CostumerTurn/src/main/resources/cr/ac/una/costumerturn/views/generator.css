@@ -74,3 +74,23 @@
 
 .primary-button:busy:disabled { -fx-opacity: 1; }
 .status-message:warning { -fx-background-color: #FFF4DF; -fx-border-color: #7A4510; }
+
+/* Solo la lista de servicios se desplaza; el panel de selección y la emisión quedan fijos. */
+.service-scroll, .service-scroll > .viewport { -fx-background-color: transparent; }
+.service-scroll { -fx-padding: 0; -fx-background-insets: 0; }
+.service-scroll .scroll-bar:vertical { -fx-pref-width: 18px; }
+.secondary-button {
+    -fx-background-color: white;
+    -fx-text-fill: #122D39;
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-border-color: #006B60;
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+}
+.secondary-button:hover { -fx-background-color: #EEF6F3; }
+.secondary-button:focused { -fx-effect: dropshadow(gaussian, #122D39, 5, 0.65, 0, 0); -fx-underline: true; }
+.secondary-button:disabled { -fx-opacity: 0.7; }

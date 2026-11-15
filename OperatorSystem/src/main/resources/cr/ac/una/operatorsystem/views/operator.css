@@ -2,6 +2,11 @@
 
 .operator-screen {
     -fx-font-family: "Segoe UI";
+    -fx-accent: #006B60;
+    -fx-focus-color: #006B60;
+    -fx-faint-focus-color: rgba(0,107,96,0.18);
+    -fx-selection-bar: #006B60;
+    -fx-selection-bar-non-focused: #4E626B;
     -fx-font-size: 16px;
     -fx-background-color: #FFFFFF;
 }
@@ -100,4 +105,21 @@
     -fx-border-color: #7A4510;
     -fx-border-width: 0 0 0 4px;
     -fx-padding: 12px 16px;
+}
+
+/* Campos y selecciones conservan la misma identidad que las acciones principales. */
+.operator-screen .text-field {
+    -fx-border-color: #ADBDC4;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+.operator-screen .text-field:focused { -fx-border-color: #006B60; }
+.operator-screen .table-row-cell:filled:selected .text { -fx-fill: #FFFFFF; }
+.operator-screen .table-row-cell:filled:selected .table-cell { -fx-text-fill: #FFFFFF; }
+.operator-screen .summary-label:warning {
+    -fx-background-color: #FFF4DF;
+    -fx-text-fill: #7A4510;
+    -fx-border-color: #7A4510;
+    -fx-border-width: 0 0 0 4px;
+    -fx-padding: 10px 14px;
 }

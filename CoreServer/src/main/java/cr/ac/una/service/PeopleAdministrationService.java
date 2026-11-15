@@ -67,8 +67,15 @@ public class PeopleAdministrationService {
         return UserRole.valueOf(role);
     }
 
+    // Comparte con LOGIN la normalización y el conteo de UsernamePolicy; las reglas de controles y
+    // espacios interiores son propias de las altas y ediciones.
     private static String username(String value) {
-        String result = text(value, "nombre de usuario", 50);
+        if (value == null || value.isBlank()) throw new IllegalArgumentException("El nombre de usuario es obligatorio.");
+        String result = UsernamePolicy.normalize(value);
+        if (!UsernamePolicy.fits(result) || result.codePoints().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("El nombre de usuario admite hasta " + UsernamePolicy.MAX_LENGTH
+                    + " caracteres y no permite caracteres de control.");
+        }
         if (result.codePoints().anyMatch(Character::isWhitespace)) {
             throw new IllegalArgumentException("El nombre de usuario no puede contener espacios.");
         }

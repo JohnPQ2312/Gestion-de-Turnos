@@ -38,6 +38,16 @@ public class InMemoryOperatorWindowAssignmentRepository
         return assignments;
     }
 
+    // Sin repositorios de funcionarios ni ventanillas no puede comprobar su estado: solo filtra por
+    // funcionario, apertura e inicio. Es un ejemplo para probar el flujo, no la versión de producción.
+    @Override
+    public List<OperatorWindowAssignment> findUsableByOperator(int operatorId, LocalDateTime now) {
+        return assignments.stream()
+                .filter(assignment -> assignment.getOperatorId() == operatorId
+                && assignment.isOpen() && !assignment.getStartedAt().isAfter(now))
+                .toList();
+    }
+
     @Override
     public Optional<OperatorWindowAssignment> findById(long assignmentId) {
         for (OperatorWindowAssignment assignment : assignments) {

@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -49,6 +50,47 @@ public class JdbcOperatorWindowAssignmentRepository
         } catch (SQLException exception) {
             throw new DataAccessException(
                     "No se pudieron consultar las asignaciones de atención.",
+                    exception
+            );
+        }
+    }
+
+    // Una sola consulta con JOIN en lugar de leer todas las asignaciones y revisar cada una por
+    // separado. La hora se recibe del servidor de aplicaciones, igual que antes, para no depender del
+    // reloj ni de la zona horaria de MySQL.
+    @Override
+    public List<OperatorWindowAssignment> findUsableByOperator(int operatorId, LocalDateTime now) {
+        String sql = """
+                SELECT a.assignment_id, a.operator_id, a.window_id, a.started_at, a.ended_at
+                FROM operator_window_assignment a
+                JOIN `operator` o
+                    ON o.operator_id = a.operator_id AND o.operator_state = 'ACTIVO'
+                JOIN `window` w
+                    ON w.window_id = a.window_id AND w.window_state IN ('ACTIVA', 'PAUSADA')
+                WHERE a.operator_id = ?
+                  AND a.ended_at IS NULL
+                  AND a.started_at <= ?
+                ORDER BY a.assignment_id
+                """;
+
+        try (
+                Connection connection = connectionFactory.openConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, operatorId);
+            statement.setTimestamp(2, Timestamp.valueOf(now));
+
+            try (ResultSet result = statement.executeQuery()) {
+                List<OperatorWindowAssignment> assignments = new ArrayList<>();
+
+                while (result.next()) {
+                    assignments.add(mapAssignment(result));
+                }
+
+                return List.copyOf(assignments);
+            }
+
+        } catch (SQLException exception) {
+            throw new DataAccessException(
+                    "No se pudieron consultar las asignaciones del funcionario.",
                     exception
             );
         }

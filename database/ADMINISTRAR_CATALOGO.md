@@ -2,9 +2,9 @@
 
 ## Acceso
 
-Iniciar CoreServer y OperatorSystem actualizados, entrar con una cuenta **ADMIN** y pulsar **Servicios y ventanillas**. La ventana tiene dos pestañas, **Servicios** y **Ventanillas**, cada una con listado, formulario, **Actualizar** y mensajes propios. Al cerrar sesión se cierra la ventana y se cancela su trabajo pendiente.
+Iniciar CoreServer y OperatorSystem actualizados, entrar con una cuenta **ADMIN**, abrir el menú **Administración** y elegir **Servicios y ventanillas**. La ventana tiene dos pestañas, **Servicios** y **Ventanillas**, cada una con listado, formulario, **Actualizar** y mensajes propios. Al cerrar sesión se cierra la ventana y se cancela su trabajo pendiente.
 
-La administración utiliza `service`, `ticket_sequence` y `window` del DDL actual, sin tablas ni migraciones nuevas. No repetir el esquema, las migraciones 001/002/003 ni los datos iniciales sobre la base compartida.
+La administración utiliza `service`, `ticket_sequence` y `window` del DDL actual, sin tablas ni migraciones nuevas. Sobre la base asignada no se ejecutan el esquema, las migraciones ni los datos iniciales ([INSTALACION.md](../INSTALACION.md)).
 
 El alta de un servicio o una ventanilla conserva separada la configuración de sus habilitaciones y asignaciones. Esa configuración sigue en [Asignaciones](CONFIGURAR_ATENCION.md).
 
@@ -16,7 +16,7 @@ El alta de un servicio o una ventanilla conserva separada la configuración de s
 - Reactivar: conserva la numeración. Si faltara la fila de consecutivo (datos anteriores), se crea a partir del mayor consecutivo usado; si no hay tickets históricos, comienza en 0.
 - El listado muestra turnos emitidos, pendientes y **rutas abiertas** (asignaciones abiertas cuyo funcionario y ventanilla tienen habilitado el servicio). Un servicio activo sin rutas se señala, porque sus turnos quedarían en espera.
 
-CostumerTurn consulta los servicios activos mediante `LIST_SERVICES`. La consulta se realiza al abrir el generador. Si ya tiene servicios cargados, volver a abrirlo para incorporar cambios posteriores; el botón **Actualizar servicios** solo aparece cuando la lista está vacía. Al renombrar un servicio se emite `DISPLAY_CHANGED` para que las pantallas vuelvan a consultar el nombre.
+CostumerTurn consulta los servicios activos mediante `LIST_SERVICES`. La consulta se realiza al abrir el generador y de nuevo al terminar cada turno. El botón **Actualizar servicios** permite recargar el catálogo en cualquier momento, sin reiniciar la aplicación. Al renombrar un servicio se emite `DISPLAY_CHANGED` para que las pantallas vuelvan a consultar el nombre.
 
 ## Ventanillas
 
@@ -55,13 +55,13 @@ Todas las solicitudes llevan `AUTH;<token>;`. Los textos usan la codificación U
 - Servicio, 8 campos: `código;nombre;prefijo;activo;emitidos;pendientes;rutas_abiertas;prefijo_bloqueado`.
 - Ventanilla, 7 campos: `id;estado;modalidad;asignación_abierta;funcionario;turno_activo;servicios_activos`. La asignación vale 0 y el funcionario va vacío si no hay asignación abierta.
 
-Se conservan `DENIED;motivo;mensaje` y `ERROR;mensaje`. El cliente valida cantidades, campos, estados y que la confirmación corresponda a lo solicitado. Una confirmación perdida o inválida no se reenvía: la pestaña queda bloqueada hasta pulsar **Actualizar**. No se modificaron los contratos de atención, reportes, Personas, Asignaciones ni los snapshots V1/V2. Se conservan los constructores anteriores de `TurnRequestHandler`.
+Se conservan `DENIED;motivo;mensaje` y `ERROR;mensaje`. El cliente valida cantidades, campos, estados y que la confirmación corresponda a lo solicitado. Una confirmación perdida o inválida no se reenvía: la pestaña queda bloqueada hasta pulsar **Actualizar**.
 
 ## Código
 
 - CoreServer: `CatalogAdministrationService`, `CatalogAdministrationRepository`, `JdbcCatalogAdministrationRepository`, `CatalogAdministrationHandler`, `ManagedService` y `ManagedWindow`. Además, conexión en `App` y `TurnRequestHandler`.
-- OperatorSystem: `CatalogServerClient`, `CatalogRequests`, `CatalogController`, `ServicesController`, `WindowsController`, `AdminTaskRunner`, `ManagedService`, `ManagedWindow`, `catalog.fxml`, `services.fxml` y `windows.fxml`. Además, el botón en `operatorScreen.fxml`/`OperatorController` y la ventana en `App`.
+- OperatorSystem: `CatalogServerClient`, `CatalogRequests`, `CatalogController`, `ServicesController`, `WindowsController`, `AdminTaskRunner`, `ManagedService`, `ManagedWindow`, `catalog.fxml`, `services.fxml` y `windows.fxml`. Además, la entrada del menú Administración en `operatorScreen.fxml` y `OperatorController`, y la ventana en `App`.
 
 ## Comprobaciones y alcance
 
-Los cuatro proyectos compilan con Maven. Se comprobaron las operaciones JDBC y el protocolo sobre MySQL local, y las vistas JavaFX con respuestas controladas. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) distingue esos ensayos. El 13 de noviembre se comprobó el catálogo sobre la base compartida con vistas y clientes de protocolo reales: alta y edición del servicio, alta de ventanilla, habilitaciones, asignación, dos emisiones, restricciones y atención completa. El despliegue físico entre computadoras sigue pendiente.
+Los cuatro proyectos compilan con Maven. Se comprobaron las operaciones JDBC y el protocolo sobre MySQL local, y las vistas JavaFX con respuestas controladas. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) distingue esos ensayos. Antes de los últimos cambios se comprobó el catálogo sobre la base asignada con vistas y clientes de protocolo reales: alta y edición del servicio, alta de ventanilla, habilitaciones, asignación, dos emisiones, restricciones y atención completa. El despliegue físico entre computadoras queda como trabajo futuro.

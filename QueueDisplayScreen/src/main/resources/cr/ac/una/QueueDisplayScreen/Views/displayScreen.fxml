@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- Vista pública del último llamado, historial reciente y espera, actualizada por DisplayScreenController. -->
+<!-- Vista pública: anuncio del turno llamado arriba a todo el ancho y turnos activos paginados debajo, actualizada por DisplayScreenController. Sin desplazamiento manual. -->
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
@@ -10,48 +10,43 @@
   <Region HBox.hgrow="ALWAYS"/>
   <Label fx:id="clockLabel" text="--:--:--" styleClass="display-clock"/>
  </HBox></top>
- <center><ScrollPane fitToWidth="true" fitToHeight="true" styleClass="display-scroll">
-  <VBox spacing="16">
-   <padding><Insets top="12" right="28" bottom="20" left="28"/></padding>
-   <HBox fx:id="lastCallPanel" spacing="24" alignment="CENTER_LEFT" styleClass="last-call">
-    <VBox spacing="2" minWidth="0" prefWidth="650" HBox.hgrow="ALWAYS">
-     <Label text="Último llamado" styleClass="call-caption"/>
-     <Label fx:id="callNoticeLabel" visible="false" managed="false" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="call-notice"/>
-     <Label fx:id="lastCalledLabel" text="—" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="call-code"/>
-     <Label fx:id="lastCallDetailsLabel" text="Esperando información de llamados…" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="call-details"/>
-    </VBox>
-    <VBox spacing="14" minWidth="270" prefWidth="310" maxWidth="340">
-     <Label text="Ventanilla" styleClass="call-caption"/>
-     <Label fx:id="lastWindowLabel" text="—" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="call-window"/>
-     <Label fx:id="lastStateLabel" text="" styleClass="call-state"/>
-    </VBox>
+ <center><VBox spacing="12" minHeight="0">
+  <padding><Insets top="0" right="28" bottom="12" left="28"/></padding>
+  <GridPane fx:id="lastCallPanel" hgap="28" minHeight="-Infinity" maxWidth="Infinity" styleClass="last-call">
+   <columnConstraints>
+    <ColumnConstraints percentWidth="50" minWidth="0"/>
+    <ColumnConstraints percentWidth="17" minWidth="0"/>
+    <ColumnConstraints percentWidth="33" minWidth="0"/>
+   </columnConstraints>
+   <VBox fx:id="codeBlock" GridPane.columnIndex="0" alignment="CENTER_LEFT" minWidth="0" maxWidth="Infinity">
+    <HBox spacing="16" alignment="BASELINE_LEFT">
+     <Label text="Turno llamado" styleClass="call-caption" minWidth="-Infinity"/>
+     <Label fx:id="callNoticeLabel" visible="false" managed="false" styleClass="call-notice" minWidth="-Infinity"/>
+    </HBox>
+    <Label fx:id="lastCalledLabel" text="—" styleClass="call-code"/>
+   </VBox>
+   <VBox fx:id="windowBlock" GridPane.columnIndex="1" alignment="CENTER_LEFT" minWidth="0" maxWidth="Infinity">
+    <Label text="Ventanilla" styleClass="call-caption"/>
+    <Label fx:id="lastWindowLabel" text="—" styleClass="call-window"/>
+   </VBox>
+   <VBox GridPane.columnIndex="2" spacing="6" alignment="CENTER_LEFT" minWidth="0" maxWidth="Infinity">
+    <Label text="Servicio" styleClass="call-caption"/>
+    <Label fx:id="lastCallDetailsLabel" text="" wrapText="true" maxWidth="Infinity" maxHeight="68" styleClass="call-details"/>
+    <Label fx:id="lastStateLabel" text="" wrapText="true" maxWidth="Infinity" styleClass="call-state"/>
+   </VBox>
+  </GridPane>
+  <VBox spacing="6" minWidth="0" minHeight="0" VBox.vgrow="ALWAYS">
+   <HBox alignment="BOTTOM_LEFT" spacing="16">
+    <Label text="Turnos activos" styleClass="section-title"/>
+    <Region HBox.hgrow="ALWAYS"/>
+    <Label fx:id="pageLabel" text="" styleClass="page-label"/>
    </HBox>
-   <VBox spacing="8">
-    <Label text="Últimos llamados" styleClass="section-title"/>
-    <TableView minWidth="0" prefWidth="1" maxWidth="Infinity" fx:id="recentCallsTable" prefHeight="210" minHeight="210" maxHeight="210" fixedCellSize="34" focusTraversable="false">
-     <placeholder><Label text="Esperando información del servidor." styleClass="placeholder-text"/></placeholder>
-     <columns>
-      <TableColumn fx:id="recentCodeColumn" text="Turno" prefWidth="125" minWidth="90" sortable="false" reorderable="false" styleClass="code-column"/>
-      <TableColumn fx:id="recentServiceColumn" text="Servicio" prefWidth="360" minWidth="180" sortable="false" reorderable="false"/>
-      <TableColumn fx:id="recentWindowColumn" text="Ventanilla" prefWidth="135" minWidth="110" sortable="false" reorderable="false" styleClass="window-column"/>
-      <TableColumn fx:id="recentTimeColumn" text="Último llamado" prefWidth="235" minWidth="195" sortable="false" reorderable="false"/>
-      <TableColumn fx:id="recentStateColumn" text="Estado actual" prefWidth="165" minWidth="130" sortable="false" reorderable="false"/>
-     </columns>
-    </TableView>
+   <VBox minHeight="0" VBox.vgrow="ALWAYS">
+    <GridPane fx:id="listHeader" styleClass="list-header" maxWidth="Infinity"/>
+    <VBox fx:id="rowsBox" minHeight="0" prefHeight="0" maxHeight="Infinity" VBox.vgrow="ALWAYS" styleClass="rows-box"/>
    </VBox>
-   <VBox spacing="8" VBox.vgrow="ALWAYS">
-    <Label text="Turnos en espera" styleClass="section-title"/>
-    <TableView minWidth="0" prefWidth="1" maxWidth="Infinity" fx:id="ticketsTable" prefHeight="175" minHeight="135" fixedCellSize="34" focusTraversable="false" VBox.vgrow="ALWAYS">
-     <placeholder><Label text="Esperando información del servidor." styleClass="placeholder-text"/></placeholder>
-     <columns>
-      <TableColumn fx:id="codeColumn" text="Turno" prefWidth="140" minWidth="90" sortable="false" reorderable="false" styleClass="code-column"/>
-      <TableColumn fx:id="serviceColumn" text="Servicio" prefWidth="490" minWidth="180" sortable="false" reorderable="false"/>
-      <TableColumn fx:id="attentionColumn" text="Atención" prefWidth="230" minWidth="140" sortable="false" reorderable="false"/>
-      <TableColumn fx:id="stateColumn" text="Estado" prefWidth="160" minWidth="140" sortable="false" reorderable="false"/>
-     </columns>
-    </TableView>
-   </VBox>
+   <Label fx:id="listNoteLabel" text="" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="list-note"/>
   </VBox>
- </ScrollPane></center>
+ </VBox></center>
  <bottom><Label fx:id="connectionLabel" text="Conectando con el servidor…" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="connection-label"/></bottom>
 </BorderPane>

@@ -21,6 +21,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.util.StringConverter;
 
 // Coordina las acciones de atención a partir del turno y la ventanilla confirmados por
@@ -59,12 +61,8 @@ public class OperatorController {
         String apply(long assignmentId) throws IOException;
     }
 
-    private enum AttentionOperation {
-        CALL, START, FINISH, RECALL
-    }
-
     private record FailedOperation(
-            AttentionOperation operation, Long ticketId, Throwable cause
+            AttentionRecovery.Operation operation, Long ticketId, Throwable cause
             ) {
 
     }
@@ -107,11 +105,12 @@ public class OperatorController {
     @FXML private Label finishCodeLabel;
     @FXML private Label finishServiceLabel;
     @FXML private Button reportsButton;
-    @FXML private Button peopleButton;
+    @FXML private MenuButton administrationMenu;
+    @FXML private MenuItem peopleButton;
     private Runnable peopleOpener;
-    @FXML private Button assignmentsButton;
+    @FXML private MenuItem assignmentsButton;
     private Runnable assignmentsOpener;
-    @FXML private Button catalogButton;
+    @FXML private MenuItem catalogButton;
     private Runnable catalogOpener;
     @FXML private Button logoutButton;
     @FXML private Label sessionUserLabel;
@@ -296,9 +295,8 @@ public class OperatorController {
 
                 if (active.isPresent()) {
                     ActiveTicket ticket = active.get();
-                    if (ticket.assignmentId() != selected.assignmentId()
-                            || ticket.operatorId() != selected.operatorId()
-                            || ticket.windowId() != selected.windowId()) {
+                    if (!AttentionRecovery.belongsTo(selected, ticket.assignmentId(),
+                            ticket.operatorId(), ticket.windowId())) {
                         throw new IOException(
                                 "El turno activo no corresponde a la asignación seleccionada."
                         );
@@ -341,8 +339,10 @@ public class OperatorController {
 
             setBusy(false);
 
-            if (failedOperation != null && !recoveredAfterFailure(failedOperation, active)) {
-                showFailure(failureMessage(failedOperation.operation()), failedOperation.cause());
+            if (failedOperation != null && !AttentionRecovery.recovered(failedOperation.operation(),
+                    failedOperation.ticketId(), failedOperation.cause(), active)) {
+                showFailure(AttentionRecovery.failureMessage(failedOperation.operation()),
+                        failedOperation.cause());
             }
         });
 
@@ -374,48 +374,9 @@ public class OperatorController {
         startTask(task);
     }
 
-    // Solo considera recuperados los llamados o inicios que la consulta posterior permite
-    // reconocer.
-    // La ausencia de turno activo no basta para confirmar un fin o un rellamado perdido.
-    private boolean recoveredAfterFailure(
-            FailedOperation failure,
-            Optional<ActiveTicket> active
-    ) {
-        if (!(failure.cause() instanceof IOException)) {
-            return false;
-        }
-
-        return switch (failure.operation()) {
-            case CALL ->
-                active.isPresent();
-            case START ->
-                active.isPresent()
-                && Objects.equals(active.get().ticketId(), failure.ticketId())
-                && "EN_ATENCION".equals(active.get().state());
-            case FINISH, RECALL ->
-                false;
-        };
-    }
-
-    private String failureMessage(AttentionOperation operation) {
-        return switch (operation) {
-            case CALL ->
-                "No se recibió la confirmación del llamado. "
-                + "Compruebe el estado actual antes de repetir la solicitud.";
-            case START ->
-                "No se recibió la confirmación del inicio de atención. "
-                + "Compruebe el estado actual antes de repetir la solicitud.";
-            case RECALL ->
-                "No se recibió la confirmación del rellamado. "
-                + "Compruebe la pantalla pública antes de volver a solicitarlo.";
-            case FINISH ->
-                "No se recibió la confirmación de finalización. "
-                + "Compruebe el estado y el historial del turno antes de repetir la solicitud.";
-        };
-    }
-
     // Solicita un único llamado y comprueba que corresponda al puesto seleccionado.
-    // Después consulta el ticket activo para recuperar su identificador y estado persistido.
+    // La confirmación ya trae el identificador y el estado persistidos, así que no se consulta otra
+    // vez el turno activo. Si la confirmación se pierde, la recuperación consulta GET_ACTIVE_TICKET.
     @FXML
     private void callNext() {
         if (busy || closed || !assignmentsLoaded || !activeTicketKnown
@@ -441,8 +402,8 @@ public class OperatorController {
 
                 if (next.isPresent()) {
                     CalledTicket ticket = next.get();
-                    if (ticket.operatorId() != selected.operatorId()
-                            || ticket.windowId() != selected.windowId()) {
+                    if (!AttentionRecovery.belongsTo(selected, ticket.assignmentId(),
+                            ticket.operatorId(), ticket.windowId())) {
                         throw new IOException(
                                 "La confirmación no corresponde al operador y ventanilla seleccionados."
                         );
@@ -468,10 +429,12 @@ public class OperatorController {
             Optional<CalledTicket> next = task.getValue();
             if (next.isPresent()) {
                 CalledTicket ticket = next.get();
+                // Mismo estado que dejaría la consulta del turno activo: llamado y confirmado.
+                currentTicket = ticket.toActiveTicket();
+                activeTicketKnown = true;
                 showTicket(ticket.visualCode(), ticket.serviceName(),
                         ticket.operatorId(), ticket.windowId(), "LLAMADO");
                 setBusy(false);
-                loadActiveTicket(null);
             } else {
                 activeTicketKnown = true;
                 currentTicket = null;
@@ -494,7 +457,7 @@ public class OperatorController {
             activeTicketKnown = false;
             setBusy(false);
             FailedOperation failure = new FailedOperation(
-                    AttentionOperation.CALL, null, task.getException()
+                    AttentionRecovery.Operation.CALL, null, task.getException()
             );
             logFailure(failure);
             loadActiveTicket(selected.equals(assignmentCombo.getValue()) ? failure : null);
@@ -505,7 +468,7 @@ public class OperatorController {
 
     @FXML
     private void startAttention() {
-        changeAttention(AttentionOperation.START);
+        changeAttention(AttentionRecovery.Operation.START);
     }
 
     // Abre la confirmación visual; la solicitud de cierre se envía al aceptar.
@@ -538,7 +501,7 @@ public class OperatorController {
         }
         finishConfirmationOpen = false;
         updatePresentation();
-        changeAttention(AttentionOperation.FINISH);
+        changeAttention(AttentionRecovery.Operation.FINISH);
     }
 
     public void configureRecall(AttentionRequest recallRequest) {
@@ -548,14 +511,14 @@ public class OperatorController {
 
     @FXML
     private void recallTicket() {
-        changeAttention(AttentionOperation.RECALL);
+        changeAttention(AttentionRecovery.Operation.RECALL);
     }
 
     // Captura el turno seleccionado y ejecuta una transición o un rellamado fuera de JavaFX.
     // Ante un fallo consulta el estado actual, sin repetir automáticamente la escritura.
-    private void changeAttention(AttentionOperation operation) {
-        boolean starting = operation == AttentionOperation.START;
-        boolean recalling = operation == AttentionOperation.RECALL;
+    private void changeAttention(AttentionRecovery.Operation operation) {
+        boolean starting = operation == AttentionRecovery.Operation.START;
+        boolean recalling = operation == AttentionRecovery.Operation.RECALL;
         AttentionRequest request = recalling ? recallRequest
                 : starting ? startAttentionRequest : finishAttentionRequest;
         String expectedState = starting || recalling ? "LLAMADO" : "EN_ATENCION";
@@ -720,6 +683,7 @@ public class OperatorController {
     // Habilita acciones según la tarea en curso y el estado confirmado del turno y la
     // ventanilla.
     private void updateControls() {
+        administrationMenu.setDisable(closed);
         boolean noAssignments = assignmentCombo.getItems().isEmpty();
         boolean actionsBlocked = closed || busy || !assignmentsLoaded
                 || !activeTicketKnown || assignmentCombo.getValue() == null;
@@ -766,7 +730,8 @@ public class OperatorController {
     public void configureAssignments(Runnable opener) {
         assignmentsOpener = Objects.requireNonNull(opener);
         assignmentsButton.setVisible(true);
-        assignmentsButton.setManaged(true);
+        administrationMenu.setVisible(true);
+        administrationMenu.setManaged(true);
         assignmentsButton.setDisable(closed);
     }
 
@@ -779,7 +744,8 @@ public class OperatorController {
     public void configureCatalog(Runnable opener) {
         catalogOpener = Objects.requireNonNull(opener);
         catalogButton.setVisible(true);
-        catalogButton.setManaged(true);
+        administrationMenu.setVisible(true);
+        administrationMenu.setManaged(true);
         catalogButton.setDisable(closed);
     }
 
@@ -791,7 +757,8 @@ public class OperatorController {
     public void configurePeople(Runnable opener) {
         peopleOpener = Objects.requireNonNull(opener);
         peopleButton.setVisible(true);
-        peopleButton.setManaged(true);
+        administrationMenu.setVisible(true);
+        administrationMenu.setManaged(true);
         peopleButton.setDisable(closed);
     }
 

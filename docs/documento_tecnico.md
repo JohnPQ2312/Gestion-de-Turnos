@@ -19,9 +19,9 @@ Se desarrolló un sistema cliente-servidor en Java, organizado en cuatro proyect
 | Aplicación | Función |
 | --- | --- |
 | `CoreServer` | Recibe conexiones, procesa solicitudes, verifica permisos y reglas, ejecuta operaciones JDBC y avisa a las pantallas públicas cuando cambian los turnos. |
-| `CostumerTurn` | Muestra los servicios disponibles, permite elegir atención regular o preferencial y confirma el código del turno generado. |
-| `OperatorSystem` | Permite iniciar sesión, consultar asignaciones propias, llamar y rellamar, iniciar y finalizar atenciones, y pausar o reanudar la ventanilla. El perfil ADMIN dispone además de consultas y administración de personas, servicios, ventanillas y asignaciones. |
-| `QueueDisplayScreen` | Muestra el último llamado y su ventanilla, llamados recientes, turnos en espera, reloj y estado de conexión. Se actualiza mediante avisos del servidor. |
+| `CostumerTurn` | Muestra los servicios disponibles, permite recargarlos sin reiniciar, elegir atención regular o preferencial y confirma el código del turno generado. |
+| `OperatorSystem` | Permite iniciar sesión, consultar sus asignaciones (el servidor solo entrega las del funcionario autenticado), llamar y rellamar, iniciar y finalizar atenciones, y pausar o reanudar la ventanilla. El perfil ADMIN dispone además de consultas y administración de personas, servicios, ventanillas y asignaciones, que se abren desde el menú Administración. |
+| `QueueDisplayScreen` | Anuncia el llamado activo más reciente con su ventanilla y lista los turnos activos (llamados, en atención y en espera) con un reloj y el estado de conexión. Se actualiza mediante avisos del servidor. |
 
 ### Recorrido de un turno
 
@@ -70,7 +70,7 @@ Los contratos de repositorio expresan lo que necesita cada caso de uso. Sus impl
 
 Por ejemplo, `TicketService` depende del contrato `TicketCreationRepository`. `JdbcTicketCreationRepository` consulta el servicio, bloquea su consecutivo y registra el ticket antes de confirmar ambos cambios. Si la operación falla, revierte la transacción. Las restricciones de MySQL complementan ese control para impedir identidades u ocupaciones duplicadas.
 
-Las implementaciones `InMemory` se conservan como apoyo para desarrollo y comprobaciones. El ensamblado actual de CoreServer utiliza JDBC para la generación y atención. No hay una única conexión MySQL compartida entre todos los hilos ni un pool de conexiones incorporado en este corte.
+Las implementaciones `InMemory` están en `CoreServer/src/test` como apoyo de comprobaciones; no forman parte del código que ejecuta el servidor. El ensamblado de CoreServer utiliza JDBC para la generación y la atención. No hay una única conexión MySQL compartida entre todos los hilos ni un pool de conexiones incorporado en este corte.
 
 ### Motivo de esta organización
 
@@ -78,7 +78,7 @@ Todas las estaciones operan sobre las mismas reglas y datos. CoreServer concentr
 
 Los hilos mantienen la disponibilidad de las interfaces y del servidor, mientras que las transacciones, los bloqueos y las restricciones protegen la consistencia. Son responsabilidades distintas: ejecutar solicitudes en paralelo no garantiza por sí solo que dos operaciones no tomen el mismo turno.
 
-La implementación utiliza MySQL 8, conforme a la autorización de uso comunicada por el equipo. La conexión entre aplicaciones y CoreServer, y la conexión JDBC hacia MySQL, se configuran por separado. El modo TLS de las aplicaciones no implica que se haya configurado el mismo transporte para JDBC.
+El docente asignó a cada grupo una base de datos MySQL; el proyecto utiliza la asignada al grupo. La conexión entre aplicaciones y CoreServer, y la conexión JDBC hacia MySQL, se configuran por separado. El modo TLS de las aplicaciones no implica que se haya configurado el mismo transporte para JDBC.
 
 ### Referencias de implementación
 
@@ -101,7 +101,7 @@ La flecha discontinua representa los avisos que CoreServer envía por ese canal 
 
 Dentro de CoreServer se distinguen el acceso de red, los casos de uso y los repositorios JDBC. Esa separación es interna: no representa tres servidores desplegados ni un quinto proyecto Java. Solo CoreServer dispone de la configuración JDBC.
 
-El diagrama representa componentes lógicos, no la distribución física entre computadoras. Se pueden ejecutar varias instancias de los clientes. Las conexiones fuera de loopback requieren TLS; la seguridad del enlace JDBC se configura por separado. La prueba física entre computadoras permanece pendiente.
+El diagrama representa componentes lógicos, no la distribución física entre computadoras. Se pueden ejecutar varias instancias de los clientes. Las conexiones fuera de loopback requieren TLS; la seguridad del enlace JDBC se configura por separado. La prueba física entre computadoras queda como trabajo futuro.
 
 ## 7. Diseño de la base de datos
 
@@ -177,7 +177,7 @@ El ticket guarda creación, primer llamado, último llamado, inicio y fin. Las c
 
 Para una instalación nueva se ejecutan el esquema y los [datos iniciales](../database/datos_prueba.sql). Para una base anterior se revisan las [migraciones](../database/migraciones), sin reinicializar datos ni contadores. El procedimiento reproducible está en [INSTALACION.md](../INSTALACION.md).
 
-Los diagramas preparados con el corte `cc9405e` conservan su estructura tras incorporar el catálogo administrativo: las operaciones nuevas utilizan los mismos cuatro proyectos y las tablas existentes. La administración de servicios y ventanillas no añade entidades ni claves foráneas.
+La administración de servicios y ventanillas usa las tablas existentes: no añade entidades ni claves foráneas.
 
 ## 8. Descripción de los patrones utilizados
 
@@ -234,7 +234,9 @@ Los identificadores enviados por el cliente no acreditan su propiedad. El servid
 
 La pantalla envía `SUBSCRIBE_DISPLAY`. El servidor confirma con `OK;SUBSCRIBED`, emite `EVENT;DISPLAY_CHANGED` cuando hay cambios y envía `OK;HEARTBEAT` después de diez segundos sin avisos. El latido no obliga a consultar los datos.
 
-`DisplayRefreshService` abre la suscripción antes de solicitar la captura inicial para conservar un aviso que llegue durante esa lectura. Después consulta `GET_DISPLAY_SNAPSHOT_V2` cuando recibe cambios. V2 incluye primer llamado, último llamado y contador; el comando anterior conserva su formato para las herramientas existentes.
+`DisplayRefreshService` abre la suscripción antes de solicitar la captura inicial para conservar un aviso que llegue durante esa lectura. Después consulta `GET_DISPLAY_SNAPSHOT_V3` cuando recibe cambios. V3 devuelve todos los turnos llamados y en atención, ordenados por último llamado (el más reciente primero), y hasta 30 turnos en espera con el total de los que esperan; los finalizados no viajan. Los comandos anteriores (`GET_DISPLAY_SNAPSHOT` y `GET_DISPLAY_SNAPSHOT_V2`) conservan su formato para herramientas existentes.
+
+La franja superior anuncia el primer turno de esa lista, es decir, el llamado activo más reciente. Si está en estado llamado, indica que debe dirigirse a la ventanilla; si pasó a atención, indica que está siendo atendido en esa ventanilla y sigue anunciado hasta que otro llamado más reciente lo sustituya. El aviso de rellamado aparece solo mientras el turno sigue llamado y su contador aumentó. Sin turnos llamados ni en atención, la franja muestra «Sin llamados pendientes». La lista inferior conserva los activos y la espera.
 
 Si la conexión falla, la pantalla conserva los datos visibles, indica que están desactualizados e intenta volver a suscribirse después de dos segundos. Al recuperar el canal vuelve a consultar una captura completa. Los avisos viven en memoria y no son una bitácora durable; SQL ejecutado directamente en MySQL no publica notificaciones del servidor.
 
@@ -300,9 +302,11 @@ La administración del catálogo bloquea el servicio o la ventanilla antes de co
 
 Las operaciones publican el aviso público después de confirmar el cambio. Las colas de avisos usan `offer`, con capacidad uno por suscripción, para que una pantalla lenta no obligue a esperar a la operación de negocio. No hay una transacción distribuida entre MySQL y los sockets; el estado persistido es la referencia para recuperar los datos.
 
-Se comprobaron emisiones y llamados concurrentes, solicitudes sobre una misma asignación, rollback y conflictos de pausa, rellamado y administración. Los [procedimientos de pruebas](../pruebas/README.md#comprobaciones-y-límites) distinguen las comprobaciones locales de las realizadas sobre la base compartida y explican cómo ejecutar las tres herramientas de concurrencia.
+Se comprobaron emisiones y llamados concurrentes, solicitudes sobre una misma asignación, rollback y conflictos de pausa, rellamado y administración. El entorno, los resultados y los límites de cada comprobación están en [pruebas/README.md](../pruebas/README.md#comprobaciones-y-límites), junto con el procedimiento de las tres herramientas de concurrencia.
 
-Los casos de regresión repetidos no se suman como pruebas diferentes. Las pruebas del catálogo incluyen JDBC y protocolo sobre MySQL local, vistas con respuestas controladas y regresión de Asignaciones. El 13 de noviembre se comprobó el catálogo sobre la base compartida mediante vistas y clientes de protocolo reales, incluyendo dos emisiones, restricciones y atención completa. Siguen pendientes el ensayo físico entre computadoras y una medición de rendimiento bajo carga. Los resultados no acreditan carga prolongada ni ausencia de cualquier interbloqueo.
+Se ejecutó el escenario integrado con la versión actual: CoreServer real contra MySQL local desechable y las aplicaciones iniciadas con sus clases `App`, en ventanas fuera de pantalla. Con tres turnos esperando, dos llamados simultáneos entregaron turnos distintos. Con uno solo elegible, una ventanilla lo recibió, la otra mostró «No hay turnos compatibles en espera.» y la base registró un único turno llamado. Pasaron 64 comprobaciones. El anuncio de la pantalla pública tuvo otras 21, de las cuales el comportamiento anterior no cumple 4. Otra prueba detuvo MySQL con el sistema en marcha (15 comprobaciones): CoreServer siguió activo, el generador y el operador mostraron el error y el servicio se recuperó al volver la base. Esas pruebas se ejecutaron en una sola computadora, por loopback y sin TLS. También se ejecutaron las aplicaciones con el código actual sobre la base asignada: emisión, llamado, rellamado, inicio y finalización de un turno.
+
+El despliegue entre computadoras y la medición de rendimiento bajo carga quedan como trabajo futuro.
 
 ### Ubicación del código explicado
 
@@ -312,43 +316,32 @@ Los casos de regresión repetidos no se suman como pruebas diferentes. Las prueb
 
 ## 12. Instrucciones para ejecutar el sistema
 
-Las cuatro aplicaciones se ejecutan desde NetBeans. La preparación del entorno se detalla en la [guía de instalación](../INSTALACION.md); a continuación se indica el orden de arranque y el recorrido de demostración.
+Las cuatro aplicaciones se ejecutan desde NetBeans con JDK 21 o superior y Maven. Hay una guía por cada base de datos posible:
 
-### Preparación del entorno
+- [INSTALACION.md](../INSTALACION.md) conecta el sistema a la base MySQL que el docente asignó al grupo. Esa base ya contiene la estructura y no requiere los scripts de instalación.
+- [INSTALACION_BASE_PROPIA.md](../INSTALACION_BASE_PROPIA.md) crea una base nueva con [el esquema](../database/esquema.sql) y [los datos iniciales](../database/datos_prueba.sql).
 
-1. Disponer de JDK 21 o superior, NetBeans con soporte Maven y MySQL 8. Abrir por separado los proyectos CoreServer, CostumerTurn, OperatorSystem y QueueDisplayScreen. Maven necesita acceso a sus dependencias si aún no están en la caché. Los tres clientes incorporan JavaFX 13 mediante sus dependencias.
-2. Para una instalación nueva, crear y seleccionar una base vacía, ejecutar [el esquema](../database/esquema.sql) y después [los datos iniciales](../database/datos_prueba.sql). No ejecutar además las migraciones sobre ese esquema nuevo. Para una base existente, revisar su versión y aplicar solo las migraciones que correspondan, conservando los datos.
-3. Crear `CoreServer/src/main/resources/db.properties` con la URL JDBC, el usuario y la contraseña del entorno. Conservar `connectionTimeZone=SERVER&preserveInstants=true` en la URL. Los clientes no necesitan este archivo ni credenciales MySQL.
-4. Compilar CoreServer y ejecutar `cr.ac.una.config.CredentialSetup` mediante **Run File** para preparar las contraseñas de `admin`, `amora` y `lvargas` en la base nueva. Esos usuarios vienen en los datos iniciales, sin contraseña. El procedimiento está en [la guía de acceso](../database/INICIALIZAR_ACCESO.md).
-5. Compilar los cuatro proyectos. La configuración privada, las contraseñas y los almacenes TLS no se incluyen en Git ni en las capturas de la demostración.
-
-La instalación nueva prepara diez tablas, cinco funcionarios, tres servicios, cuatro ventanillas, tres asignaciones abiertas y cero tickets. El administrador inicial no tiene una asignación de atención. Estos datos corresponden al seed, no a los nombres o al estado actual de la base compartida.
-
-El esquema versionado define las restricciones necesarias para la instalación. Si se prepara una copia desde una exportación, comprobar que conserve claves, índices, CHECK y opciones de tabla. Las exportaciones con credenciales se mantienen fuera de Git y no se restauran sobre una base compartida para preparar la demostración.
+En ambos casos solo CoreServer necesita `CoreServer/src/main/resources/db.properties`, que se copia de `db.properties.example`, con la URL JDBC, el usuario y la contraseña, y con `connectionTimeZone=SERVER&preserveInstants=true` en la URL. Los clientes no necesitan credenciales MySQL. Con la base asignada, las contraseñas de las cuentas existentes se entregan junto con el enlace del repositorio. En una base propia, y para restablecer una contraseña, se usa `cr.ac.una.config.CredentialSetup` mediante **Run File**, según [la guía de acceso](../database/INICIALIZAR_ACCESO.md). La configuración privada, las contraseñas, los almacenes TLS y los volcados de la base con credenciales no se incluyen en Git ni en las capturas de la demostración.
 
 ### Conexión local y entre computadoras
 
-Para ejecutar todo en una misma computadora se puede conservar la configuración predeterminada `127.0.0.1:5000`, sin crear `network.properties`. CoreServer debe estar escuchando en ese puerto y los clientes deben utilizar el mismo destino.
-
-Para comunicar computadoras, configurar host, puerto, dirección de escucha y TLS según [RED_Y_TLS.md](../RED_Y_TLS.md), usando los archivos de ejemplo de cada proyecto. El nombre o IP del servidor debe coincidir con el certificado. Reiniciar las aplicaciones después de cambiar la configuración. El modo TLS de los clientes no configura automáticamente la conexión JDBC.
-
-El despliegue entre computadoras debe ensayarse en la red elegida; no se considera comprobado por ejecutar varios procesos en una sola computadora.
+En una misma computadora se conserva la configuración predeterminada `127.0.0.1:5000`, sin crear `network.properties`. Para comunicar computadoras, configurar host, puerto, dirección de escucha y TLS según [RED_Y_TLS.md](../RED_Y_TLS.md). El nombre o IP del servidor debe coincidir con el certificado, y el modo TLS de los clientes no configura la conexión JDBC. El despliegue entre computadoras debe ensayarse en la red elegida: ejecutar varios procesos en una sola computadora no lo comprueba.
 
 ### Orden de arranque en NetBeans
 
 | Orden | Acción | Resultado que debe observarse |
 | --- | --- | --- |
 | 1 | Ejecutar CoreServer con `cr.ac.una.CoreServer.App`. | La consola informa el puerto de escucha. Mantener el servidor ejecutándose. |
-| 2 | Ejecutar QueueDisplayScreen con **Run Project**. | Estado conectado, reloj en marcha y listas inicialmente vacías si la base es nueva. |
-| 3 | Ejecutar OperatorSystem e ingresar como `amora`. | Asignación propia de funcionario 1 a ventanilla 1. |
-| 4 | Abrir otra ejecución de OperatorSystem e ingresar como `lvargas`. | Asignación propia de funcionario 2 a ventanilla 2. |
+| 2 | Ejecutar QueueDisplayScreen con **Run Project**. | Estado conectado y reloj en marcha. Las listas están vacías en una base nueva; con la base asignada muestran los turnos que ya esperan. |
+| 3 | Ejecutar OperatorSystem e ingresar como `amora` (base propia) u `operador1` (base asignada). | Asignación propia a la ventanilla 1. |
+| 4 | Abrir otra ejecución de OperatorSystem e ingresar como `lvargas` u `operador2`. | Asignación propia a la ventanilla 2. |
 | 5 | Ejecutar CostumerTurn con **Run Project**. | Catálogo con Información general, Trámites y Pagos. |
 
 Una pantalla conectada no prueba por sí sola el funcionamiento de MySQL. Generar y consultar un turno permite comprobar el recorrido completo. No es necesario volver a ejecutar CredentialSetup en cada arranque.
 
 ### Recorrido de demostración
 
-El siguiente procedimiento utiliza la base nueva del seed, sin otras emisiones ni cambios administrativos durante su preparación. Si se usa otra base, registrar sus códigos y asignaciones reales: reiniciar CoreServer no reinicia los consecutivos.
+El siguiente procedimiento utiliza la base nueva con los datos iniciales, sin otras emisiones ni cambios administrativos durante su preparación. En la base asignada los códigos continúan la numeración existente y la ventanilla 2 solo atiende preferenciales; su recorrido equivalente está en la sección 6 de [INSTALACION.md](../INSTALACION.md). Reiniciar CoreServer no reinicia los consecutivos.
 
 | Paso | Acción | Comprobación esperada |
 | --- | --- | --- |
@@ -360,9 +353,9 @@ El siguiente procedimiento utiliza la base nueva del seed, sin otras emisiones n
 | 6 | Ingresar como ADMIN y abrir Consultas con fechas que incluyan el recorrido. | Se recuperan los turnos atendidos, cantidades por funcionario/servicio y duraciones. |
 | 7 | Abrir Personas, Asignaciones y Servicios y ventanillas como ADMIN. | Se consultan personas, catálogo, habilitaciones e historial. OPERADOR no dispone de esos controles administrativos. |
 
-La instalación y el recorrido de atención se comprobaron en MySQL local mediante TLS, incluidas ejecuciones en procesos separados. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) precisa sus límites. Los pasos anteriores son un procedimiento de demostración, sin una nueva ejecución asociada a esta revisión documental. Para demostrar el catálogo, abrir Servicios y ventanillas como ADMIN, crear un servicio y una ventanilla con identificadores disponibles y comprobar su aparición en los listados. Después configurar las habilitaciones y la asignación desde Asignaciones antes de emitir y llamar turnos del nuevo servicio. Este recorrido debe coordinarse si se utiliza la base compartida.
+Una variante automatizada de estos pasos se ejecutó con la versión actual; la ejecución con personas y ventanas visibles queda como ensayo previo a la defensa. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) precisa sus límites. Para demostrar el catálogo, abrir Servicios y ventanillas como ADMIN, crear un servicio y una ventanilla con identificadores disponibles y comprobar su aparición en los listados. Después configurar las habilitaciones y la asignación desde Asignaciones antes de emitir y llamar turnos del nuevo servicio. Con la base asignada, esas altas quedan en la base del docente y deben coordinarse.
 
-Para una prueba coordinada de concurrencia, dejar libres las asignaciones 1 y 2 y preparar dos preferenciales de Información general. Ejecutar la herramienta siguiendo [pruebas/README.md](../pruebas/README.md), con una cuenta propia por funcionario. El procedimiento también contiene los casos de la misma asignación y de un único turno elegible. Usar la configuración local admitida por las herramientas; esa ejecución no sustituye el ensayo entre computadoras ni comprueba por sí sola el transporte TLS del despliegue.
+Para una prueba coordinada de concurrencia, dejar libres las asignaciones 1 y 2 y preparar dos preferenciales de Información general. Ejecutar la herramienta siguiendo [pruebas/README.md](../pruebas/README.md), con una cuenta propia por funcionario; el procedimiento incluye los casos de la misma asignación y de un único turno elegible. Esa ejecución es local: no sustituye el ensayo entre computadoras ni comprueba el transporte TLS del despliegue.
 
 ### Recuperación de errores y cierre
 
@@ -378,4 +371,4 @@ Para una prueba coordinada de concurrencia, dejar libres las asignaciones 1 y 2 
 
 Al terminar, cerrar las aplicaciones cliente y detener CoreServer. Cerrar sesión revoca el token cuando el servidor confirma; si falla el aviso de salida, la sesión vence según su política. Cerrar una ventana no finaliza por sí solo un ticket activo ni elimina su historial: completar la atención antes del cierre cuando corresponda.
 
-El recorrido compartido del catálogo quedó registrado en los procedimientos de pruebas. El ensayo físico entre computadoras sigue pendiente. La distribución del trabajo y las conclusiones se incluyen en el documento Word; el material para la defensa está en [presentacion.pptx](presentacion.pptx).
+El despliegue entre computadoras queda como trabajo futuro. La distribución del trabajo y las conclusiones se incluyen en el documento Word; el material para la defensa está en [presentacion.pptx](presentacion.pptx).

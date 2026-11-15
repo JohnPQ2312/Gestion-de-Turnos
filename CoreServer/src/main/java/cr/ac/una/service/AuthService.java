@@ -25,7 +25,6 @@ public class AuthService {
     }
 
     private static final String INVALID_CREDENTIALS = "Usuario o contraseña incorrectos.";
-    private static final int MAX_USERNAME_LENGTH = 50;
 
     private final AccountRepository accountRepository;
     private final PasswordHasher passwordHasher;
@@ -54,13 +53,16 @@ public class AuthService {
         if (username == null || username.isBlank() || password == null || password.isEmpty()) {
             throw new IllegalArgumentException("Ingrese el usuario y la contraseña.");
         }
-        if (username.length() > MAX_USERNAME_LENGTH || password.length() > PasswordHasher.MAX_LENGTH) {
+        // Misma normalización y conteo (puntos de código) que usa Personas al guardar el nombre.
+        // La contraseña tiene su propio límite, independiente del nombre de acceso.
+        String normalized = UsernamePolicy.normalize(username);
+        if (!UsernamePolicy.fits(normalized) || password.length() > PasswordHasher.MAX_LENGTH) {
             throw new AccessDeniedException(Reason.INVALID_CREDENTIALS, INVALID_CREDENTIALS);
         }
 
         char[] secret = password.toCharArray();
         try {
-            Optional<OperatorAccount> found = accountRepository.findByUsername(username.trim());
+            Optional<OperatorAccount> found = accountRepository.findByUsername(normalized);
 
             // Ejecuta PBKDF2 y usa el mismo mensaje cuando falta la cuenta o su credencial.
             // Esto reduce la diferencia de respuesta entre esos casos y una clave incorrecta.

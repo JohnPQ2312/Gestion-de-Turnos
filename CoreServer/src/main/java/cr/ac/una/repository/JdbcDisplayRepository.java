@@ -2,6 +2,7 @@ package cr.ac.una.repository;
 
 import cr.ac.una.config.DatabaseConnectionFactory;
 import cr.ac.una.exception.DataAccessException;
+import cr.ac.una.model.ActiveDisplaySnapshot;
 import cr.ac.una.model.DisplaySnapshot;
 import cr.ac.una.model.DisplayTicket;
 import cr.ac.una.model.TicketState;
@@ -14,8 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-// Lee espera y llamados recientes desde una misma captura de MySQL.
-// Las dos listas comparten la transacción para presentar un estado coherente.
+// Lee las capturas públicas desde una misma lectura consistente de MySQL.
+// Las listas y conteos de cada captura comparten la transacción para presentar un estado coherente.
 public class JdbcDisplayRepository implements DisplayRepository {
 
     private static final String SELECT_TICKETS = """
@@ -25,6 +26,14 @@ public class JdbcDisplayRepository implements DisplayRepository {
             JOIN service s ON s.service_code = t.service_id
             LEFT JOIN operator_window_assignment a
                 ON a.assignment_id = t.assignment_id
+            """;
+
+    // Cuenta con el mismo JOIN de la lista de espera para que el total sea comparable.
+    private static final String COUNT_WAITING = """
+            SELECT COUNT(*)
+            FROM ticket t
+            JOIN service s ON s.service_code = t.service_id
+            WHERE t.ticket_state = 'EN_ESPERA'
             """;
 
     private final DatabaseConnectionFactory connectionFactory;
@@ -41,20 +50,41 @@ public class JdbcDisplayRepository implements DisplayRepository {
         validateLimit(waitingLimit);
         validateLimit(recentCallsLimit);
 
+        return inSnapshot(connection -> new DisplaySnapshot(
+                findWaitingTickets(connection, waitingLimit),
+                findRecentCalls(connection, recentCallsLimit)
+        ));
+    }
+
+    // Consulta llamados/en atención y espera por separado. Los llamados se leen completos, sin
+    // límite: así ningún activo queda oculto y el anuncio siempre ve el LLAMADO más reciente.
+    // La espera filtra su estado en SQL antes del LIMIT, de modo que los finalizados nunca ocupan
+    // lugares. Listas y conteo se leen en la misma transacción.
+    @Override
+    public ActiveDisplaySnapshot findActiveSnapshot(int waitingLimit) {
+        validateLimit(waitingLimit);
+
+        return inSnapshot(connection -> new ActiveDisplaySnapshot(
+                findActiveCalls(connection),
+                findWaitingTickets(connection, waitingLimit),
+                countWaiting(connection)
+        ));
+    }
+
+    @FunctionalInterface
+    private interface SnapshotReader<T> {
+
+        T read(Connection connection) throws SQLException;
+    }
+
+    private <T> T inSnapshot(SnapshotReader<T> reader) {
         try (Connection connection = connectionFactory.openConnection()) {
             connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
             connection.setReadOnly(true);
             connection.setAutoCommit(false);
 
             try {
-                List<DisplayTicket> waitingTickets = findWaitingTickets(
-                        connection, waitingLimit
-                );
-                List<DisplayTicket> recentCalls = findRecentCalls(
-                        connection, recentCallsLimit
-                );
-
-                DisplaySnapshot snapshot = new DisplaySnapshot(waitingTickets, recentCalls);
+                T snapshot = reader.read(connection);
                 connection.commit();
                 return snapshot;
 
@@ -107,6 +137,38 @@ public class JdbcDisplayRepository implements DisplayRepository {
                 """;
 
         return queryTickets(connection, sql, limit);
+    }
+
+    // Orden por último llamado: un rellamado vuelve al inicio y el primer LLAMADO de la lista
+    // es el anuncio vigente. Sin LIMIT: el volumen está acotado por las asignaciones abiertas.
+    private List<DisplayTicket> findActiveCalls(Connection connection) throws SQLException {
+        String sql = SELECT_TICKETS + """
+                WHERE t.ticket_state IN ('LLAMADO', 'EN_ATENCION')
+                ORDER BY t.last_called_at DESC, t.ticket_id DESC
+                """;
+
+        List<DisplayTicket> tickets = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+                ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                tickets.add(mapTicket(result));
+            }
+        }
+        return tickets;
+    }
+
+    private int countWaiting(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(COUNT_WAITING);
+                ResultSet result = statement.executeQuery()) {
+            if (!result.next()) {
+                throw new SQLException("No se pudo contar los turnos de la pantalla pública.");
+            }
+            long count = result.getLong(1);
+            if (count < 0 || count > Integer.MAX_VALUE) {
+                throw new SQLException("La cantidad de turnos no es válida.");
+            }
+            return (int) count;
+        }
     }
 
     private List<DisplayTicket> queryTickets(

@@ -3,7 +3,6 @@ package cr.ac.una.operatorsystem.client;
 import cr.ac.una.operatorsystem.model.ManagedService;
 import cr.ac.una.operatorsystem.model.ManagedWindow;
 import cr.ac.una.operatorsystem.model.UserSession;
-import cr.ac.una.operatorsystem.network.NetworkSettings;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -14,14 +13,15 @@ import java.util.*;
 public class CatalogServerClient implements CatalogRequests {
     private static final int SERVICE_FIELDS = 8;
     private static final int WINDOW_FIELDS = 7;
-    private final String host;
-    private final int port;
+    private final ProtocolTransport transport;
     private final UserSession session;
 
     public CatalogServerClient(String host, int port, UserSession session) {
         if (host == null || host.isBlank() || port < 1 || port > 65535) throw new IllegalArgumentException("Servidor o puerto no válido.");
-        this.host = host;
-        this.port = port;
+        this.transport = new ProtocolTransport(host, port, new ProtocolTransport.Messages(
+                "No se recibió una respuesta del catálogo.",
+                "Codificación de respuesta no válida.",
+                "Respuesta del catálogo no válida."));
         this.session = Objects.requireNonNull(session);
     }
 
@@ -131,26 +131,6 @@ public class CatalogServerClient implements CatalogRequests {
     private static String encode(String value) { return URLEncoder.encode(value, StandardCharsets.UTF_8); }
 
     private String[] request(String command) throws IOException {
-        String line;
-        try (Socket socket = NetworkSettings.open(host, port, 3000, 15000)) {
-            try (var out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-                    var in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
-                out.write("AUTH;" + session.token() + ";" + command);
-                out.newLine();
-                out.flush();
-                line = in.readLine();
-            }
-        }
-        if (line == null || line.isBlank()) throw new IOException("No se recibió una respuesta del catálogo.");
-        String[] r = line.split(";", -1);
-        try {
-            for (int i = 0; i < r.length; i++) r[i] = URLDecoder.decode(r[i], StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException e) {
-            throw new IOException("Codificación de respuesta no válida.", e);
-        }
-        if (r.length == 3 && r[0].equals("DENIED")) throw new AccessDeniedException(r[1], r[2]);
-        if (r.length == 2 && r[0].equals("ERROR")) throw new IllegalArgumentException(r[1]);
-        if (r.length < 2 || !r[0].equals("OK")) throw new IOException("Respuesta del catálogo no válida.");
-        return r;
+        return transport.authenticated(session.token(), command);
     }
 }

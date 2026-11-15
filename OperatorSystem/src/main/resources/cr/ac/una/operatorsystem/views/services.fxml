@@ -14,6 +14,10 @@
       <Label text="Servicios registrados" styleClass="field-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
       <Button text="Nuevo servicio" onAction="#newService" minHeight="40" minWidth="-Infinity" styleClass="secondary-button"/>
      </HBox>
+     <HBox alignment="CENTER_LEFT" spacing="12">
+      <TextField fx:id="servicesFilter" promptText="Buscar por código, nombre o prefijo" accessibleText="Buscar en los servicios" HBox.hgrow="ALWAYS" maxWidth="Infinity" prefHeight="36"/>
+      <Label fx:id="servicesFilterSummary" wrapText="true" minHeight="-Infinity" prefWidth="210" maxWidth="210" styleClass="secondary-text"/>
+     </HBox>
      <TableView fx:id="servicesTable" accessibleText="Servicios registrados" VBox.vgrow="ALWAYS">
       <placeholder><Label text="Sin servicios para mostrar."/></placeholder>
      </TableView>

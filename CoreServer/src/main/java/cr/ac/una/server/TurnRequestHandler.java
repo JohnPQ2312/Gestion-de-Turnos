@@ -8,15 +8,8 @@ import cr.ac.una.service.AuthService;
 import cr.ac.una.service.TicketRecallService;
 import cr.ac.una.model.RecalledTicket;
 import cr.ac.una.model.ActiveTicket;
-import cr.ac.una.model.AttendedTicket;
-import cr.ac.una.model.DurationReport;
-import cr.ac.una.model.OperatorAttentionCount;
-import cr.ac.una.model.ReportPeriod;
+import cr.ac.una.model.CalledTicket;
 import cr.ac.una.model.ServiceWindow;
-import cr.ac.una.model.ServiceTicketCount;
-import cr.ac.una.model.TicketDuration;
-import cr.ac.una.model.DisplaySnapshot;
-import cr.ac.una.model.DisplayTicket;
 import cr.ac.una.model.OperatorWindowAssignment;
 import cr.ac.una.model.Service;
 import cr.ac.una.model.Ticket;
@@ -31,8 +24,6 @@ import cr.ac.una.service.WindowAvailabilityService;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -52,9 +43,12 @@ public class TurnRequestHandler {
     private final TicketAttentionService attentionService;
     private final ActiveTicketRepository activeTicketRepository;
     private final TicketLifecycleService lifecycleService;
+    // Límite de la espera en la captura V3. Los llamados y en atención se envían completos.
+    private static final int PUBLIC_WAITING_LIMIT = 30;
+
     private final DisplayRepository displayRepository;
     private final DisplayEventHub displayEvents;
-    private final ReportService reportService;
+    private final ReportProtocolHandler reports;
     private final AuthService authService;
     private final WindowAvailabilityService windowAvailabilityService;
     private final TicketRecallService recallService;
@@ -154,9 +148,9 @@ public class TurnRequestHandler {
         this.displayEvents = Objects.requireNonNull(
                 displayEvents, "El centro de avisos de la pantalla es obligatorio."
         );
-        this.reportService = Objects.requireNonNull(
+        this.reports = new ReportProtocolHandler(Objects.requireNonNull(
                 reportService, "El servicio de reportes es obligatorio."
-        );
+        ));
         this.authService = Objects.requireNonNull(
                 authService, "El servicio de acceso es obligatorio."
         );
@@ -248,6 +242,9 @@ public class TurnRequestHandler {
         if ("GET_DISPLAY_SNAPSHOT_V2".equals(request)) {
             return getDisplaySnapshot(true);
         }
+        if ("GET_DISPLAY_SNAPSHOT_V3".equals(request)) {
+            return getActiveDisplaySnapshot();
+        }
 
         if ("LIST_ASSIGNMENTS".equals(request)) {
             return listAssignments(authService.requireUser(user));
@@ -261,7 +258,14 @@ public class TurnRequestHandler {
 
         if (parts.length == 2 && "CALL_NEXT".equals(parts[0])) {
             authService.requireOwnAssignment(user, parseAssignmentId(parts[1]));
-            return callNext(parts[1]);
+            return callNext(parts[1], false);
+        }
+
+        // V2: confirmación completa con el identificador y el estado del turno, para continuar la
+        // atención sin consultar GET_ACTIVE_TICKET. CALL_NEXT conserva su formato de seis campos.
+        if (parts.length == 2 && "CALL_NEXT_V2".equals(parts[0])) {
+            authService.requireOwnAssignment(user, parseAssignmentId(parts[1]));
+            return callNext(parts[1], true);
         }
 
         if (parts.length == 2 && "GET_ACTIVE_TICKET".equals(parts[0])) {
@@ -314,7 +318,7 @@ public class TurnRequestHandler {
         // Solo leen datos y no publican avisos a las pantallas.
         if (parts.length == 3 && REPORT_COMMANDS.contains(parts[0])) {
             authService.requireRole(user, UserRole.ADMIN);
-            return handleReport(parts[0], parsePeriod(parts[1], parts[2]));
+            return reports.handle(parts[0], parts[1], parts[2]);
         }
 
         throw new IllegalArgumentException(
@@ -356,9 +360,10 @@ public class TurnRequestHandler {
         return response.toString();
     }
 
-    // Solo las asignaciones del funcionario autenticado.
+    // Solo las asignaciones del funcionario autenticado: la consulta ya se limita a su identidad y el
+    // filtro posterior queda como defensa adicional.
     private String listAssignments(AuthenticatedUser user) {
-        List<OperatorWindowAssignment> assignments = attentionService.listActiveAssignments()
+        List<OperatorWindowAssignment> assignments = attentionService.listActiveAssignments(user.operatorId())
                 .stream()
                 .filter(assignment -> assignment.getOperatorId() == user.operatorId())
                 .toList();
@@ -397,16 +402,29 @@ public class TurnRequestHandler {
                 + ticket.isPriority();
     }
 
-    private String callNext(String assignmentIdText) {
+    // V1: OK;CALLED;código;servicio;funcionario;ventanilla (herramientas de concurrencia).
+    // V2: OK;CALLED_V2;turno;código;servicio;asignación;funcionario;ventanilla;LLAMADO, los mismos
+    // campos que ACTIVE_TICKET. Sin turno elegible ambas responden OK;NO_TICKET.
+    private String callNext(String assignmentIdText, boolean complete) {
         long assignmentId = parseAssignmentId(assignmentIdText);
-        Optional<Ticket> next = attentionService.callNext(assignmentId);
+        Optional<CalledTicket> next = attentionService.callNext(assignmentId);
 
         if (next.isEmpty()) {
             return "OK;NO_TICKET";
         }
 
-        Ticket ticket = next.get();
+        Ticket ticket = next.get().ticket();
         displayEvents.publishChange();
+        if (complete) {
+            return "OK;CALLED_V2;"
+                    + next.get().ticketId() + ";"
+                    + encode(ticket.getVisualCode()) + ";"
+                    + encode(ticket.getService().getName()) + ";"
+                    + ticket.getAssignmentId() + ";"
+                    + ticket.getOperatorId() + ";"
+                    + ticket.getWindowId() + ";"
+                    + ticket.getState().name();
+        }
         return "OK;CALLED;"
                 + encode(ticket.getVisualCode()) + ";"
                 + encode(ticket.getService().getName()) + ";"
@@ -475,145 +493,18 @@ public class TurnRequestHandler {
         return "OK;ATTENTION_FINISHED;" + assignmentId + ";" + ticketId;
     }
 
-    // Serializa espera y llamados recientes en una respuesta pública con límites de filas.
+    // Lee espera y llamados recientes con sus límites de filas y los serializa (V1 o V2).
     private String getDisplaySnapshot(boolean withCallHistory) {
-        DisplaySnapshot snapshot = displayRepository.findSnapshot(50, 5);
-        StringBuilder response = new StringBuilder(withCallHistory ? "OK;DISPLAY_SNAPSHOT_V2;" : "OK;DISPLAY_SNAPSHOT;");
-        response.append(snapshot.waitingTickets().size())
-                .append(";").append(snapshot.recentCalls().size());
-
-        for (DisplayTicket ticket : snapshot.waitingTickets()) {
-            appendDisplayTicket(response, ticket, withCallHistory);
-        }
-
-        for (DisplayTicket ticket : snapshot.recentCalls()) {
-            appendDisplayTicket(response, ticket, withCallHistory);
-        }
-
-        return response.toString();
+        return DisplaySnapshotProtocol.legacy(displayRepository.findSnapshot(50, 5), withCallHistory);
     }
 
-    private void appendDisplayTicket(StringBuilder response, DisplayTicket ticket, boolean withCallHistory) {
-        response.append(";").append(ticket.ticketId())
-                .append(";").append(encode(ticket.visualCode()))
-                .append(";").append(encode(ticket.serviceName()))
-                .append(";").append(ticket.priority())
-                .append(";").append(ticket.state().name())
-                .append(";").append(ticket.windowId() == null ? "" : ticket.windowId())
-                .append(";").append(ticket.calledAt() == null
-                ? "" : encode(ticket.calledAt().toString()));
-        if (withCallHistory) {
-            response.append(";").append(ticket.lastCalledAt() == null
-                    ? "" : encode(ticket.lastCalledAt().toString()))
-                    .append(";").append(ticket.callCount());
-        }
+    // V3: todos los llamados/en atención y como máximo PUBLIC_WAITING_LIMIT turnos en espera.
+    private String getActiveDisplaySnapshot() {
+        return DisplaySnapshotProtocol.active(displayRepository.findActiveSnapshot(PUBLIC_WAITING_LIMIT));
     }
 
     private String windowState(ServiceWindow window) {
         return "OK;WINDOW_STATE;" + window.getWindowId() + ";" + window.getState().name();
-    }
-
-    private ReportPeriod parsePeriod(String fromText, String toText) {
-        return new ReportPeriod(parseDate(fromText, "inicial"), parseDate(toText, "final"));
-    }
-
-    private LocalDate parseDate(String value, String label) {
-        try {
-            return LocalDate.parse(value);
-        } catch (DateTimeParseException exception) {
-            throw new IllegalArgumentException(
-                    "La fecha " + label + " debe tener el formato AAAA-MM-DD."
-            );
-        }
-    }
-
-    private String handleReport(String command, ReportPeriod period) {
-        return switch (command) {
-            case "REPORT_ATTENDED" ->
-                attendedReport(period);
-            case "REPORT_BY_OPERATOR" ->
-                operatorReport(period);
-            case "REPORT_BY_SERVICE" ->
-                serviceReport(period);
-            case "REPORT_WAIT_TIMES" ->
-                durationReport("REPORT_WAIT_TIMES", reportService.waitTimes(period));
-            case "REPORT_ATTENTION_TIMES" ->
-                durationReport("REPORT_ATTENTION_TIMES", reportService.attentionTimes(period));
-            default ->
-                throw new IllegalArgumentException("El reporte solicitado no existe.");
-        };
-    }
-
-    // OK;REPORT_ATTENDED;n; y por turno: código;servicio;prioridad;ventanilla;
-    // id funcionario;funcionario;generación;inicio;fin
-    private String attendedReport(ReportPeriod period) {
-        List<AttendedTicket> tickets = reportService.attendedTickets(period);
-        StringBuilder response = new StringBuilder("OK;REPORT_ATTENDED;");
-        response.append(tickets.size());
-
-        for (AttendedTicket ticket : tickets) {
-            response.append(";").append(encode(ticket.visualCode()))
-                    .append(";").append(encode(ticket.serviceName()))
-                    .append(";").append(ticket.priority())
-                    .append(";").append(ticket.windowId())
-                    .append(";").append(ticket.operatorId())
-                    .append(";").append(encode(ticket.operatorName()))
-                    .append(";").append(encode(ticket.createdAt().toString()))
-                    .append(";").append(encode(ticket.startedAt().toString()))
-                    .append(";").append(encode(ticket.endedAt().toString()));
-        }
-
-        return response.toString();
-    }
-
-    // OK;REPORT_BY_OPERATOR;n; y por funcionario: id;nombre;finalizados
-    private String operatorReport(ReportPeriod period) {
-        List<OperatorAttentionCount> counts = reportService.attentionByOperator(period);
-        StringBuilder response = new StringBuilder("OK;REPORT_BY_OPERATOR;");
-        response.append(counts.size());
-
-        for (OperatorAttentionCount count : counts) {
-            response.append(";").append(count.operatorId())
-                    .append(";").append(encode(count.operatorName()))
-                    .append(";").append(count.attendedTickets());
-        }
-
-        return response.toString();
-    }
-
-    // OK;REPORT_BY_SERVICE;n; y por servicio: código;nombre;emitidos
-    private String serviceReport(ReportPeriod period) {
-        List<ServiceTicketCount> counts = reportService.ticketsByService(period);
-        StringBuilder response = new StringBuilder("OK;REPORT_BY_SERVICE;");
-        response.append(counts.size());
-
-        for (ServiceTicketCount count : counts) {
-            response.append(";").append(encode(count.serviceCode()))
-                    .append(";").append(encode(count.serviceName()))
-                    .append(";").append(count.issuedTickets());
-        }
-
-        return response.toString();
-    }
-
-    // OK;<COMANDO>;n;promedio;mínimo;máximo; y por turno:
-    // código;servicio;desde;hasta;segundos
-    private String durationReport(String command, DurationReport report) {
-        StringBuilder response = new StringBuilder("OK;").append(command).append(";");
-        response.append(report.tickets().size())
-                .append(";").append(report.averageSeconds())
-                .append(";").append(report.minimumSeconds())
-                .append(";").append(report.maximumSeconds());
-
-        for (TicketDuration ticket : report.tickets()) {
-            response.append(";").append(encode(ticket.visualCode()))
-                    .append(";").append(encode(ticket.serviceName()))
-                    .append(";").append(encode(ticket.startedAt().toString()))
-                    .append(";").append(encode(ticket.endedAt().toString()))
-                    .append(";").append(ticket.seconds());
-        }
-
-        return response.toString();
     }
 
     private String encode(String value) {

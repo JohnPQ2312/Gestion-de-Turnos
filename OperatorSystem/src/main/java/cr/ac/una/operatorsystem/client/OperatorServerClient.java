@@ -1,19 +1,10 @@
 package cr.ac.una.operatorsystem.client;
 
-import cr.ac.una.operatorsystem.network.NetworkSettings;
 import cr.ac.una.operatorsystem.model.ActiveTicket;
 import cr.ac.una.operatorsystem.model.CalledTicket;
 import cr.ac.una.operatorsystem.model.OperatorAssignment;
 import cr.ac.una.operatorsystem.model.UserSession;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -24,8 +15,7 @@ import java.util.Set;
 // Envía las acciones de atención con la sesión del funcionario y comprueba sus respuestas.
 public class OperatorServerClient {
 
-    private final String host;
-    private final int port;
+    private final ProtocolTransport transport;
     private final UserSession session;
 
     // Todas las operaciones del operador van con la sesión: AUTH;token;comando.
@@ -36,8 +26,7 @@ public class OperatorServerClient {
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("El puerto no es válido.");
         }
-        this.host = host;
-        this.port = port;
+        this.transport = new ProtocolTransport(host, port, ProtocolTransport.Messages.GENERAL);
         this.session = Objects.requireNonNull(session, "La sesión es obligatoria.");
     }
 
@@ -85,22 +74,35 @@ public class OperatorServerClient {
             );
         }
 
-        String[] response = request("CALL_NEXT;" + assignmentId);
+        // V2 confirma el turno completo; CALL_NEXT (V1) se conserva en el servidor para las
+        // herramientas de concurrencia. Requiere un CoreServer con CALL_NEXT_V2.
+        String[] response = request("CALL_NEXT_V2;" + assignmentId);
 
         if (response.length == 2 && "NO_TICKET".equals(response[1])) {
             return Optional.empty();
         }
 
-        if (response.length != 6 || !"CALLED".equals(response[1])
-                || response[2].isBlank() || response[3].isBlank()) {
+        // OK;CALLED_V2;turno;código;servicio;asignación;funcionario;ventanilla;LLAMADO
+        if (response.length != 9 || !"CALLED_V2".equals(response[1])
+                || !"LLAMADO".equals(response[8])) {
             throw new IOException("La confirmación del llamado no es válida.");
         }
 
-        return Optional.of(new CalledTicket(
-                response[2], response[3],
-                positiveInt(response[4], "operador"),
-                positiveInt(response[5], "ventanilla")
-        ));
+        long receivedAssignmentId = positiveLong(response[5], "asignación");
+        if (receivedAssignmentId != assignmentId) {
+            throw new IOException("La confirmación del llamado pertenece a otra asignación.");
+        }
+
+        try {
+            return Optional.of(new CalledTicket(
+                    positiveLong(response[2], "turno"),
+                    response[3], response[4], receivedAssignmentId,
+                    positiveInt(response[6], "operador"),
+                    positiveInt(response[7], "ventanilla")
+            ));
+        } catch (IllegalArgumentException exception) {
+            throw new IOException("La confirmación del llamado contiene datos inválidos.", exception);
+        }
     }
 
     public Optional<ActiveTicket> getActiveTicket(long assignmentId) throws IOException {
@@ -265,46 +267,6 @@ public class OperatorServerClient {
     }
 
     private String[] request(String message) throws IOException {
-        String line;
-
-        try (Socket socket = NetworkSettings.open(host, port, 3000, 15000)) {
-
-            try (
-                    BufferedWriter output = new BufferedWriter(
-                            new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)
-                    ); BufferedReader input = new BufferedReader(
-                            new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
-                    )) {
-                output.write("AUTH;" + session.token() + ";" + message);
-                output.newLine();
-                output.flush();
-                line = input.readLine();
-            }
-        }
-
-        if (line == null || line.isBlank()) {
-            throw new IOException("El servidor no envió una respuesta.");
-        }
-
-        String[] response = line.split(";", -1);
-        try {
-            for (int index = 0; index < response.length; index++) {
-                response[index] = URLDecoder.decode(response[index], StandardCharsets.UTF_8);
-            }
-        } catch (IllegalArgumentException exception) {
-            throw new IOException("La respuesta tiene una codificación inválida.", exception);
-        }
-
-        if (response.length == 3 && "DENIED".equals(response[0])) {
-            throw new AccessDeniedException(response[1], response[2]);
-        }
-        if (response.length == 2 && "ERROR".equals(response[0])) {
-            throw new IllegalArgumentException(response[1]);
-        }
-        if (response.length < 2 || !"OK".equals(response[0])) {
-            throw new IOException("El formato de respuesta no es válido.");
-        }
-
-        return response;
+        return transport.authenticated(session.token(), message);
     }
 }

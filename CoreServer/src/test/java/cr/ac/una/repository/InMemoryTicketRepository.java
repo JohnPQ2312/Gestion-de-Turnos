@@ -3,6 +3,7 @@ package cr.ac.una.repository;
 import cr.ac.una.model.Service;
 import cr.ac.una.model.Ticket;
 import cr.ac.una.model.AttentionMode;
+import cr.ac.una.model.CalledTicket;
 import cr.ac.una.model.OperatorWindowAssignment;
 import cr.ac.una.model.TicketState;
 import java.time.LocalDateTime;
@@ -18,6 +19,8 @@ import java.util.Queue;
 // Mantiene colas separadas para turnos regulares y preferenciales dentro del proceso.
 // Los métodos sincronizados protegen la numeración y el llamado entre hilos de esa instancia.
 public class InMemoryTicketRepository implements TicketRepository {
+
+    private long calledCount;
 
     private final Queue<Ticket> regularQueue = new ArrayDeque<>();
     private final Queue<Ticket> priorityQueue = new ArrayDeque<>();
@@ -55,7 +58,7 @@ public class InMemoryTicketRepository implements TicketRepository {
     // Descarta una asignación ocupada y busca primero un preferencial compatible.
     // Si no lo encuentra, prueba la cola regular según la modalidad de la ventanilla.
     @Override
-    public synchronized Optional<Ticket> callNext(
+    public synchronized Optional<CalledTicket> callNext(
             OperatorWindowAssignment assignment,
             Set<String> eligibleServiceCodes,
             AttentionMode attentionMode
@@ -97,7 +100,9 @@ public class InMemoryTicketRepository implements TicketRepository {
 
         next.ifPresent(ticket -> ticket.markCalled(assignment));
 
-        return next;
+        // Los turnos en memoria no tienen identificador persistido: se numeran los llamados solo para
+        // cumplir el contrato en este ejemplo.
+        return next.map(ticket -> new CalledTicket(++calledCount, ticket));
     }
 
     // Recorre la cola sin retirar los turnos incompatibles con esta ventanilla.

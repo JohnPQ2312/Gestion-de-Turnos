@@ -4,7 +4,7 @@ OperatorSystem exige iniciar sesión. Ningún funcionario tiene contraseña por 
 
 ## 1. Estructura
 
-- **Base existente** (por ejemplo, la del equipo): aplicar una vez `database/migraciones/001_credenciales_operador.sql` y después `002_estado_pausada_ventanilla.sql`. La primera crea `operator_credential`; la segunda permite `PAUSADA`. Conservan los registros existentes.
+- **Base existente** (por ejemplo, la asignada por el docente): aplicar una vez `database/migraciones/001_credenciales_operador.sql` y después `002_estado_pausada_ventanilla.sql`. La primera crea `operator_credential`; la segunda permite `PAUSADA`. Conservan los registros existentes.
 - **Instalación nueva**: `database/esquema.sql` ya incluye esa tabla. No aplicar además la migración.
 
 La versión con rellamado también requiere la [migración 003](migraciones/003_rellamado_ticket.sql) sobre una base anterior. Consultar [RELLAMADO.md](RELLAMADO.md) para aplicarla con CoreServer detenido. En una instalación nueva el DDL ya la incluye.
@@ -67,8 +67,8 @@ Los rechazos de acceso responden `DENIED;<motivo>;<mensaje>`, distinto de `ERROR
 
 Las herramientas de `pruebas/` utilizan este contrato y solicitan la cuenta de cada funcionario participante. `TestAccess` asocia cada asignación con su sesión y envía LOGOUT al terminar. Ejecutarlas con `pruebas/Ejecutar.ps1`, según el [procedimiento](../pruebas/README.md). No requieren credenciales MySQL.
 
-El modo sin TLS está limitado a loopback. Para comunicar computadoras se exige TLS, con certificado del servidor y almacenes de confianza configurados según [RED_Y_TLS.md](../RED_Y_TLS.md). El transporte protegido ya está implementado; sigue pendiente el ensayo físico entre equipos.
+El modo sin TLS está limitado a loopback. Para comunicar computadoras se exige TLS, con certificado del servidor y almacenes de confianza configurados según [RED_Y_TLS.md](../RED_Y_TLS.md). El transporte protegido ya está implementado; el ensayo físico entre equipos queda como trabajo futuro.
 
-El rellamado usa `RECALL_TICKET;<asignación>;<ticket>` y la pantalla pública usa `GET_DISPLAY_SNAPSHOT_V2`. El detalle de esos contratos y su compatibilidad está en [RELLAMADO.md](RELLAMADO.md).
+El rellamado usa `RECALL_TICKET;<asignación>;<ticket>` y la pantalla pública usa `GET_DISPLAY_SNAPSHOT_V3`. El detalle de esos contratos y su compatibilidad está en [RELLAMADO.md](RELLAMADO.md).
 
 La vista [Administración de personas](ADMINISTRAR_PERSONAS.md), exclusiva de ADMIN, permite gestionar funcionarios y credenciales desde OperatorSystem. Reutiliza este acceso inicial; no crea contraseñas predeterminadas ni reemplaza la preparación de la primera cuenta administrativa.

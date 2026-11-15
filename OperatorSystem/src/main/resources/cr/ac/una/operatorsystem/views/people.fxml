@@ -24,6 +24,10 @@
          <Label text="Personal registrado" styleClass="field-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
          <Button text="Nuevo funcionario" onAction="#newOperator" minHeight="40" minWidth="-Infinity" styleClass="secondary-button"/>
         </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="12">
+         <TextField fx:id="operatorsFilter" promptText="Buscar por nombre, acceso, perfil o número" accessibleText="Buscar en los funcionarios" HBox.hgrow="ALWAYS" maxWidth="Infinity" prefHeight="36"/>
+         <Label fx:id="operatorsFilterSummary" wrapText="true" minHeight="-Infinity" prefWidth="210" maxWidth="210" styleClass="secondary-text"/>
+        </HBox>
         <TableView fx:id="operatorsTable" accessibleText="Funcionarios registrados" VBox.vgrow="ALWAYS">
          <placeholder><Label text="Sin funcionarios para mostrar."/></placeholder>
         </TableView>
@@ -58,6 +62,10 @@
         <HBox alignment="CENTER_LEFT" spacing="12">
          <Label text="Usuarios registrados" styleClass="field-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
          <Button text="Nuevo usuario" onAction="#newUser" minHeight="40" minWidth="-Infinity" styleClass="secondary-button"/>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="12">
+         <TextField fx:id="usersFilter" promptText="Buscar por nombre de usuario o número" accessibleText="Buscar en los usuarios de turnos" HBox.hgrow="ALWAYS" maxWidth="Infinity" prefHeight="36"/>
+         <Label fx:id="usersFilterSummary" wrapText="true" minHeight="-Infinity" prefWidth="210" maxWidth="210" styleClass="secondary-text"/>
         </HBox>
         <TableView fx:id="usersTable" accessibleText="Usuarios relacionados con turnos" VBox.vgrow="ALWAYS">
          <placeholder><Label text="Sin usuarios para mostrar."/></placeholder>

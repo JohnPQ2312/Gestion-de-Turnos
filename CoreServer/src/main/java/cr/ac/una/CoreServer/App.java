@@ -4,12 +4,11 @@ import cr.ac.una.config.DatabaseConnectionFactory;
 import cr.ac.una.config.NetworkSettings;
 import cr.ac.una.repository.JdbcAccountRepository;
 import cr.ac.una.repository.JdbcActiveTicketRepository;
+import cr.ac.una.repository.JdbcAssignmentCallContextRepository;
 import cr.ac.una.repository.JdbcDisplayRepository;
-import cr.ac.una.repository.JdbcOperatorRepository;
 import cr.ac.una.repository.JdbcOperatorWindowAssignmentRepository;
 import cr.ac.una.repository.JdbcReportRepository;
 import cr.ac.una.repository.JdbcServiceRepository;
-import cr.ac.una.repository.JdbcServiceWindowRepository;
 import cr.ac.una.repository.JdbcTicketCallingRepository;
 import cr.ac.una.repository.JdbcTicketCreationRepository;
 import cr.ac.una.repository.JdbcTicketLifecycleRepository;
@@ -61,9 +60,8 @@ public class App {
 
             TicketAttentionService attentionService = new TicketAttentionService(
                     new JdbcTicketCallingRepository(connectionFactory),
-                    new JdbcOperatorRepository(connectionFactory),
-                    new JdbcServiceWindowRepository(connectionFactory),
-                    new JdbcOperatorWindowAssignmentRepository(connectionFactory)
+                    new JdbcOperatorWindowAssignmentRepository(connectionFactory),
+                    new JdbcAssignmentCallContextRepository(connectionFactory)
             );
 
             TicketLifecycleService lifecycleService = new TicketLifecycleService(

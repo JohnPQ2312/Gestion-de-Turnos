@@ -2,9 +2,9 @@
 
 ## Acceso
 
-Iniciar CoreServer y OperatorSystem actualizados, entrar con una cuenta **ADMIN** y pulsar **Asignaciones**. La vista contiene **Servicios habilitados** y **Asignaciones e historial**. Conserva el diseño y los permisos de la aplicación; los clientes no acceden directamente a MySQL.
+Iniciar CoreServer y OperatorSystem actualizados, entrar con una cuenta **ADMIN**, abrir el menú **Administración** y elegir **Asignaciones**. La vista contiene **Servicios habilitados** y **Asignaciones e historial**. Conserva el diseño y los permisos de la aplicación; los clientes no acceden directamente a MySQL.
 
-El bloque utiliza `operator_service`, `window_service` y `operator_window_assignment` existentes. **No requiere tablas ni migraciones nuevas.** No repetir el esquema, las migraciones 001/002/003 ni los datos iniciales sobre la base compartida.
+Esta vista utiliza las tablas `operator_service`, `window_service` y `operator_window_assignment`. No requiere tablas ni migraciones nuevas. Sobre la base asignada no se ejecutan el esquema, las migraciones ni los datos iniciales ([INSTALACION.md](../INSTALACION.md)).
 
 La vista trabaja con servicios y ventanillas existentes, incluidos los inactivos, para preparar sus habilitaciones y consultar su historia. Su creación y edición se realizan desde [Servicios y ventanillas](ADMINISTRAR_CATALOGO.md).
 
@@ -74,10 +74,10 @@ Los seis contadores de la captura corresponden a funcionarios, ventanillas, serv
 
 El cliente valida cantidades, campos, identificadores, estados y fechas. Una confirmación inválida o perdida no provoca reenvío: bloquea la edición hasta consultar de nuevo. Comprobar la habilitación o la fila histórica antes de repetir una acción.
 
-Los errores conservan `DENIED;motivo;mensaje` y `ERROR;mensaje`. No se modifican los contratos de llamado, reportes, Personas ni snapshots públicos V1/V2. Se conservan los constructores anteriores de TurnRequestHandler para las herramientas existentes.
+Los errores conservan `DENIED;motivo;mensaje` y `ERROR;mensaje`.
 
 ## Código y verificación
 
 CoreServer incorpora `AssignmentConfigurationService`, `AssignmentConfigurationRepository`, `JdbcAssignmentConfigurationRepository` y `AssignmentConfigurationHandler`. `AssignmentConfiguration` representa la captura. OperatorSystem utiliza `AssignmentServerClient`, `AssignmentRequests`, `AssignmentsController` y `assignments.fxml`.
 
-Las habilitaciones y asignaciones se comprobaron sobre MySQL local desechable. Esa administración no se ejecutó contra la base compartida durante las pruebas. Consultar el [alcance de las comprobaciones](../pruebas/README.md#comprobaciones-y-límites).
+Las habilitaciones y asignaciones se comprobaron sobre MySQL local desechable. También se probaron las habilitaciones y la apertura y el cierre de una asignación sobre la base asignada, mediante clientes de protocolo, antes de los últimos cambios. Consultar el [alcance de las comprobaciones](../pruebas/README.md#comprobaciones-y-límites).

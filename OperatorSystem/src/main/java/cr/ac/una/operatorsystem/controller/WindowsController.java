@@ -23,6 +23,8 @@ public class WindowsController {
 
     @FXML private BorderPane content;
     @FXML private TableView<ManagedWindow> windowsTable;
+    @FXML private TextField windowsFilter;
+    @FXML private Label windowsFilterSummary;
     @FXML private Label selectionLabel;
     @FXML private TextField numberField;
     @FXML private ComboBox<ModeOption> modeCombo;
@@ -35,6 +37,7 @@ public class WindowsController {
     private CatalogRequests requests;
     private AdminTaskRunner runner;
     private ManagedWindow selected;
+    private TableFilter<ManagedWindow> filter;
 
     @FXML
     private void initialize() {
@@ -45,10 +48,15 @@ public class WindowsController {
         column("Turno activo", w -> w.hasActiveTicket() ? "Sí" : "No", 100);
         column("Servicios activos", w -> "" + w.enabledServices(), 120);
         modeCombo.getItems().setAll(MIXED, PRIORITY_ONLY);
-        windowsTable.getSelectionModel().selectedItemProperty().addListener((o, before, row) -> select(row));
+        filter = new TableFilter<>(windowsTable, windowsFilter, windowsFilterSummary,
+                w -> w.id() + " " + ManagedWindow.stateLabel(w.state()) + " " + ManagedWindow.modeLabel(w.mode())
+                        + " " + (w.openAssignmentId() == 0 ? "" : w.operatorName()));
+        windowsTable.getSelectionModel().selectedItemProperty().addListener((o, before, row) -> {
+            if (!filter.isRefiltering()) select(row);
+        });
         runner = new AdminTaskRunner(content, reloadButton, noticeLabel, "operatorsystem-windows");
         select(null);
-        noticeLabel.setText("Pendiente de consulta.");
+        AdminTaskRunner.showNotice(noticeLabel, "Pendiente de consulta.", false);
         content.setDisable(true);
     }
 
@@ -73,11 +81,11 @@ public class WindowsController {
     private void load(int idToSelect, String success) {
         if (requests == null) return;
         runner.run(requests::windows, rows -> {
-            windowsTable.getItems().setAll(rows);
+            filter.setAll(rows);
             ManagedWindow match = rows.stream().filter(w -> w.id() == idToSelect).findFirst().orElse(null);
             if (match == null) newWindow();
-            else windowsTable.getSelectionModel().select(match);
-            noticeLabel.setText(success);
+            else filter.select(match);
+            AdminTaskRunner.showNotice(noticeLabel, success, false);
         }, false);
     }
 
@@ -134,7 +142,7 @@ public class WindowsController {
         if (!runner.isIdle() || requests == null) return;
         ManagedWindow row = selected;
         ModeOption mode = modeCombo.getValue();
-        if (mode == null) { noticeLabel.setText("Seleccione la modalidad."); return; }
+        if (mode == null) { AdminTaskRunner.showNotice(noticeLabel, "Seleccione la modalidad.", true); return; }
         int id;
         if (row == null) {
             try {
@@ -142,10 +150,10 @@ public class WindowsController {
             } catch (NumberFormatException e) {
                 id = 0;
             }
-            if (id < 1 || id > 999) { noticeLabel.setText("Ingrese un número de ventanilla entre 1 y 999."); return; }
+            if (id < 1 || id > 999) { AdminTaskRunner.showNotice(noticeLabel, "Ingrese un número de ventanilla entre 1 y 999.", true); return; }
         } else {
             id = row.id();
-            if (row.mode().equals(mode.value())) { noticeLabel.setText("No hay cambios para guardar."); return; }
+            if (row.mode().equals(mode.value())) { AdminTaskRunner.showNotice(noticeLabel, "No hay cambios para guardar.", false); return; }
         }
         String message = row == null
                 ? "Crear la ventanilla " + id + " con modalidad " + ManagedWindow.modeLabel(mode.value()).toLowerCase() + "."

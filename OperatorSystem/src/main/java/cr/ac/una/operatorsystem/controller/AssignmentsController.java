@@ -29,6 +29,8 @@ public class AssignmentsController {
     @FXML private Button openButton;
     @FXML private Button closeButton;
     @FXML private TableView<AssignmentEntry> assignmentsTable;
+    @FXML private TextField assignmentsFilter;
+    @FXML private Label assignmentsFilterSummary;
     @FXML private Label selectedAssignmentLabel;
     @FXML private Label noticeLabel;
     @FXML private Button reloadButton;
@@ -38,6 +40,7 @@ public class AssignmentsController {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
     private AssignmentConfiguration data;
     private AssignmentRequests requests;
+    private TableFilter<AssignmentEntry> historyFilter;
     private Consumer<String> sessionEnded;
     private Task<?> currentTask;
     private boolean busy, closed, refreshRequired;
@@ -50,7 +53,9 @@ public class AssignmentsController {
         servicesTable.getSelectionModel().selectedItemProperty().addListener((o, old, value) -> updateControls());
         operatorCombo.valueProperty().addListener((o, old, value) -> updateControls());
         windowCombo.valueProperty().addListener((o, old, value) -> updateControls());
-        assignmentsTable.getSelectionModel().selectedItemProperty().addListener((o, old, value) -> updateControls());
+        assignmentsTable.getSelectionModel().selectedItemProperty().addListener((o, old, value) -> {
+            if (historyFilter == null || !historyFilter.isRefiltering()) updateControls();
+        });
         column(servicesTable, "Código", Permission::code, 110);
         column(servicesTable, "Servicio", Permission::name, 320);
         column(servicesTable, "Estado del servicio", p -> p.active() ? "Activo" : "Inactivo", 160);
@@ -61,6 +66,10 @@ public class AssignmentsController {
         column(assignmentsTable, "Estado", p -> p.endedAt() == null ? "Abierta" : "Cerrada", 110);
         column(assignmentsTable, "Inicio", p -> DATE.format(p.startedAt()), 190);
         column(assignmentsTable, "Fin", p -> p.endedAt() == null ? "—" : DATE.format(p.endedAt()), 190);
+        // El historial crece con cada ocupación: se puede buscar por funcionario, ventanilla o estado.
+        historyFilter = new TableFilter<>(assignmentsTable, assignmentsFilter, assignmentsFilterSummary,
+                a -> "#" + a.id() + " " + operatorName(a) + " ventanilla " + a.windowId()
+                        + (a.endedAt() == null ? " abierta" : " cerrada"));
         content.setDisable(true);
         updateControls();
     }
@@ -86,7 +95,7 @@ public class AssignmentsController {
             operatorCombo.getItems().setAll(snapshot.operators()); windowCombo.getItems().setAll(snapshot.windows());
             snapshot.operators().stream().filter(o -> Objects.equals(o.id(), previousOperator)).findFirst().ifPresent(operatorCombo::setValue);
             snapshot.windows().stream().filter(w -> Objects.equals(w.id(), previousWindow)).findFirst().ifPresent(windowCombo::setValue);
-            assignmentsTable.getItems().setAll(snapshot.assignments()); updateControls(); noticeLabel.setText(message);
+            historyFilter.setAll(snapshot.assignments()); updateControls(); AdminTaskRunner.showNotice(noticeLabel, message, false);
         }, false);
     }
     private void showOwners() {
@@ -126,7 +135,7 @@ public class AssignmentsController {
     @FXML private void enableService() { changeService(true); }
     @FXML private void removeService() { changeService(false); }
     private void changeService(boolean enabled) {
-        if (busy || closed || ownerCombo.getValue() == null || servicesTable.getSelectionModel().getSelectedItem() == null) return;
+        if (busy || closed || refreshRequired || ownerCombo.getValue() == null || servicesTable.getSelectionModel().getSelectedItem() == null) return;
         Owner owner = ownerCombo.getValue(); Permission permission = servicesTable.getSelectionModel().getSelectedItem();
         boolean operator = "Funcionario".equals(ownerType.getValue());
         if (!confirm((enabled ? "Habilitar " : "Retirar ") + permission.name() + " para " + owner.label() + ".")) return;
@@ -137,7 +146,7 @@ public class AssignmentsController {
         }, result -> load("Habilitación guardada. Los próximos llamados comprobarán la configuración actual."), true);
     }
     @FXML private void openAssignment() {
-        if (busy || closed || operatorCombo.getValue() == null || windowCombo.getValue() == null) return;
+        if (busy || closed || refreshRequired || operatorCombo.getValue() == null || windowCombo.getValue() == null) return;
         var operator = operatorCombo.getValue(); var window = windowCombo.getValue();
         if (!confirm("Abrir una asignación de " + operator.name() + " en la ventanilla " + window.id() + ".")) return;
         execute(() -> requests.open(operator.id(), window.id()), id -> load("Asignación #" + id
@@ -145,7 +154,7 @@ public class AssignmentsController {
     }
     @FXML private void closeAssignment() {
         AssignmentEntry row = assignmentsTable.getSelectionModel().getSelectedItem();
-        if (busy || closed || row == null || row.endedAt() != null) return;
+        if (busy || closed || refreshRequired || row == null || row.endedAt() != null) return;
         if (!confirm("Cerrar la asignación #" + row.id() + " de " + operatorName(row)
                 + " en la ventanilla " + row.windowId() + ". Se conservarán las atenciones y el historial.")) return;
         execute(() -> { requests.close(row.id()); return row.id(); }, id -> load("Asignación #" + id
@@ -160,23 +169,28 @@ public class AssignmentsController {
     // Una escritura sin confirmación obliga a recargar antes de permitir otro cambio.
     private <T> void execute(Callable<T> action, Consumer<T> success, boolean write) {
         if (busy || closed || requests == null) return;
+        // Respaldo: ninguna escritura sale mientras una lectura correcta no restablezca el estado.
+        if (write && refreshRequired) return;
         busy = true; content.setDisable(true); reloadButton.setDisable(true); updateControls();
-        noticeLabel.setText(write ? "Guardando…" : "Consultando…");
+        AdminTaskRunner.showNotice(noticeLabel, write ? "Guardando…" : "Consultando…", false);
         Task<T> task = new Task<>() { @Override protected T call() throws Exception { return action.call(); } };
         currentTask = task;
-        task.setOnSucceeded(event -> { if (!closed) { release(); success.accept(task.getValue()); } });
+        // Una escritura confirmada deja pendiente la recarga: si esta falla, el formulario anterior
+        // no se reactiva. load() restablece refreshRequired al leer correctamente.
+        task.setOnSucceeded(event -> { if (!closed) { if (write) refreshRequired = true; release(); success.accept(task.getValue()); } });
         task.setOnFailed(event -> {
             if (closed) return;
             release(); Throwable error = task.getException();
             if (error instanceof AccessDeniedException denied) {
-                noticeLabel.setText(denied.getMessage());
+                AdminTaskRunner.showNotice(noticeLabel, denied.getMessage(), true);
                 if (denied.endsSession() || "FORBIDDEN".equals(denied.getReason())) sessionEnded.accept(denied.getMessage());
             } else if (error instanceof IllegalArgumentException || error instanceof IllegalStateException) {
-                noticeLabel.setText(error.getMessage());
+                AdminTaskRunner.showNotice(noticeLabel, error.getMessage(), true);
             } else {
                 if (write) { refreshRequired = true; content.setDisable(true); }
-                noticeLabel.setText(write ? "No se recibió una confirmación válida. El cambio pudo guardarse: actualice y compruebe la habilitación o el historial antes de repetir. No se reenvió la operación."
-                        : "No se pudo actualizar la configuración. Los datos visibles pueden estar desactualizados; compruebe CoreServer y vuelva a consultar.");
+                AdminTaskRunner.showNotice(noticeLabel, write ? "No se recibió una confirmación válida. El cambio pudo guardarse: actualice y compruebe la habilitación o el historial antes de repetir. No se reenvió la operación."
+                        : refreshRequired ? "No se pudo actualizar la configuración tras un cambio anterior. La edición sigue bloqueada hasta que Actualizar tenga éxito; no se reenvió ninguna operación."
+                        : "No se pudo actualizar la configuración. Los datos visibles pueden estar desactualizados; compruebe CoreServer y vuelva a consultar.", true);
             }
         });
         Thread.ofVirtual().name("operatorsystem-assignments").start(task);

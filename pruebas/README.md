@@ -144,10 +144,9 @@ Los números son operador y ventanilla de la primera asignación y de la segunda
 
 Al final la herramienta imprime dos consultas para confirmar en phpMyAdmin el estado del turno y que cada asignación tiene como máximo un turno activo.
 
-
 ## Comprobaciones y límites
 
-La validación local incluyó los repositorios JDBC, el servidor, los clientes y las vistas JavaFX sobre MySQL 8.0.32 desechable. Se ejecutó con JDK 25.0.3, destino de compilación Java 21 y JavaFX 13. No se probó por separado un runtime JDK 21.
+La validación local incluyó los repositorios JDBC, el servidor, los clientes y las vistas JavaFX sobre MySQL 8.0.32 desechable, con JDK 25.0.3 y 26.0.2, destino de compilación Java 21 y JavaFX 13. No se probó por separado un runtime JDK 21.
 
 | Área | Comprobaciones realizadas |
 | --- | --- |
@@ -160,35 +159,22 @@ La validación local incluyó los repositorios JDBC, el servidor, los clientes y
 | Pantalla pública | Varias suscripciones, avisos tras cambios confirmados, latidos, sincronización inicial, desconexión y recuperación. |
 | Transporte | TLS con clientes reales, nombre de certificado incorrecto, falta de confianza y configuración inválida, sin degradación automática a TCP. |
 
-La instalación se comprobó desde una copia limpia obtenida de los archivos versionados, sin reutilizar los recursos generados o privados de la carpeta del equipo. Se aplicaron esquema y datos iniciales, se prepararon credenciales con `CredentialSetup` y se ejecutó el recorrido por TLS. También se comprobaron clientes en procesos separados en la misma computadora. La compilación utilizó dependencias disponibles en la caché de Maven; no verificó su primera descarga en un equipo sin caché.
+Se comprobó el código actual con MySQL 8.0.32 local desechable, JDK 26.0.2, destino Java 21 y JavaFX 13. Un escenario integrado de 64 comprobaciones inició el servidor y las cuatro aplicaciones reales y las condujo por sus controles en ventanas fuera de pantalla. Incluyó cinco turnos, dos operadores, dos llamados simultáneos, un rellamado, las cinco consultas y el corte del servidor. Otras 21 comprobaciones cubren el anuncio de la pantalla pública y 15 la pérdida de la base de datos con el sistema en marcha: el servidor siguió activo, el generador y el operador mostraron el mensaje de error y el mismo servidor recuperó el servicio cuando MySQL volvió. Todo se ejecutó en una sola computadora por loopback, sin TLS y con ayudas de prueba externas a este repositorio. Una copia de los archivos que se entregan compiló con Maven sin conexión en los cuatro proyectos.
 
-Sobre la base compartida se comprobó la generación con persistencia, la continuación de consecutivos, el ciclo de atención y dos llamados coordinados a asignaciones diferentes. Ese ensayo produjo dos turnos distintos y ninguna ventanilla con más de un turno activo. Los llamados tardaron aproximadamente 5,5 y 6,5 segundos; esos tiempos históricos no equivalen a una medición actual bajo carga ni al tiempo de actualización visual.
+Con versiones anteriores del código se comprobó la instalación desde una copia limpia de los archivos versionados: se aplicaron esquema y datos iniciales, se prepararon credenciales con `CredentialSetup` y se ejecutó el recorrido por TLS, también con clientes en procesos separados en la misma computadora. La compilación usó dependencias de la caché de Maven y no verificó su primera descarga en un equipo sin caché.
 
-Después de aplicar las migraciones también se comprobó el rellamado sobre la base compartida: conservó el ticket y el primer llamado, aumentó el contador, actualizó ambas pantallas y permitió completar la atención. La administración de Personas y Asignaciones se probó en MySQL local, sin ejecutar sus escrituras sobre la base compartida durante esa validación.
+### Base asignada por el docente
 
-Las tres herramientas de esta carpeta se verificaron con el protocolo autenticado, incluyendo preparación inválida, credenciales incorrectas, identidades distintas y salida sin sesiones residuales en los casos comprobados. Los resultados locales de una misma asignación y un único turno elegible siguen separados de los ensayos remotos. Las baterías amplias utilizaron auxiliares de prueba externos y no forman una suite Maven/CI reproducible íntegramente desde este repositorio. Los casos repetidos de regresión no se cuentan como escenarios nuevos.
+Sobre la base asignada (MySQL 8.4.7) se comprobaron versiones anteriores del código: la generación con persistencia y la continuación de consecutivos, el ciclo de atención, dos llamados coordinados a asignaciones distintas (dos turnos distintos y ninguna ventanilla con más de un turno activo) y el rellamado después de aplicar las migraciones. Antes de los últimos cambios se recorrió también el catálogo, con los cuatro módulos compilados y todo ejecutándose en una computadora por loopback contra la base remota. Ese recorrido incluyó el alta y la edición de un servicio, el alta de una ventanilla, las habilitaciones, la asignación, dos emisiones, diez rechazos esperados y la atención completa de dos turnos. Los registros previos se conservaron. Quedaron en la base una cuenta ADMIN, un servicio y una ventanilla de QA inactivos, una asignación cerrada y dos turnos finalizados. Las altas, la edición, las emisiones y la vista pública se comprobaron en las pantallas reales; los cambios de modalidad, las restricciones y la atención usaron clientes de protocolo reales.
 
-La administración de servicios y ventanillas se comprobó con MySQL 8.0.32 local, JDK 26.0.2, destino Java 21 y JavaFX 13. Pasaron 21 comprobaciones de servidor y protocolo, diez de las vistas con respuestas controladas y 29 de regresión de Asignaciones. El cliente de catálogo también se probó por sockets contra el servidor y JDBC reales. Esas cifras corresponden a pruebas separadas de servidor e interfaz. El recorrido compartido posterior se describe a continuación.
+Con el código actual se ejecutaron además las aplicaciones contra la base asignada: se emitió un turno de Información general, se llamó y rellamó un turno de Trámites desde la asignación 1 (`operador1`, ventanilla 1) y se inició y finalizó su atención. La base conserva esas operaciones con sus fechas. Esa sesión cubrió el ciclo de atención de un operador.
 
-Quedan pendientes el ensayo físico entre computadoras, una medición de rendimiento bajo carga y la revisión de fechas históricas anteriores al ajuste horario. Los resultados no acreditan carga prolongada ni ausencia de cualquier interbloqueo. Las herramientas de esta carpeta conectan a un servidor local y no validan por sí solas un despliegue TLS entre equipos.
+Dos llamados con turno tardaron cerca de seis segundos de procesamiento porque cada uno abrió siete conexiones. Es una observación de ese recorrido; el código actual reduce las conexiones por llamado.
 
+### Herramientas de esta carpeta
 
-### Recorrido del catálogo sobre la base compartida
+Las tres herramientas se verificaron con el protocolo autenticado, incluidas la preparación inválida, las credenciales incorrectas y las identidades distintas, y cierran sus sesiones al terminar. Sus resultados corresponden a un servidor local. Las baterías amplias usaron auxiliares externos que no forman parte de este repositorio, así que no hay una suite Maven/CI reproducible desde él.
 
-El 13 de noviembre de 2026 se ejecutó sobre MySQL 8.0.32 compartido, con JDK 26.0.2, destino Java 21 y JavaFX 13. Los cuatro módulos compilaron. Servidor y clientes se ejecutaron en una sola computadora mediante loopback; MySQL era remoto.
+### Alcance y trabajo futuro
 
-| Comprobación | Resultado |
-| --- | --- |
-| Servicio desde la interfaz | Alta activa con consecutivo 0; edición de nombre y prefijo antes de emitir, confirmada en MySQL. |
-| Ventanilla desde la interfaz | Alta activa sin habilitaciones ni asignación implícitas. |
-| Cliente de administración | Baja y reactivación de ventanilla libre, cambios de modalidad, habilitaciones y apertura/cierre de asignación confirmados. |
-| Validaciones | Diez rechazos correctos: duplicados de código, nombre, prefijo y ventanilla; prefijo inválido; bajas incompatibles, retirada con pendientes, cambio de prefijo tras emitir y cambio de modalidad con turno activo. |
-| Generador y pantalla pública | Emisión regular y preferencial con el servicio nuevo, códigos y prioridad persistidos; llamados y finalizaciones visibles por la suscripción. |
-| Atención mediante cliente real | La exclusiva tomó primero el preferencial y dejó en espera al regular. Al cambiar a mixta se atendió el regular. Ambos terminaron FINALIZADO con fechas en orden. |
-| Cierre | Cuenta, servicio y ventanilla de QA inactivos, asignación cerrada y dos tickets finalizados. Se conservaron las mismas huellas de los 44 registros anteriores de las diez tablas. |
-
-La autenticación de QA utilizó AuthServerClient con una cuenta exclusiva autorizada. Las altas y edición indicadas, las emisiones y la vista pública se comprobaron en las pantallas reales. Los cambios de modalidad, restricciones y atención utilizaron los clientes de protocolo reales; no se acredita que todos los botones administrativos se hayan recorrido en esta sesión. No se provocaron nuevos fallos de red ni conflictos concurrentes en la base compartida.
-
-Los llamados con turno tardaron 6289 y 6154 ms de procesamiento. Cada uno abrió siete conexiones, cuyas aperturas sumaron aproximadamente 4,9 segundos. La petición sin turno tardó 6013 ms. Son observaciones del recorrido y no una prueba de carga.
-
-Una comprobación visual separada, sin MySQL ni emisión, cargó 20 servicios de ejemplo en el generador. El último fue accesible y seleccionable; el botón de generar permaneció visible. Al desplazarse por la lista también se pierde de vista temporalmente el panel preferencial. El generador abierto no incorpora automáticamente altas posteriores: se debe volver a abrir para consultar el catálogo actualizado.
+Las herramientas y los escenarios se conectan a un servidor local. Como trabajo futuro quedan el despliegue entre computadoras con TLS, una medición de rendimiento bajo carga y la revisión de fechas históricas anteriores al ajuste horario.

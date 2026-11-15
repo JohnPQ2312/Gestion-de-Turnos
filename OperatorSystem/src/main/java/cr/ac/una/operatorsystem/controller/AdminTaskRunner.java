@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import javafx.concurrent.Task;
+import javafx.css.PseudoClass;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -30,23 +31,38 @@ final class AdminTaskRunner {
         this.threadName = threadName;
     }
 
+    // El aviso cambia de aspecto; el texto y las reglas de la operación se conservan.
+    static void showNotice(Label label, String message, boolean warning) {
+        label.pseudoClassStateChanged(PseudoClass.getPseudoClass("warning"), warning);
+        label.setText(message);
+    }
+
     void onSessionEnded(Consumer<String> handler) { sessionEnded = Objects.requireNonNull(handler); }
 
-    boolean isIdle() { return !busy && !closed; }
+    // Disponible para iniciar una escritura: sin tarea en curso y sin una actualización pendiente.
+    boolean isIdle() { return !busy && !closed && !refreshRequired; }
 
     // Task entrega éxito o fallo en JavaFX y mantiene los controles bloqueados durante la
-    // solicitud.
+    // solicitud. Toda escritura confirmada o dudosa exige una lectura correcta antes de permitir
+    // otra: la recarga que sigue a una escritura puede fallar y no debe reactivar el formulario
+    // anterior.
     <T> void run(Callable<T> action, Consumer<T> success, boolean write) {
         if (busy || closed) return;
+        if (write && refreshRequired) {
+            AdminTaskRunner.showNotice(noticeLabel, "Presione Actualizar y revise los datos antes de guardar otro cambio.", true);
+            return;
+        }
         busy = true;
         content.setDisable(true);
         reloadButton.setDisable(true);
-        noticeLabel.setText(write ? "Guardando…" : "Consultando…");
+        AdminTaskRunner.showNotice(noticeLabel, write ? "Guardando…" : "Consultando…", false);
         Task<T> task = new Task<>() { @Override protected T call() throws Exception { return action.call(); } };
         currentTask = task;
         task.setOnSucceeded(event -> {
             if (closed) return;
-            if (!write) refreshRequired = false;
+            // Una lectura correcta restablece el estado; una escritura confirmada lo deja pendiente
+            // hasta que la recarga que sigue termine bien.
+            refreshRequired = write;
             release();
             success.accept(task.getValue());
         });
@@ -55,19 +71,22 @@ final class AdminTaskRunner {
             release();
             Throwable error = task.getException();
             if (error instanceof AccessDeniedException denied) {
-                noticeLabel.setText(denied.getMessage());
+                AdminTaskRunner.showNotice(noticeLabel, denied.getMessage(), true);
                 if (denied.endsSession()) sessionEnded.accept(denied.getMessage());
             } else if (error instanceof IllegalArgumentException || error instanceof IllegalStateException) {
-                noticeLabel.setText(error.getMessage());
+                AdminTaskRunner.showNotice(noticeLabel, error.getMessage(), true);
             } else if (write) {
                 // Una confirmación perdida no demuestra que el cambio falló: se exige consultar antes de seguir.
                 refreshRequired = true;
                 content.setDisable(true);
-                noticeLabel.setText("No se recibió una confirmación válida. El cambio pudo guardarse: presione Actualizar "
-                        + "y revise el registro antes de repetirlo. No se reenvió la operación.");
+                AdminTaskRunner.showNotice(noticeLabel, "No se recibió una confirmación válida. El cambio pudo guardarse: presione Actualizar "
+                        + "y revise el registro antes de repetirlo. No se reenvió la operación.", true);
+            } else if (refreshRequired) {
+                AdminTaskRunner.showNotice(noticeLabel, "No se pudieron actualizar los datos tras un cambio anterior. La edición sigue bloqueada "
+                        + "hasta que Actualizar tenga éxito; no se reenvió ninguna operación.", true);
             } else {
-                noticeLabel.setText("No se pudieron consultar los datos; las filas visibles pueden estar desactualizadas. "
-                        + "Compruebe CoreServer y presione Actualizar.");
+                AdminTaskRunner.showNotice(noticeLabel, "No se pudieron consultar los datos; las filas visibles pueden estar desactualizadas. "
+                        + "Compruebe CoreServer y presione Actualizar.", true);
             }
         });
         Thread.ofVirtual().name(threadName).start(task);

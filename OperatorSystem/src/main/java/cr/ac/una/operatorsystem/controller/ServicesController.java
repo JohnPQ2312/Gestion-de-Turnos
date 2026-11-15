@@ -20,6 +20,8 @@ public class ServicesController {
 
     @FXML private BorderPane content;
     @FXML private TableView<ManagedService> servicesTable;
+    @FXML private TextField servicesFilter;
+    @FXML private Label servicesFilterSummary;
     @FXML private Label selectionLabel;
     @FXML private TextField codeField;
     @FXML private TextField nameField;
@@ -33,6 +35,7 @@ public class ServicesController {
     private CatalogRequests requests;
     private AdminTaskRunner runner;
     private ManagedService selected;
+    private TableFilter<ManagedService> filter;
 
     @FXML
     private void initialize() {
@@ -43,10 +46,14 @@ public class ServicesController {
         column("Emitidos", s -> "" + s.issuedTickets(), 80);
         column("Pendientes", s -> "" + s.pendingTickets(), 90);
         column("Rutas abiertas", s -> "" + s.openRoutes(), 110);
-        servicesTable.getSelectionModel().selectedItemProperty().addListener((o, before, row) -> select(row));
+        filter = new TableFilter<>(servicesTable, servicesFilter, servicesFilterSummary,
+                s -> s.code() + " " + s.name() + " " + s.prefix());
+        servicesTable.getSelectionModel().selectedItemProperty().addListener((o, before, row) -> {
+            if (!filter.isRefiltering()) select(row);
+        });
         runner = new AdminTaskRunner(content, reloadButton, noticeLabel, "operatorsystem-services");
         select(null);
-        noticeLabel.setText("Pendiente de consulta.");
+        AdminTaskRunner.showNotice(noticeLabel, "Pendiente de consulta.", false);
         content.setDisable(true);
     }
 
@@ -72,11 +79,11 @@ public class ServicesController {
     private void load(String codeToSelect, String success) {
         if (requests == null) return;
         runner.run(requests::services, rows -> {
-            servicesTable.getItems().setAll(rows);
+            filter.setAll(rows);
             ManagedService match = rows.stream().filter(s -> s.code().equals(codeToSelect)).findFirst().orElse(null);
             if (match == null) newService();
-            else servicesTable.getSelectionModel().select(match);
-            noticeLabel.setText(success);
+            else filter.select(match);
+            AdminTaskRunner.showNotice(noticeLabel, success, false);
         }, false);
     }
 
@@ -130,20 +137,20 @@ public class ServicesController {
         if (row == null || !prefix.equals(row.prefix())) prefix = prefix.toUpperCase(Locale.ROOT);
 
         if (row == null && !CODE.matcher(code).matches()) {
-            noticeLabel.setText("Código no válido: de 1 a 20 caracteres, inicia con letra y usa letras sin tildes, dígitos o guion bajo.");
+            AdminTaskRunner.showNotice(noticeLabel, "Código no válido: de 1 a 20 caracteres, inicia con letra y usa letras sin tildes, dígitos o guion bajo.", true);
             return;
         }
         if (name.isEmpty() || name.length() > 80) {
-            noticeLabel.setText("El nombre es obligatorio y admite hasta 80 caracteres.");
+            AdminTaskRunner.showNotice(noticeLabel, "El nombre es obligatorio y admite hasta 80 caracteres.", true);
             return;
         }
         boolean prefixChanged = row == null || !prefix.equals(row.prefix());
         if (prefixChanged && !PREFIX.matcher(prefix).matches()) {
-            noticeLabel.setText("Prefijo no válido: de 1 a 5 letras sin tildes, sin dígitos ni espacios.");
+            AdminTaskRunner.showNotice(noticeLabel, "Prefijo no válido: de 1 a 5 letras sin tildes, sin dígitos ni espacios.", true);
             return;
         }
         if (row != null && !prefixChanged && name.equals(row.name())) {
-            noticeLabel.setText("No hay cambios para guardar.");
+            AdminTaskRunner.showNotice(noticeLabel, "No hay cambios para guardar.", false);
             return;
         }
         String message = row == null

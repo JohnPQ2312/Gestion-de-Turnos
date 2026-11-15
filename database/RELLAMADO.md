@@ -6,7 +6,7 @@ El rellamado no genera otro ticket, no consume consecutivos y no libera la asign
 
 ## Preparar una base existente
 
-La migración se validó en MySQL 8.0.32 local, sobre bases desechables, y se aplicó a `gamabasis_p3g9` para comprobar el rellamado sobre la base compartida. No volver a aplicarla en esa base. Para otra instalación, comprobar primero su estructura y seguir el procedimiento que corresponda. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) distingue ambos entornos.
+La migración se validó en MySQL 8.0.32 local, sobre bases desechables, y se aplicó a `gamabasis_p3g9` para comprobar el rellamado sobre la base asignada. No volver a aplicarla en esa base. Para otra instalación, comprobar primero su estructura y seguir el procedimiento que corresponda. El [resumen de comprobaciones](../pruebas/README.md#comprobaciones-y-límites) distingue ambos entornos.
 
 1. Confirmar que la base ya corresponde a las migraciones 001 y 002. Consultar [la guía de acceso](INICIALIZAR_ACCESO.md) si todavía faltan.
 2. Detener CoreServer y cerrar los clientes para actualizar la versión completa.
@@ -18,7 +18,7 @@ La migración se validó en MySQL 8.0.32 local, sobre bases desechables, y se ap
    ```
 
 4. Si ambas faltan, ejecutar una sola vez [003_rellamado_ticket.sql](migraciones/003_rellamado_ticket.sql), en su orden completo. Si alguna ya existe, revisar el estado de la migración antes de repetirla.
-5. Compilar los proyectos actualizados en NetBeans. Iniciar CoreServer y después los clientes. CoreServer, OperatorSystem y QueueDisplayScreen deben usar esta versión del bloque; CostumerTurn conserva su contrato de emisión.
+5. Compilar los proyectos actualizados en NetBeans. Iniciar CoreServer y después los clientes. CoreServer, OperatorSystem y QueueDisplayScreen deben usar esta versión; CostumerTurn conserva su contrato de emisión.
 
 Sobre una base existente no ejecutar de nuevo `esquema.sql` ni `datos_prueba.sql`. La migración 003 conserva los tickets: amplía la precisión de las fechas e inicializa los dos campos nuevos del historial.
 
@@ -53,17 +53,17 @@ OK;RECALLED;<assignment_id>;<ticket_id>;<call_count>;<last_called_at>
 
 Las fechas y los textos usan la codificación del protocolo existente. La respuesta se envía después de confirmar la transacción. Solo entonces se publica DISPLAY_CHANGED a las pantallas. Los rechazos no incrementan el contador ni publican avisos. Una respuesta perdida no provoca reintentos automáticos.
 
-La pantalla pública solicita `GET_DISPLAY_SNAPSHOT_V2`. Su respuesta comienza con `OK;DISPLAY_SNAPSHOT_V2;<cantidad_en_espera>;<cantidad_recientes>` y cada ticket contiene nueve campos:
+La pantalla pública solicita `GET_DISPLAY_SNAPSHOT_V3`. Su respuesta comienza con `OK;DISPLAY_SNAPSHOT_V3;<cantidad_llamados>;<cantidad_en_espera_enviada>;<total_en_espera>`. Después van todos los turnos LLAMADO o EN_ATENCION y luego hasta 30 turnos EN_ESPERA. Cada ticket contiene nueve campos:
 
 ```text
 ticket_id;visual_code;service_name;priority;state;window_id;called_at;last_called_at;call_count
 ```
 
-Los llamados recientes se ordenan por `last_called_at` e identificador. La pantalla compara ticket y contador para detectar una nueva repetición, muestra primer/último llamado y destaca el panel durante cuatro segundos. Al iniciar o finalizar la atención conserva el contador como historial, sin seguir anunciando que se está llamando al cliente. Una reconexión recupera los datos persistidos.
+Los turnos llamados y en atención se ordenan por `last_called_at` e identificador, del más reciente al más antiguo; los finalizados no se envían. La pantalla compara ticket y contador para detectar una nueva repetición, muestra primer y último llamado y destaca el panel durante cuatro segundos. Si el turno más reciente ya está EN_ATENCION, el anuncio dice que está siendo atendido en la ventanilla y no vuelve a pedir que se dirija a ella. Una reconexión recupera los datos persistidos.
 
-El comando anterior `GET_DISPLAY_SNAPSHOT` conserva sus siete campos. Así siguen funcionando las herramientas de concurrencia existentes. La nueva pantalla requiere un CoreServer actualizado para consultar V2.
+Los comandos anteriores `GET_DISPLAY_SNAPSHOT` (siete campos) y `GET_DISPLAY_SNAPSHOT_V2` se conservan en el servidor. Así siguen funcionando las herramientas de concurrencia existentes. La pantalla actual requiere un CoreServer actualizado para consultar V3.
 
-## Comprobación manual al integrar con la base compartida
+## Comprobación manual al integrar con la base asignada
 
 1. Iniciar sesión con un funcionario y elegir una asignación propia libre.
 2. Generar y llamar un turno de prueba; abrir dos pantallas públicas.

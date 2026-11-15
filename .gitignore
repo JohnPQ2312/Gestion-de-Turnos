@@ -16,5 +16,7 @@ network.properties
 *.jks
 
 /pruebas/.build/
+# Baterías de regresión locales: requieren una base MySQL desechable y no forman parte de la entrega
+/pruebas/regresion/
 # Archivos temporales de Word
 ~$*.docx

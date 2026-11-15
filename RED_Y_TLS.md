@@ -22,7 +22,7 @@ La configuración sin TLS se limita a direcciones loopback. Los clientes comprue
 3. Distribuir únicamente el certificado público por un canal verificado. Importarlo en un almacén de confianza PKCS12 para cada cliente. La clave privada permanece en la computadora de CoreServer.
 4. Completar las rutas y contraseñas privadas en los archivos locales. No versionar claves, almacenes o contraseñas. Los ejemplos contienen marcadores, no credenciales reales.
 5. Compilar y ejecutar primero CoreServer, luego generador, pantalla pública y dos operadores. Comprobar el arranque, login, generación, llamado, rellamado y ciclo de atención, reportes, administración, dos suscriptores y reconexión.
-6. Comprobar la conectividad de la red y sus reglas de acceso según el entorno del equipo. Este bloque no modifica el firewall ni instala certificados en Windows.
+6. Comprobar la conectividad de la red y sus reglas de acceso según el entorno del equipo. Esta guía no modifica el firewall ni instala certificados en Windows.
 
 Ejemplo con `keytool` incluido en el JDK, sustituyendo NOMBRE_SERVIDOR e IP_SERVIDOR. Los comandos solicitan las contraseñas interactivamente:
 
@@ -46,4 +46,4 @@ La configuración se lee al arrancar para elegir host/puerto y al abrir conexion
 
 TLS protege el enlace entre las aplicaciones y CoreServer. La conexión JDBC hacia MySQL se configura por separado mediante `db.properties`; activar TLS para los clientes no modifica su transporte.
 
-La validación realizada es local. El ensayo físico entre computadoras y su medición de rendimiento siguen pendientes. Consultar el [alcance de las comprobaciones](pruebas/README.md#comprobaciones-y-límites).
+La validación realizada es local; el despliegue entre computadoras con TLS y su medición de rendimiento quedan como trabajo futuro. Consultar el [alcance de las comprobaciones](pruebas/README.md#comprobaciones-y-límites).

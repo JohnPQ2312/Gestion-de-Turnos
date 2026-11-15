@@ -22,6 +22,10 @@ public class PeopleController {
     @FXML private BorderPane content;
     @FXML private TableView<ManagedOperator> operatorsTable;
     @FXML private TableView<ManagedAppUser> usersTable;
+    @FXML private TextField operatorsFilter;
+    @FXML private Label operatorsFilterSummary;
+    @FXML private TextField usersFilter;
+    @FXML private Label usersFilterSummary;
     @FXML private TextField operatorName;
     @FXML private TextField operatorUsername;
     @FXML private ComboBox<String> operatorRole;
@@ -39,6 +43,8 @@ public class PeopleController {
     @FXML private Label noticeLabel;
 
     private PeopleRequests requests;
+    private TableFilter<ManagedOperator> operatorsFilterModel;
+    private TableFilter<ManagedAppUser> usersFilterModel;
     private Consumer<String> sessionEnded;
     private int selfId;
     private ManagedOperator selectedOperator;
@@ -60,12 +66,20 @@ public class PeopleController {
         column(usersTable, "Id", r -> "" + r.id(), 60);
         column(usersTable, "Usuario", ManagedAppUser::username, 260);
         column(usersTable, "Estado", r -> r.active() ? "Activo" : "Inactivo", 100);
+        operatorsFilterModel = new TableFilter<>(operatorsTable, operatorsFilter, operatorsFilterSummary,
+                o -> o.id() + " " + o.name() + " " + o.username() + " " + o.role());
+        usersFilterModel = new TableFilter<>(usersTable, usersFilter, usersFilterSummary,
+                u -> u.id() + " " + u.username());
         operatorRole.getItems().setAll("OPERADOR", "ADMIN");
-        operatorsTable.getSelectionModel().selectedItemProperty().addListener((o, before, row) -> selectOperator(row));
-        usersTable.getSelectionModel().selectedItemProperty().addListener((o, before, row) -> selectUser(row));
+        operatorsTable.getSelectionModel().selectedItemProperty().addListener((o, before, row) -> {
+            if (!operatorsFilterModel.isRefiltering()) selectOperator(row);
+        });
+        usersTable.getSelectionModel().selectedItemProperty().addListener((o, before, row) -> {
+            if (!usersFilterModel.isRefiltering()) selectUser(row);
+        });
         selectOperator(null);
         selectUser(null);
-        noticeLabel.setText("Pendiente de consulta.");
+        AdminTaskRunner.showNotice(noticeLabel, "Pendiente de consulta.", false);
         content.setDisable(true);
     }
 
@@ -92,11 +106,11 @@ public class PeopleController {
         execute(() -> new Listings(requests.operators(), requests.users()), data -> {
             refreshRequired = false;
             content.setDisable(false);
-            operatorsTable.getItems().setAll(data.operators());
-            usersTable.getItems().setAll(data.users());
+            operatorsFilterModel.setAll(data.operators());
+            usersFilterModel.setAll(data.users());
             newOperator();
             newUser();
-            noticeLabel.setText(success);
+            AdminTaskRunner.showNotice(noticeLabel, success, false);
         }, false);
     }
 
@@ -130,7 +144,7 @@ public class PeopleController {
 
     @FXML
     private void saveOperator() {
-        if (busy || closed) return;
+        if (busy || closed || refreshRequired) return;
         ManagedOperator row = selectedOperator;
         String name = operatorName.getText();
         String username = operatorUsername.getText();
@@ -138,11 +152,11 @@ public class PeopleController {
         boolean active = operatorActive.isSelected();
         String password = operatorPassword.getText();
         if (name.isBlank() || username.isBlank() || role == null || (row == null && password.isEmpty())) {
-            noticeLabel.setText("Complete nombre, acceso, rol y, para un alta, contraseña inicial.");
+            AdminTaskRunner.showNotice(noticeLabel, "Complete nombre, acceso, rol y, para un alta, contraseña inicial.", true);
             return;
         }
         if (row != null && !password.isEmpty()) {
-            noticeLabel.setText("Para cambiar la contraseña use Restablecer contraseña; Guardar cambios solo modifica los datos.");
+            AdminTaskRunner.showNotice(noticeLabel, "Para cambiar la contraseña use Restablecer contraseña; Guardar cambios solo modifica los datos.", true);
             return;
         }
         if (!confirm(row == null ? "Crear el funcionario " + username + "."
@@ -161,11 +175,11 @@ public class PeopleController {
 
     @FXML
     private void resetPassword() {
-        if (busy || closed || selectedOperator == null) return;
+        if (busy || closed || refreshRequired || selectedOperator == null) return;
         int id = selectedOperator.id();
         String password = operatorPassword.getText();
         if (password.length() < 8 || password.length() > 128) {
-            noticeLabel.setText("Ingrese una contraseña nueva de 8 a 128 caracteres.");
+            AdminTaskRunner.showNotice(noticeLabel, "Ingrese una contraseña nueva de 8 a 128 caracteres.", true);
             return;
         }
         if (!confirm("Restablecer la contraseña del funcionario #" + id + ". Sus sesiones con la contraseña anterior dejarán de servir."
@@ -179,11 +193,11 @@ public class PeopleController {
 
     @FXML
     private void saveUser() {
-        if (busy || closed) return;
+        if (busy || closed || refreshRequired) return;
         ManagedAppUser row = selectedUser;
         String username = userUsername.getText();
         boolean active = userActive.isSelected();
-        if (username.isBlank()) { noticeLabel.setText("Ingrese el nombre del usuario."); return; }
+        if (username.isBlank()) { AdminTaskRunner.showNotice(noticeLabel, "Ingrese el nombre del usuario.", true); return; }
         if (!confirm(row == null ? "Crear el usuario " + username + "."
                 : "Guardar los datos y el estado del usuario #" + row.id() + ".")) return;
         execute(() -> {
@@ -205,14 +219,19 @@ public class PeopleController {
     // Tras una escritura incierta exige consultar el estado guardado antes de continuar.
     private <T> void execute(Callable<T> action, Consumer<T> success, boolean write) {
         if (busy || closed || requests == null) return;
+        // Respaldo: ninguna escritura sale mientras una lectura correcta no restablezca el estado.
+        if (write && refreshRequired) return;
         busy = true;
         content.setDisable(true);
         reloadButton.setDisable(true);
-        noticeLabel.setText(write ? "Guardando…" : "Consultando…");
+        AdminTaskRunner.showNotice(noticeLabel, write ? "Guardando…" : "Consultando…", false);
         Task<T> task = new Task<>() { @Override protected T call() throws Exception { return action.call(); } };
         currentTask = task;
         task.setOnSucceeded(event -> {
             if (closed) return;
+            // Una escritura confirmada deja pendiente la recarga: si esta falla, el formulario
+            // anterior no se reactiva. load() restablece refreshRequired al leer correctamente.
+            if (write) refreshRequired = true;
             release();
             success.accept(task.getValue());
         });
@@ -222,15 +241,17 @@ public class PeopleController {
             Throwable error = task.getException();
             operatorPassword.clear();
             if (error instanceof AccessDeniedException denied) {
-                noticeLabel.setText(denied.getMessage());
+                AdminTaskRunner.showNotice(noticeLabel, denied.getMessage(), true);
                 if (denied.endsSession()) sessionEnded.accept(denied.getMessage());
             } else if (error instanceof IllegalArgumentException || error instanceof IllegalStateException) {
-                noticeLabel.setText(error.getMessage());
+                AdminTaskRunner.showNotice(noticeLabel, error.getMessage(), true);
             } else {
                 if (write) { refreshRequired = true; content.setDisable(true); }
-                noticeLabel.setText(write
+                AdminTaskRunner.showNotice(noticeLabel, write
                         ? "No se recibió una confirmación válida. El cambio pudo guardarse: actualice los datos antes de repetir. Para contraseñas, compruebe el acceso. No se reenvió la operación."
-                        : "No se pudieron actualizar los datos; las filas visibles pueden estar desactualizadas. Compruebe CoreServer y presione Actualizar.");
+                        : refreshRequired
+                        ? "No se pudieron actualizar los datos tras un cambio anterior. La edición sigue bloqueada hasta que Actualizar tenga éxito; no se reenvió ninguna operación."
+                        : "No se pudieron actualizar los datos; las filas visibles pueden estar desactualizadas. Compruebe CoreServer y presione Actualizar.", true);
             }
         });
         Thread.ofVirtual().name("operatorsystem-people").start(task);

@@ -35,6 +35,10 @@
      <Button fx:id="openButton" text="Abrir asignación" onAction="#openAssignment" minHeight="44" styleClass="primary-button"/>
     </FlowPane>
     <Label text="Solo se abre una asignación por funcionario y ventanilla, con acceso habilitado y al menos un servicio activo compartido. Una nueva ocupación crea una fila nueva." wrapText="true" minHeight="-Infinity" styleClass="secondary-text"/>
+    <HBox alignment="CENTER_LEFT" spacing="12">
+     <TextField fx:id="assignmentsFilter" promptText="Buscar por funcionario, ventanilla, número o estado" accessibleText="Buscar en el historial de asignaciones" HBox.hgrow="ALWAYS" maxWidth="Infinity" prefHeight="36"/>
+     <Label fx:id="assignmentsFilterSummary" wrapText="true" minHeight="-Infinity" prefWidth="210" maxWidth="210" styleClass="secondary-text"/>
+    </HBox>
     <TableView fx:id="assignmentsTable" accessibleText="Historial de asignaciones" VBox.vgrow="ALWAYS"><placeholder><Label text="No hay asignaciones registradas."/></placeholder></TableView>
     <Label fx:id="selectedAssignmentLabel" wrapText="true" minHeight="-Infinity" styleClass="secondary-text"/>
     <Button fx:id="closeButton" text="Cerrar asignación seleccionada" onAction="#closeAssignment" minHeight="44" styleClass="secondary-button"/>

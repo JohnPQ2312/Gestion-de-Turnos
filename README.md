@@ -7,26 +7,28 @@ Sistema distribuido en Java para emitir turnos, atenderlos por ventanilla y most
 | `CoreServer` | Comunicación, permisos, reglas de atención y persistencia JDBC. |
 | `CostumerTurn` | Selección de servicio y prioridad, emisión y confirmación del turno. |
 | `OperatorSystem` | Acceso del personal, atención, consultas y administración. |
-| `QueueDisplayScreen` | Último llamado, ventanilla, llamados recientes, espera y reloj. |
+| `QueueDisplayScreen` | Turno llamado con su ventanilla, lista de turnos activos (llamados, en atención y en espera) y reloj. |
 
 ## Funciones disponibles
 
 Los turnos tienen un consecutivo independiente por servicio. La creación del ticket y la actualización de ese número se confirman en una misma transacción. La prioridad se guarda por separado del código visual.
 
-Cada funcionario atiende sus propias asignaciones abiertas. El llamado comprueba actividad, ocupación y servicios habilitados tanto para el funcionario como para la ventanilla. Entre los turnos compatibles se atienden primero los preferenciales y luego los regulares; dentro de cada prioridad se ordenan por fecha de creación e identificador. Las ventanillas mixtas atienden ambos tipos y las `PRIORITY_ONLY` solo preferenciales. Esta prioridad estricta no garantiza una espera máxima para los regulares.
+Cada funcionario atiende sus propias asignaciones abiertas y el servidor solo le entrega las suyas (`LIST_ASSIGNMENTS`, una consulta). El llamado comprueba actividad, ocupación y servicios habilitados tanto para el funcionario como para la ventanilla. Entre los turnos compatibles se atienden primero los preferenciales y luego los regulares; dentro de cada prioridad se ordenan por fecha de creación e identificador. Las ventanillas mixtas atienden ambos tipos y las `PRIORITY_ONLY` solo preferenciales. Esta prioridad estricta no garantiza una espera máxima para los regulares. La atención preferencial con ventanilla exclusiva es la característica adicional del proyecto: reserva una ventanilla para quienes la necesitan y las mixtas apoyan cuando hay espera.
 
 El ciclo es `EN_ESPERA`, `LLAMADO`, `EN_ATENCION` y `FINALIZADO`. Finalizar libera la asignación y conserva el historial. **Volver a llamar** mantiene el mismo turno y su primer llamado, actualiza el último llamado y aumenta el contador. La pausa impide nuevos llamados y rellamados; permite completar el turno activo.
 
-La pantalla pública recibe avisos por una suscripción al servidor y consulta una captura actualizada después de cada cambio confirmado. Muestra hasta 50 turnos en espera y cinco llamados recientes. Si pierde la conexión, conserva los datos, avisa que están desactualizados y vuelve a sincronizarse al reconectar. Las modificaciones directas en MySQL no emiten esos avisos.
+La pantalla pública recibe avisos por una suscripción al servidor y consulta una captura actualizada (`GET_DISPLAY_SNAPSHOT_V3`) después de cada cambio confirmado. Tiene dos zonas. La superior anuncia el llamado activo más reciente con su ventanilla: mientras ese turno está en atención sigue anunciado, y solo lo sustituye otro llamado más reciente. El aviso «Volvemos a llamar» corresponde a un turno que sigue en estado llamado. La inferior lista los turnos activos con turno, servicio, estado y ventanilla: todos los llamados y en atención, ordenados por último llamado, y hasta 30 en espera, con una nota cuando hay más. Los turnos finalizados no aparecen. Si las filas no caben, la lista cambia de página cada ocho segundos. Si pierde la conexión, conserva los datos, avisa que están desactualizados y vuelve a sincronizarse al reconectar. Las modificaciones directas en MySQL no emiten esos avisos. El servidor conserva `GET_DISPLAY_SNAPSHOT` y `GET_DISPLAY_SNAPSHOT_V2` para herramientas anteriores; la pantalla actual usa V3.
 
-El perfil ADMIN dispone de cinco consultas: atenciones entre fechas, cantidades por funcionario y servicio, tiempos de espera y tiempos de atención. También gestiona funcionarios, credenciales, usuarios relacionados con tickets, habilitaciones de servicios e historial de asignaciones. La vista Servicios y ventanillas permite crear y editar el catálogo, dar de baja registros y reactivarlos sin borrar su historial. Los usuarios de `app_user` son registros opcionales de personas atendidas; no son las cuentas de acceso del personal.
+El perfil ADMIN dispone de cinco consultas: atenciones entre fechas, cantidades por funcionario y servicio, tiempos de espera y tiempos de atención. También gestiona funcionarios, credenciales, usuarios relacionados con tickets, habilitaciones de servicios e historial de asignaciones. La vista Servicios y ventanillas permite crear y editar el catálogo, dar de baja registros y reactivarlos sin borrar su historial. Los usuarios de `app_user` son registros opcionales de personas atendidas; no son las cuentas de acceso del personal. En OperatorSystem, Personas, Asignaciones y Servicios y ventanillas se abren desde el menú Administración; Consultas y Cerrar sesión quedan a la vista.
+
+CostumerTurn carga el catálogo al abrirse y lo vuelve a cargar al terminar cada turno. El botón «Actualizar servicios» permite recargarlo en cualquier momento. Solo la lista de servicios se desplaza; el panel de prioridad y el botón de emisión permanecen fijos.
 
 ## Instalación y uso
 
 Se requiere JDK 21 o superior, NetBeans con soporte Maven y MySQL 8. Los clientes incorporan JavaFX 13 mediante Maven.
 
-1. Seguir [INSTALACION.md](INSTALACION.md) para preparar una base vacía, los datos iniciales y las primeras credenciales. Sobre una base existente, aplicar solo las migraciones necesarias.
-2. Configurar MySQL únicamente en `CoreServer/src/main/resources/db.properties`. El archivo es privado y está excluido de Git.
+1. Con la base que el docente asignó al grupo, seguir [INSTALACION.md](INSTALACION.md). Para crear una base propia con sus datos iniciales y primeras credenciales, seguir [INSTALACION_BASE_PROPIA.md](INSTALACION_BASE_PROPIA.md).
+2. Configurar MySQL únicamente en `CoreServer/src/main/resources/db.properties`, que se copia de `db.properties.example`. El archivo es privado y está excluido de Git, así que un clon nuevo no lo trae.
 3. Ejecutar primero CoreServer y después los tres clientes mediante **Run Project** en NetBeans.
 4. Para atender, iniciar sesión, seleccionar una asignación propia y utilizar **Llamar siguiente**, **Iniciar atención** y **Finalizar atención**.
 
@@ -46,12 +48,8 @@ Las operaciones de red se ejecutan en segundo plano. Si una escritura pierde su 
 - [Rellamado y migración](database/RELLAMADO.md).
 - [Herramientas de concurrencia y alcance de las comprobaciones](pruebas/README.md).
 
-Se comprobaron instalación, recorrido de atención, concurrencia, permisos, administración, notificaciones y transporte TLS en entornos locales. También hay comprobaciones funcionales de generación, llamado y rellamado sobre la base compartida. Los procedimientos de pruebas distinguen ese alcance del despliegue entre computadoras.
+## Verificación y alcance
 
-## Verificación y límites
+Se comprobó el código actual con un escenario integrado de 64 comprobaciones (CoreServer real contra MySQL local desechable y las cuatro aplicaciones conducidas por sus controles, en ventanas fuera de pantalla), 21 comprobaciones del anuncio de la pantalla pública y 15 de la pérdida de la base de datos con el sistema en marcha. También se ejecutaron las aplicaciones con el código actual sobre la base asignada: emisión, llamado, rellamado, inicio y finalización de un turno. Antes de los últimos cambios se había recorrido el catálogo sobre la base asignada con interfaces y clientes de protocolo reales. El [resumen de pruebas](pruebas/README.md#comprobaciones-y-límites) precisa el entorno de cada una.
 
-El 13 de noviembre se comprobó el catálogo sobre la base compartida: altas y edición desde las vistas, emisión regular y preferencial, restricciones administrativas, modalidades de atención y finalización de ambos turnos. La prueba combinó interfaces reales y clientes de protocolo. Los registros previos se conservaron. El resumen de pruebas precisa ese alcance.
-
-Siguen pendientes el ensayo físico entre computadoras, la medición de rendimiento bajo carga y la revisión de fechas históricas anteriores al ajuste horario. Dos llamados del recorrido remoto tardaron aproximadamente 6,2 segundos de procesamiento. Estos tiempos no equivalen a la demora de actualización visual ni garantizan un máximo.
-
-CostumerTurn carga el catálogo al abrirse. Para incorporar cambios posteriores, volver a abrir el generador; el botón «Actualizar servicios» aparece cuando la consulta devuelve una lista vacía. Una lista larga permite desplazamiento, aunque también desplaza el panel de atención preferencial.
+Las aplicaciones se comprobaron en una sola computadora y el escenario integrado se ejecutó por loopback, sin TLS. El despliegue entre computadoras, la medición de rendimiento bajo carga y la revisión de fechas históricas anteriores al ajuste horario quedan como trabajo futuro. En una medición previa, dos llamados remotos tardaron cerca de 6,2 segundos de procesamiento porque cada uno abría siete conexiones; el código actual reduce esas conexiones.

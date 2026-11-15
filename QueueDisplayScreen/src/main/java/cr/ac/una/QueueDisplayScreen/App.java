@@ -33,9 +33,12 @@ public class App extends Application {
         controller = loader.getController();
 
         stage.setTitle("Pantalla de turnos");
-        stage.setScene(new Scene(root, 1180, 860));
+        // La sala se presenta maximizada; el tamaño base cabe en 1366x768 al restaurar.
+        // La vista no se desplaza: pagina las filas según el alto disponible.
+        stage.setScene(new Scene(root, 1240, 680));
         stage.setMinWidth(900);
-        stage.setMinHeight(740);
+        stage.setMinHeight(600);
+        stage.setMaximized(true);
         stage.show();
 
         DisplayServerClient client = new DisplayServerClient(network.host(), network.port());

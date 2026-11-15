@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- Formulario de emisión y vista de confirmación; comparten TicketsGeneratorController. -->
+<!-- Formulario de emisión y vista de confirmación; comparten TicketsGeneratorController. Solo la lista de servicios se desplaza. -->
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
@@ -9,41 +9,51 @@
            fx:controller="cr.ac.una.costumerturn.controller.TicketsGeneratorController" stylesheets="@generator.css" styleClass="terminal">
     <fx:define><ToggleGroup fx:id="servicesGroup"/></fx:define>
     <BorderPane fx:id="formView">
-      <center>
-      <ScrollPane fitToWidth="true" fitToHeight="true" styleClass="page-scroll">
-        <VBox spacing="26" fillWidth="true">
-            <padding><Insets top="30" right="40" bottom="28" left="40"/></padding>
+      <top>
+        <VBox spacing="10" styleClass="form-header">
+            <padding><Insets top="22" right="40" bottom="6" left="40"/></padding>
             <HBox alignment="CENTER_LEFT" spacing="12">
                 <Label text="Gestión de turnos" styleClass="brand"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Label text="Atención al público" styleClass="context-label"/>
             </HBox>
-            <VBox spacing="8">
-                <Label text="Solicite su turno" styleClass="page-title"/>
-                <Label text="Elija un servicio. Su número aparecerá al terminar." wrapText="true" styleClass="intro"/>
-            </VBox>
+            <Label text="Solicite su turno" styleClass="page-title"/>
+            <Label text="Elija un servicio. Su número aparecerá al terminar." wrapText="true" minHeight="-Infinity" styleClass="intro"/>
             <Label fx:id="statusLabel" wrapText="true" minHeight="-Infinity" visible="false" managed="false" maxWidth="Infinity" styleClass="status-message"/>
-            <HBox spacing="28" alignment="TOP_LEFT" fillHeight="false" VBox.vgrow="ALWAYS">
-                <VBox fx:id="serviceArea" spacing="12" prefWidth="560" minWidth="300" HBox.hgrow="ALWAYS">
-                    <Label text="¿Qué servicio necesita?" styleClass="section-title"/>
-                    <Label text="Seleccione una opción." styleClass="helper"/>
-                    <VBox fx:id="serviceOptions" spacing="12"/>
-                    <Label fx:id="errorLabel" text="Seleccione un servicio para continuar." wrapText="true"
-                           visible="false" managed="false" maxWidth="Infinity" styleClass="validation-error"/>
-                </VBox>
-                <VBox spacing="16" prefWidth="320" minWidth="300" maxWidth="360" styleClass="selection-panel">
-                    <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
-                    <Label text="Su selección" styleClass="panel-caption"/>
-                    <Label fx:id="selectedServiceLabel" text="Elija un servicio" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="selection-name"/>
-                    <Separator styleClass="panel-divider"/>
-                    <CheckBox fx:id="priorityCheck" text="Necesito atención preferencial" wrapText="true"
-                              minHeight="48" maxWidth="Infinity" styleClass="priority-check"/>
-                    <Label text="Marque esta opción si le corresponde." wrapText="true" minHeight="-Infinity" styleClass="panel-helper"/>
-                    <Label fx:id="attentionLabel" text="Atención regular" wrapText="true" minHeight="-Infinity" styleClass="attention-state"/>
-                </VBox>
-            </HBox>
         </VBox>
-      </ScrollPane>
+      </top>
+      <center>
+        <HBox spacing="28" alignment="TOP_LEFT" fillHeight="true" minHeight="0">
+            <padding><Insets top="10" right="40" bottom="16" left="40"/></padding>
+            <VBox fx:id="serviceArea" spacing="10" prefWidth="560" minWidth="300" minHeight="0" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <VBox spacing="2" HBox.hgrow="ALWAYS" minWidth="0">
+                        <Label text="¿Qué servicio necesita?" wrapText="true" minHeight="-Infinity" styleClass="section-title"/>
+                        <Label fx:id="serviceHelperLabel" text="Seleccione una opción." wrapText="true" minHeight="-Infinity" styleClass="helper"/>
+                    </VBox>
+                    <Button fx:id="refreshButton" text="Actualizar servicios" onAction="#refreshServices"
+                            minHeight="44" minWidth="-Infinity" styleClass="secondary-button"/>
+                </HBox>
+                <ScrollPane fx:id="serviceScroll" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                            focusTraversable="false" minHeight="120" VBox.vgrow="ALWAYS" styleClass="service-scroll">
+                    <VBox fx:id="serviceOptions" spacing="12">
+                        <padding><Insets top="5" right="8" bottom="5" left="5"/></padding>
+                    </VBox>
+                </ScrollPane>
+                <Label fx:id="errorLabel" text="Seleccione un servicio para continuar." wrapText="true" minHeight="-Infinity"
+                       visible="false" managed="false" maxWidth="Infinity" styleClass="validation-error"/>
+            </VBox>
+            <VBox spacing="14" prefWidth="320" minWidth="300" maxWidth="360" minHeight="-Infinity" styleClass="selection-panel">
+                <padding><Insets top="22" right="24" bottom="22" left="24"/></padding>
+                <Label text="Su selección" styleClass="panel-caption"/>
+                <Label fx:id="selectedServiceLabel" text="Elija un servicio" wrapText="true" minHeight="-Infinity" maxWidth="Infinity" styleClass="selection-name"/>
+                <Separator styleClass="panel-divider"/>
+                <CheckBox fx:id="priorityCheck" text="Necesito atención preferencial" wrapText="true"
+                          minHeight="48" maxWidth="Infinity" styleClass="priority-check"/>
+                <Label text="Marque esta opción si le corresponde." wrapText="true" minHeight="-Infinity" styleClass="panel-helper"/>
+                <Label fx:id="attentionLabel" text="Atención regular" wrapText="true" minHeight="-Infinity" styleClass="attention-state"/>
+            </VBox>
+        </HBox>
       </center>
       <bottom>
         <HBox alignment="CENTER_LEFT" spacing="24" styleClass="action-bar">
