@@ -53,3 +53,15 @@ Las operaciones de red se ejecutan en segundo plano. Si una escritura pierde su 
 Se comprobó el código actual con un escenario integrado de 64 comprobaciones (CoreServer real contra MySQL local desechable y las cuatro aplicaciones conducidas por sus controles, en ventanas fuera de pantalla), 21 comprobaciones del anuncio de la pantalla pública y 15 de la pérdida de la base de datos con el sistema en marcha. También se ejecutaron las aplicaciones con el código actual sobre la base asignada: emisión, llamado, rellamado, inicio y finalización de un turno. Antes de los últimos cambios se había recorrido el catálogo sobre la base asignada con interfaces y clientes de protocolo reales. El [resumen de pruebas](pruebas/README.md#comprobaciones-y-límites) precisa el entorno de cada una.
 
 Las aplicaciones se comprobaron en una sola computadora y el escenario integrado se ejecutó por loopback, sin TLS. El despliegue entre computadoras, la medición de rendimiento bajo carga y la revisión de fechas históricas anteriores al ajuste horario quedan como trabajo futuro. En una medición previa, dos llamados remotos tardaron cerca de 6,2 segundos de procesamiento porque cada uno abría siete conexiones; el código actual reduce esas conexiones.
+
+## Defensa del proyecto
+
+Video: [carpeta de la defensa en Google Drive](https://drive.google.com/drive/folders/1Ywf7AkpODFRscM6Up1DAf6WRvf0LuJl9?usp=sharing)
+
+| Integrante | Partes presentadas |
+| --- | --- |
+| Joe Sandoval Diaz | Presentación del proyecto, arquitectura por capas, clases principales y patrones de diseño. |
+| John Perez Quesada | Diseño de la base de datos, operaciones JDBC y comunicación entre servidor, generador, operadores y pantalla pública. |
+| Joshua Barrantes Granados | Demostración funcional, validaciones, prueba de concurrencia y persistencia tras reiniciar. |
+
+En las conclusiones, cada integrante explica su aporte, una dificultad técnica y su solución.
